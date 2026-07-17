@@ -765,7 +765,18 @@ Ruled beyond this effort's destination. These return only if the foundation is r
 | [13](https://github.com/ShmuelAmir/wardrobe-tracker/issues/13) | Prototype: navigation, entry points & first-run | §7, §5.6 |
 | [14](https://github.com/ShmuelAmir/wardrobe-tracker/issues/14) | Prototype: item & outfit detail | §8 |
 
-**Throwaway branches** (not on `main`): `research/expo-foundation`, `research/web-image-import`, `prototype/stats-screen`, `prototype/navigation-entry-points`, `prototype/detail-screens`.
+**Supporting branches** — none are merged to `main`, and none carry app code.
+
+- **Research findings, kept on the remote:** `research/expo-foundation` (#2), `research/web-image-import` (#3). These are durable reference — §2 and §5.3 lean on them.
+- **Prototype source: throwaway, and deleted from the remote once wayfinding closed.** The **interactive prototypes linked from each section above are the durable record**; the HTML that generated them is not. Recoverable from a local clone if ever needed:
+
+  | Branch | Commit | Ticket |
+  |---|---|---|
+  | `prototype/stats-screen` | `cb8f933` | [#11](https://github.com/ShmuelAmir/wardrobe-tracker/issues/11) |
+  | `prototype/navigation-entry-points` | `d5e11d2` | [#13](https://github.com/ShmuelAmir/wardrobe-tracker/issues/13) |
+  | `prototype/detail-screens` | `e9ff76e` | [#14](https://github.com/ShmuelAmir/wardrobe-tracker/issues/14) |
+
+  > The `source on branch …` links in #11, #13 and #14's comments therefore **404**. This is intended — those prototypes did their job (each one caught a real bug: the `k=0` sub-tab trap, the never-worn sink, the outfit-delete cascade) and their conclusions are in this document.
 
 ## Amendment chain
 
