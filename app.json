@@ -6,7 +6,9 @@
     "orientation": "portrait",
     "scheme": "wardrobetracker",
     "userInterfaceStyle": "automatic",
-    "platforms": ["ios"],
+    "platforms": [
+      "ios"
+    ],
     "ios": {
       "bundleIdentifier": "com.shmuelamir.wardrobetracker",
       "supportsTablet": false
@@ -19,6 +21,14 @@
         {
           "cameraPermission": "Wardrobe Tracker uses the camera to photograph clothing items you add to your wardrobe.",
           "photosPermission": "Wardrobe Tracker needs access to your photo library so you can pick existing photos of your clothing items."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
         }
       ]
     ],

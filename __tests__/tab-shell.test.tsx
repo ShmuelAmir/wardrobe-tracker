@@ -1,18 +1,17 @@
 import { userEvent } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
 
-/**
- * `renderRouter` is async in expo-router 57 but hangs its route getters
- * (`getPathname` etc.) on the returned promise object itself. Awaiting it in a
- * position that unwraps the thenable — including `return await` from a helper —
- * loses those getters, so each test holds the promise in a local and awaits it
- * separately.
- */
 const APP_ROOT = 'src/app';
 
 /**
  * The three-tab shell is the ground everything else stands on: if these
  * assertions hold, a route added under any tab has somewhere to render.
+ *
+ * Note on the `renderRouter` calls below: it is async in expo-router 57 but
+ * hangs its route getters (`getPathname` etc.) on the returned promise object
+ * itself. Awaiting it in a position that unwraps the thenable — including
+ * `return await` from a helper — loses those getters, so each test holds the
+ * promise in a local and awaits it separately.
  */
 describe('three-tab shell', () => {
   it('opens on the Wardrobe tab', async () => {

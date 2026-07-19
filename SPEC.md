@@ -36,7 +36,7 @@ The only thing a user does *daily* is log a wear. The design bends toward that: 
 | Images on disk | expo-file-system |
 | State management | **None.** SQLite is the source of truth; Drizzle `useLiveQuery` + React state/Context suffices. Add Zustand later only if a real need appears |
 
-**Project structure:** `db/schema.ts` + `db/client.ts` + a generated `drizzle/` folder.
+**Project structure:** everything lives under `src/`, reached by the `@/*` path alias — routes in `src/app/` (the Expo Router root), shared UI in `src/components/`, and the data layer as `src/db/schema.ts` + `src/db/client.ts` plus a generated `drizzle/` folder. (Amended at scaffold time: these paths were originally written root-relative.)
 
 **Expo Go vs dev build.** expo-image-picker, expo-file-system and expo-sqlite all run in Expo Go, so early work is unblocked. But config-plugin settings (iOS permission strings in particular) need a **custom dev build** (`expo-dev-client`). This app needs proper permission strings, so **plan to move to a dev build early** rather than treating Expo Go as the target.
 
