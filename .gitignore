@@ -8,3 +8,6 @@ ios/
 android/
 .env*.local
 .claude/
+expo-env.d.ts
+.metro-health-check*
+coverage/

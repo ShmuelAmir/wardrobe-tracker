@@ -40,7 +40,23 @@ The only thing a user does *daily* is log a wear. The design bends toward that: 
 
 **Expo Go vs dev build.** expo-image-picker, expo-file-system and expo-sqlite all run in Expo Go, so early work is unblocked. But config-plugin settings (iOS permission strings in particular) need a **custom dev build** (`expo-dev-client`). This app needs proper permission strings, so **plan to move to a dev build early** rather than treating Expo Go as the target.
 
-> ⚠️ **Verify at scaffold time.** SDK versions churned three times within 2026 (55→56→57). Re-verify the latest SDK and a stable Drizzle-Expo install channel when scaffolding. The iOS 16.4 minimum is quoted from the Expo FAQ; Podfile specifics came from a search summary, not first-hand.
+> ✅ **Verified at scaffold time** (2026-07-19, [#19](https://github.com/ShmuelAmir/wardrobe-tracker/issues/19)). The numbers quoted above were re-checked against the npm registry and the generated iOS project, and supersede the earlier "verify at scaffold time" warning. What was actually installed:
+>
+> | Package | Installed | Note |
+> |---|---|---|
+> | `expo` | `~57.0.7` | `latest` dist-tag on npm; SDK 57 confirmed current |
+> | `react-native` | `0.86.0` | the upper end of the quoted 0.85–0.86 range |
+> | `react` / `react-dom` | `19.2.3` | matches the quoted React 19.2 |
+> | `expo-router` | `~57.0.7` | typed routes on via `experiments.typedRoutes` |
+> | `expo-dev-client` | `~57.0.7` | dev build is the target; Expo Go is not |
+> | Minimum iOS | **16.4** | read first-hand from the generated `ios/Podfile` and `IPHONEOS_DEPLOYMENT_TARGET` — the FAQ's figure was correct |
+>
+> Two deviations worth knowing about, neither affecting the decisions above:
+> `newArchEnabled` is no longer a valid app config key (the new architecture is
+> the default in SDK 57), and the test stack pins **jest 29**, because
+> `jest-expo@57` is built against jest 29 internals and fails to boot under
+> jest 30. The Drizzle-Expo install channel is still unverified — it is out of
+> scope until the data layer lands.
 
 ---
 

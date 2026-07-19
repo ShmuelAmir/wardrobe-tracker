@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Wardrobe Tracker",
+    "slug": "wardrobe-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "wardrobetracker",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios"],
+    "ios": {
+      "bundleIdentifier": "com.shmuelamir.wardrobetracker",
+      "supportsTablet": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Wardrobe Tracker uses the camera to photograph clothing items you add to your wardrobe.",
+          "photosPermission": "Wardrobe Tracker needs access to your photo library so you can pick existing photos of your clothing items."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

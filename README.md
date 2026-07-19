@@ -11,3 +11,23 @@ Status: **build-ready** — the spec is locked. See **[SPEC.md](SPEC.md)**, asse
 - **Stats** — per-item wear counts; most/least/never worn, scoped by a category filter.
 
 Single-user, on-device only (no accounts, no cloud). Storage: expo-sqlite + Drizzle ORM.
+
+## Running it
+
+The app targets a **custom dev build**, not Expo Go — the iOS camera and photo
+library permission strings come from config plugins, which Expo Go can't carry.
+
+```sh
+npm install
+npm run ios     # prebuild + build + install onto a simulator or connected iPhone
+npm start       # start the dev server against an already-installed dev build
+```
+
+Building to a physical iPhone needs Xcode, CocoaPods, and a signing team set on
+the generated Xcode project (`ios/` is generated and gitignored — rerun
+`npm run prebuild` any time the app config changes).
+
+```sh
+npm test        # jest + @testing-library/react-native
+npm run typecheck
+```
