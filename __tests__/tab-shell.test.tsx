@@ -19,13 +19,13 @@ describe('three-tab shell', () => {
     await router;
 
     expect(router.getPathname()).toBe('/');
-    expect(await screen.findByTestId('wardrobe-screen')).toBeOnTheScreen();
+    expect(await screen.findByTestId('wardrobe-hero')).toBeOnTheScreen();
   });
 
   it.each([
     ['Outfits', 'tab-outfits', '/outfits', 'outfits-screen'],
     ['Stats', 'tab-stats', '/stats', 'stats-screen'],
-    ['Wardrobe', 'tab-wardrobe', '/', 'wardrobe-screen'],
+    ['Wardrobe', 'tab-wardrobe', '/', 'wardrobe-hero'],
   ])('switches to the %s tab', async (_label, tabTestID, pathname, screenTestID) => {
     const user = userEvent.setup();
     const router = renderRouter(APP_ROOT, { initialUrl: '/' });
