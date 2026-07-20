@@ -30,7 +30,9 @@
             "deploymentTarget": "16.4"
           }
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true

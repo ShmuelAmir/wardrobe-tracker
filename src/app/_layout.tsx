@@ -2,9 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { MigrationGate } from '@/components/migration-gate';
+
 export default function RootLayout() {
   return (
-    <>
+    <MigrationGate>
       <StatusBar style="auto" />
       <Tabs screenOptions={{ headerShown: true }}>
         <Tabs.Screen
@@ -32,6 +34,6 @@ export default function RootLayout() {
           }}
         />
       </Tabs>
-    </>
+    </MigrationGate>
   );
 }
