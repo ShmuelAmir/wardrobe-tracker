@@ -11,13 +11,6 @@ export type ReviewSubmission = {
   season: Season[] | null;
 };
 
-export type ReviewInitial = {
-  category?: Category | null;
-  name?: string | null;
-  brand?: string | null;
-  season?: Season[] | null;
-};
-
 const SEASON_LABELS: Record<Season, string> = {
   spring: 'Spring',
   summer: 'Summer',
@@ -31,27 +24,43 @@ function textToNullable(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function Chip({
+  label,
+  selected,
+  onPress,
+  testID,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.chip, selected && styles.chipSelected]}
+      testID={testID}
+    >
+      <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 /**
  * §5.5 — Review & fill. **Category is the only required field** (chip picker,
  * the fixed six); name and brand are text, season is a four-value multi-select
  * with no "all-season" option. The screen owns only its form state and hands a
- * clean submission to its caller — the wizard saves it (§4.4), and edit mode
- * (§8) updates a row — which is exactly why it's a component with a single
- * entry point rather than two near-identical editors.
+ * clean submission to its caller — the wizard saves it (§4.4). Edit mode (§8)
+ * will give this same component a second entry point when its ticket lands;
+ * that's why persistence stays with the caller rather than living here.
  */
-export function ReviewForm({
-  initial,
-  submitLabel = 'Save',
-  onSubmit,
-}: {
-  initial?: ReviewInitial;
-  submitLabel?: string;
-  onSubmit: (submission: ReviewSubmission) => void;
-}) {
-  const [category, setCategory] = useState<Category | null>(initial?.category ?? null);
-  const [name, setName] = useState(initial?.name ?? '');
-  const [brand, setBrand] = useState(initial?.brand ?? '');
-  const [season, setSeason] = useState<Season[]>(initial?.season ?? []);
+export function ReviewForm({ onSubmit }: { onSubmit: (submission: ReviewSubmission) => void }) {
+  const [category, setCategory] = useState<Category | null>(null);
+  const [name, setName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [season, setSeason] = useState<Season[]>([]);
 
   const canSave = category !== null;
 
@@ -75,21 +84,15 @@ export function ReviewForm({
     <ScrollView contentContainerStyle={styles.content} testID="review-form">
       <Text style={styles.label}>Category</Text>
       <View style={styles.chips}>
-        {CATEGORIES.map((value) => {
-          const selected = category === value;
-          return (
-            <Pressable
-              key={value}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => setCategory(value)}
-              style={[styles.chip, selected && styles.chipSelected]}
-              testID={`category-chip-${value}`}
-            >
-              <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>{value}</Text>
-            </Pressable>
-          );
-        })}
+        {CATEGORIES.map((value) => (
+          <Chip
+            key={value}
+            label={value}
+            selected={category === value}
+            onPress={() => setCategory(value)}
+            testID={`category-chip-${value}`}
+          />
+        ))}
       </View>
 
       <Text style={styles.label}>Name</Text>
@@ -112,23 +115,15 @@ export function ReviewForm({
 
       <Text style={styles.label}>Season</Text>
       <View style={styles.chips}>
-        {SEASONS.map((value) => {
-          const selected = season.includes(value);
-          return (
-            <Pressable
-              key={value}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => toggleSeason(value)}
-              style={[styles.chip, selected && styles.chipSelected]}
-              testID={`season-chip-${value}`}
-            >
-              <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
-                {SEASON_LABELS[value]}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {SEASONS.map((value) => (
+          <Chip
+            key={value}
+            label={SEASON_LABELS[value]}
+            selected={season.includes(value)}
+            onPress={() => toggleSeason(value)}
+            testID={`season-chip-${value}`}
+          />
+        ))}
       </View>
 
       <Pressable
@@ -139,7 +134,7 @@ export function ReviewForm({
         style={[styles.save, !canSave && styles.saveDisabled]}
         testID="review-save"
       >
-        <Text style={styles.saveLabel}>{submitLabel}</Text>
+        <Text style={styles.saveLabel}>Save</Text>
       </Pressable>
     </ScrollView>
   );

@@ -14,7 +14,7 @@ import { saveItem } from '@/item-save';
  */
 export default function ReviewStep() {
   const router = useRouter();
-  const { capture, sourceUrl } = useAddItemDraft();
+  const { capture } = useAddItemDraft();
   const saving = useRef(false);
 
   if (capture === null) return <Redirect href="/add-item" />;
@@ -23,7 +23,8 @@ export default function ReviewStep() {
     if (saving.current || capture === null) return;
     saving.current = true;
     try {
-      await saveItem(capture, { ...submission, sourceUrl });
+      // A library item has no source URL; the web-import path sets one (§5.3).
+      await saveItem(capture, { ...submission, sourceUrl: null });
       router.replace('/add-item/saved');
     } catch {
       saving.current = false;

@@ -9,37 +9,28 @@ import type { CapturedImage } from '@/item-save';
  * context spanning the wizard stack — created empty, filled at capture, and
  * dropped when the wizard unmounts.
  *
- * Only the captured image and its `source_url` live here. The Review fields are
- * the ReviewForm's own local state until Save (§5.5), so they never need to
- * survive a Back.
+ * Only the captured image lives here; the Review fields are the ReviewForm's own
+ * local state until Save (§5.5). The web-import path's `source_url` joins the
+ * draft with its own ticket (§5.3).
  */
 type Draft = {
   capture: CapturedImage | null;
-  sourceUrl: string | null;
-  setCapture: (capture: CapturedImage, sourceUrl?: string | null) => void;
+  setCapture: (capture: CapturedImage) => void;
   reset: () => void;
 };
 
 const DraftContext = createContext<Draft | null>(null);
 
 export function AddItemDraftProvider({ children }: { children: ReactNode }) {
-  const [capture, setCaptureState] = useState<CapturedImage | null>(null);
-  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const [capture, setCapture] = useState<CapturedImage | null>(null);
 
   const value = useMemo<Draft>(
     () => ({
       capture,
-      sourceUrl,
-      setCapture: (next, url = null) => {
-        setCaptureState(next);
-        setSourceUrl(url);
-      },
-      reset: () => {
-        setCaptureState(null);
-        setSourceUrl(null);
-      },
+      setCapture,
+      reset: () => setCapture(null),
     }),
-    [capture, sourceUrl],
+    [capture],
   );
 
   return <DraftContext.Provider value={value}>{children}</DraftContext.Provider>;

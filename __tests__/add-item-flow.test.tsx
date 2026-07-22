@@ -21,11 +21,9 @@ jest.mock('expo-crypto', () => ({ randomUUID: () => 'a3f2c1de' }));
 
 const mockSetCapture = jest.fn();
 let mockCapture: unknown = null;
-let mockSourceUrl: string | null = null;
 jest.mock('@/components/add-item-draft', () => ({
   useAddItemDraft: () => ({
     capture: mockCapture,
-    sourceUrl: mockSourceUrl,
     setCapture: mockSetCapture,
     reset: jest.fn(),
   }),
@@ -37,7 +35,6 @@ jest.mock('@/item-save', () => ({ saveItem: (...args: unknown[]) => mockSaveItem
 beforeEach(() => {
   jest.clearAllMocks();
   mockCapture = null;
-  mockSourceUrl = null;
 });
 
 /**

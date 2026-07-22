@@ -83,24 +83,4 @@ describe('ReviewForm', () => {
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: null }));
   });
-
-  it('pre-fills from initial values — the second entry point §8 reuses', async () => {
-    const user = userEvent.setup();
-    const onSubmit = jest.fn();
-    await render(
-      <ReviewForm
-        initial={{ category: 'Top', name: 'Grey tee', brand: 'Acme', season: ['spring'] }}
-        onSubmit={onSubmit}
-      />,
-    );
-
-    await user.press(screen.getByTestId('review-save'));
-
-    expect(onSubmit).toHaveBeenCalledWith({
-      category: 'Top',
-      name: 'Grey tee',
-      brand: 'Acme',
-      season: ['spring'],
-    });
-  });
 });
