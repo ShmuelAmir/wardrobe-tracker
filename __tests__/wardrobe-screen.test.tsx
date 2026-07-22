@@ -1,13 +1,17 @@
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, userEvent } from '@testing-library/react-native';
 
-import WardrobeTab from '@/app/index';
+import WardrobeTab from '@/app/(tabs)/index';
 import type { Item } from '@/db/schema';
 
 const mockUseItems = jest.fn();
 jest.mock('@/db/queries', () => ({ useItems: () => mockUseItems() }));
 
 const mockSetOptions = jest.fn();
-jest.mock('expo-router', () => ({ useNavigation: () => ({ setOptions: mockSetOptions }) }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ setOptions: mockSetOptions }),
+  useRouter: () => ({ push: mockPush }),
+}));
 
 function anItem(overrides: Partial<Item> = {}): Item {
   return {
@@ -49,6 +53,15 @@ describe('Wardrobe with zero items', () => {
 
     expect(screen.getByTestId('wardrobe-hero-body')).toHaveTextContent(/product link/i);
     expect(screen.getByText('Add your first item')).toBeOnTheScreen();
+  });
+
+  it('opens the add-item wizard from the hero CTA — the only entry point while the header is hidden', async () => {
+    const user = userEvent.setup();
+    await render(<WardrobeTab />);
+
+    await user.press(screen.getByText('Add your first item'));
+
+    expect(mockPush).toHaveBeenCalledWith('/add-item');
   });
 
   it('hides the nav bar — the hero is the only full-bleed screen in the app', async () => {

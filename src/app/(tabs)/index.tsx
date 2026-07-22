@@ -1,8 +1,7 @@
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import { View } from 'react-native';
 
-import { DevSeedButton } from '@/components/dev-seed-button';
 import { ItemGrid } from '@/components/item-grid';
 import { WardrobeHero } from '@/components/wardrobe-hero';
 import { useItems } from '@/db/queries';
@@ -10,6 +9,7 @@ import { useItems } from '@/db/queries';
 export default function WardrobeTab() {
   const { items, loading } = useItems();
   const navigation = useNavigation();
+  const router = useRouter();
   const isEmpty = items.length === 0;
 
   // The zero-state hero is full-bleed, so the nav bar goes away with it and
@@ -23,15 +23,11 @@ export default function WardrobeTab() {
   // the hero on the first would flash it on every cold start.
   if (loading) return <View testID="wardrobe-loading" />;
 
-  return (
-    <>
-      {isEmpty ? <WardrobeHero onAddItem={addItem} /> : <ItemGrid items={items} />}
-      <DevSeedButton />
-    </>
+  // Empty: the hero's CTA opens the wizard, since the nav-bar `+` is hidden
+  // along with the header. Populated: the `+` in the header opens it (§7.3).
+  return isEmpty ? (
+    <WardrobeHero onAddItem={() => router.push('/add-item')} />
+  ) : (
+    <ItemGrid items={items} />
   );
-}
-
-function addItem() {
-  // The add-item wizard (§5) lands with the photo-library ticket. Until then
-  // the hero's CTA is inert — use the dev seed below to populate the grid.
 }
