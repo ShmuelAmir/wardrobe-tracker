@@ -2,6 +2,7 @@ import { File, Paths } from 'expo-file-system';
 import { Image } from 'expo-image';
 
 import type { CapturedImage } from './item-save';
+import { BROWSER_HEADERS } from './web-import';
 
 /**
  * §5.4 — download the chosen image at "Use this image" (step 3 → 4), **not** at
@@ -17,8 +18,10 @@ import type { CapturedImage } from './item-save';
  */
 export async function downloadCandidate(url: string, uuid: string): Promise<CapturedImage> {
   const destination = new File(Paths.cache, `${uuid}.jpg`);
-  // `idempotent` overwrites a stale cache file from an earlier "Use this image"
-  // on the same UUID rather than throwing on the existing target.
+  // The UUID is minted fresh at each "Use this image" tap, so the target is
+  // always new; `idempotent` (a valid DownloadOptions field in expo-file-system
+  // 57) just keeps the download from throwing should the OS ever hand back a
+  // cache path that already holds a file.
   const file = await File.downloadFileAsync(url, destination, {
     idempotent: true,
     headers: BROWSER_HEADERS,
@@ -27,10 +30,3 @@ export async function downloadCandidate(url: string, uuid: string): Promise<Capt
   const ref = await Image.loadAsync(file.uri);
   return { uri: file.uri, width: ref.width, height: ref.height, uuid };
 }
-
-// Mirror the page fetch's browser-like User-Agent so a CDN that gates on it
-// serves the bytes rather than a 403.
-const BROWSER_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Mobile/15E148 Safari/604.1',
-};

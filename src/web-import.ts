@@ -43,6 +43,18 @@ export function isFetchableUrl(input: string): boolean {
   }
 }
 
+/**
+ * A browser-like User-Agent nudges anti-bot pages toward serving us real HTML,
+ * and the image download (§5.4) must send the **same** UA so a CDN that gates on
+ * it hands back the bytes too — hence one shared constant rather than a copy per
+ * caller. The dead-end handling for the 403s that still get through is a later
+ * ticket (§5.3).
+ */
+export const BROWSER_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Mobile/15E148 Safari/604.1',
+};
+
 /** Fetch a page and parse it, storing the post-redirect URL as `sourceUrl`. */
 export async function fetchProductPage(pastedUrl: string): Promise<WebImportResult> {
   const response = await fetch(pastedUrl.trim(), { headers: BROWSER_HEADERS });
@@ -68,13 +80,6 @@ export function parsePage(html: string, resolvedUrl: string): WebImportResult {
     brand: siteName || null,
   };
 }
-
-// A browser-like User-Agent nudges anti-bot pages toward serving us real HTML.
-// The dead-end handling for the 403s that get through is a later ticket (§5.3).
-const BROWSER_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Mobile/15E148 Safari/604.1',
-};
 
 /** Image URLs in priority order, before absolutizing/dedup. */
 function imageCandidates(html: string): string[] {
