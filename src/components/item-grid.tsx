@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import type { Item } from '@/db/schema';
@@ -9,17 +9,23 @@ const COLUMNS = 3;
 const GAP = 2;
 
 /**
- * The Wardrobe grid (§4.1). Tiles are `contentFit: 'cover'` and nothing else:
- * `none` and `fill` disable expo-image's decode-time downscaling, which is the
- * entire reason this app stores no thumbnails (§10.8).
+ * The Wardrobe grid (§4.1), also the item grid on outfit Detail. Tiles are
+ * `contentFit: 'cover'` and nothing else: `none` and `fill` disable expo-image's
+ * decode-time downscaling, which is the entire reason this app stores no
+ * thumbnails (§10.8).
+ *
+ * `header` scrolls with the grid as the list's own header — the way to put
+ * content above a `FlatList` without nesting it in a `ScrollView` (which would
+ * defeat virtualization).
  */
-export function ItemGrid({ items }: { items: Item[] }) {
+export function ItemGrid({ items, header }: { items: Item[]; header?: ReactElement }) {
   return (
     <FlatList
       testID="wardrobe-grid"
       data={items}
       keyExtractor={(row) => String(row.id)}
       numColumns={COLUMNS}
+      ListHeaderComponent={header}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.grid}
       renderItem={({ item }) => <ItemCell item={item} />}
