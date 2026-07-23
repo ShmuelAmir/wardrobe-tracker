@@ -1,19 +1,30 @@
 /**
  * §5.3 — the web-import parse. RN's `fetch` enforces no CORS (native apps have
- * none), so brand pages are fetched directly — **no proxy, no backend**. The
- * page HTML is parsed for an image in a fixed priority order:
+ * none), so brand pages are fetched directly — **no proxy, no backend**.
  *
- *   `og:image` → `twitter:image` → JSON-LD → largest `<img>`
+ * The candidate list is built in three passes (#41):
  *
- * The first candidate is what step 3 auto-picks; the rest fill the thumbnail row
- * to swap among. Reliability is site-dependent (SPAs and anti-bot 403s can
- * fail), which is exactly why step 3's manual fallback is mandatory — the
- * failure states themselves are their own ticket; this module is the happy path.
+ *   1. **Priority extraction** — `og:image` → `twitter:image` → JSON-LD →
+ *      largest `<img>`. This still orders the generic/fallback case.
+ *   2. **Harvest** — real retail galleries hide in a JSON blob (often with
+ *      `/`-escaped slashes) or a `srcset`, not in `<meta>`/`<img src>`, so
+ *      #23's parser saw only the 1–2 hero copies and the confirm step showed the
+ *      hero **twice**. We additionally scan the (un-escaped) HTML for image URLs.
+ *   3. **Filter → scope → collapse → order** — drop junk (favicons, logos,
+ *      sprites); on a recognised platform keep only the colour the URL names and
+ *      float the clean-background packshot to `[0]`; collapse size/format
+ *      variants of one photo to a single candidate; and dedupe by that identity.
+ *
+ * The first candidate is what step 3 auto-picks; the rest fill the thumbnail row.
+ * Reliability is site-dependent (SPAs and anti-bot 403s can fail), which is
+ * exactly why step 3's manual fallback is mandatory — the failure states are
+ * their own ticket; this module is the happy path.
  *
  * Parsing is deliberately regex-based: RN ships no DOM parser, and meta/JSON-LD
  * extraction from server-rendered retail HTML doesn't need one. It is also kept
- * free of native imports so the whole parse is a pure function pinned by tests,
- * with only `fetchProductPage` reaching for the (mockable) global `fetch`.
+ * free of native imports so the whole parse is a pure function pinned by tests
+ * (including three real retail pages under `__tests__/fixtures/`), with only
+ * `fetchProductPage` reaching for the (mockable) global `fetch`.
  */
 
 export type WebImportResult = {
@@ -66,9 +77,7 @@ export async function fetchProductPage(pastedUrl: string): Promise<WebImportResu
 
 /** The pure parse: HTML + the resolved page URL in, candidates + metadata out. */
 export function parsePage(html: string, resolvedUrl: string): WebImportResult {
-  const candidates = dedupe(
-    [...imageCandidates(html)].map((raw) => absolutize(raw, resolvedUrl)).filter(nonEmpty),
-  );
+  const candidates = galleryCandidates(html, resolvedUrl);
 
   const title = decodeEntities(metaContent(html, ['og:title', 'twitter:title']));
   const siteName = decodeEntities(metaContent(html, ['og:site_name']));
@@ -79,6 +88,234 @@ export function parsePage(html: string, resolvedUrl: string): WebImportResult {
     name: cleanName(title, siteName),
     brand: siteName || null,
   };
+}
+
+/**
+ * The full candidate pipeline (#41): priority extraction + harvest, absolutized
+ * and de-junked, then narrowed by the page's platform, collapsed to one URL per
+ * distinct photo, and finally ordered so the clean-background packshot leads.
+ */
+function galleryCandidates(html: string, resolvedUrl: string): string[] {
+  const platform = detectPlatform(html, resolvedUrl);
+  const raw = [...imageCandidates(html), ...harvestImages(html)];
+
+  const usable = raw
+    .map((candidate) => absolutize(candidate, resolvedUrl))
+    .filter(nonEmpty)
+    .filter((url) => !isJunkImage(url));
+
+  return platform.order(dedupeByIdentity(platform.scope(usable)));
+}
+
+/**
+ * The extra pass #23 lacked: image URLs living in a JSON blob or `srcset` rather
+ * than a `<meta>`/`<img src>`. Retail SPAs commonly serialise the gallery as
+ * JSON with `/`-escaped slashes (`https://…`), so we un-escape first,
+ * then scrape every absolute image URL plus Demandware's root-relative statics.
+ * Everything is deduped downstream by identity, so over-collecting here is safe.
+ */
+function harvestImages(html: string): string[] {
+  const unescaped = html
+    .replace(/\\u002[fF]/g, '/')
+    .replace(/\\\//g, '/')
+    .replace(/\\u0026/gi, '&');
+  const absolute = unescaped.match(ABSOLUTE_IMAGE_URL) ?? [];
+  const demandwareRelative = unescaped.match(DEMANDWARE_STATIC_URL) ?? [];
+  return [...absolute, ...demandwareRelative].map(decodeEntities);
+}
+
+const IMAGE_EXT = String.raw`\.(?:jpe?g|png|webp|avif)(?:\?[^"'\\\s)]*)?`;
+const ABSOLUTE_IMAGE_URL = new RegExp(String.raw`https?:\/\/[^"'\\\s)]+${IMAGE_EXT}`, 'gi');
+const DEMANDWARE_STATIC_URL = new RegExp(
+  String.raw`(?:\/on\/demandware\.static|\/dw\/image)[^"'\\\s)]+${IMAGE_EXT}`,
+  'gi',
+);
+
+/**
+ * Drop URLs that are never the product: favicons, logos, sprites, UI icons,
+ * `data:` URIs and `.svg` chrome. The bias is deliberately **over-include** — we
+ * only reject what is clearly not a product photo, because the confirm step's
+ * swap row is the real safety net and a missing shot can't be recovered there.
+ * (This is also what stops factory54's favicon `og:image` from being auto-picked.)
+ */
+function isJunkImage(url: string): boolean {
+  const lower = url.toLowerCase();
+  if (lower.startsWith('data:')) return true;
+  if (/\.svg(\?|$)/.test(lower)) return true;
+  if (
+    /favicon|sprite|(?:^|[/_-])logo(?:[/_.-]|$)|apple-touch|\bplaceholder\b|[/_-]icons?[/_-]|payment|\bflags?\b/.test(
+      lower,
+    )
+  ) {
+    return true;
+  }
+  // Share buttons and carousel chrome (factory54 serves these from the same dir
+  // as its product shots), matched only as a delimited token in the *basename*
+  // so a product filename that merely contains the letters isn't caught.
+  return /(?:^|[/_-])(?:left-arrow|right-arrow|arrow|chevron|prev|next|pinterest|twitter|facebook|instagram|whatsapp|youtube|tiktok|linkedin|share|wishlist|cart|bag|search|menu|close|play|badge|spinner|loader)[0-9]*(?:[/_.-]|$)/.test(
+    basename(lower),
+  );
+}
+
+/**
+ * A platform adapter narrows and orders the harvested URLs. The generic case is
+ * identity on both; the Demandware and Shopify cases add the boosts that let us
+ * show only the chosen colour and lead with the clean-background shot.
+ */
+type Platform = {
+  /** Keep only the images that belong to the item the URL actually points at. */
+  scope(urls: string[]): string[];
+  /** Reorder so the clean-background packshot, when known, is candidate `[0]`. */
+  order(urls: string[]): string[];
+};
+
+const GENERIC_PLATFORM: Platform = {
+  scope: (urls) => urls,
+  order: (urls) => urls,
+};
+
+function detectPlatform(html: string, resolvedUrl: string): Platform {
+  if (/demandware\.static|\/dw\/image\/|dwvar_/i.test(html) || /\/dw\/image\//i.test(resolvedUrl)) {
+    return demandwarePlatform(resolvedUrl);
+  }
+  if (/cdn\/shop\/|cdn\.shopify\.com|myshopify|Shopify\.theme|window\.Shopify/i.test(html)) {
+    return shopifyPlatform(html, resolvedUrl);
+  }
+  return GENERIC_PLATFORM;
+}
+
+/**
+ * Salesforce Commerce Cloud (Hackett, factory54). Image filenames encode both
+ * the colour (`…_816_…`) and the shot type — `_MO` on-model / `_FL` flat-lay for
+ * Hackett, `_L_` look / `_P_` packshot for factory54. So we filter to the colour
+ * the URL names and float the clean-background packshot to the front. When the
+ * named colour matches no filename (factory54 names `KHAKI`, but its lone-colour
+ * page encodes no colour in the filename) the filter no-ops rather than empties.
+ */
+function demandwarePlatform(resolvedUrl: string): Platform {
+  const color = colorFromUrl(resolvedUrl);
+  const isCleanBackground = (url: string) => /_fl\.|_p_\d/i.test(basename(url));
+  return {
+    scope(urls) {
+      if (!color) return urls;
+      const pattern = new RegExp(`_${escapeRegExp(color)}_`, 'i');
+      const forColor = urls.filter((url) => pattern.test(basename(url)));
+      return forColor.length > 0 ? forColor : urls;
+    },
+    order: (urls) =>
+      [...urls].sort((a, b) => Number(isCleanBackground(b)) - Number(isCleanBackground(a))),
+  };
+}
+
+/**
+ * Shopify (piniparma). A product page carries hundreds of CDN images — every
+ * colour, plus recommended products — with no colour code in the filename. But
+ * each product has a handle (`/products/peach-polo-made-in-italy`), and the
+ * distinguishing token of that handle (`peach`; `made`/`italy` are site-wide,
+ * `polo` is shared) appears in this product's filenames and not the neighbours'.
+ * So we keep CDN images whose filename carries the handle's rarest token, which
+ * doubles as the colour filter the URL can't otherwise give us on Shopify.
+ */
+function shopifyPlatform(html: string, resolvedUrl: string): Platform {
+  const handle = resolvedUrl.match(/\/products\/([^/?#]+)/i)?.[1]?.toLowerCase();
+  const tokens = handle ? distinctiveHandleTokens(handle, html) : [];
+  const isCdn = (url: string) => /cdn\/shop\/|cdn\.shopify\.com/i.test(url);
+  return {
+    scope(urls) {
+      if (tokens.length === 0) return urls;
+      return urls.filter(
+        (url) => !isCdn(url) || tokens.some((token) => url.toLowerCase().includes(token)),
+      );
+    },
+    order: (urls) => urls,
+  };
+}
+
+/** The rarest (most product-specific) tokens of a Shopify handle, length ≥ 3. */
+function distinctiveHandleTokens(handle: string, html: string): string[] {
+  const handles = new Set(
+    (html.match(/\/products\/[a-z0-9][a-z0-9-]+/gi) ?? []).map((h) =>
+      h.replace(/\/products\//i, '').toLowerCase(),
+    ),
+  );
+  handles.add(handle);
+
+  const frequency = new Map<string, number>();
+  for (const h of handles) {
+    for (const token of new Set(h.split('-'))) {
+      if (token.length >= 3) frequency.set(token, (frequency.get(token) ?? 0) + 1);
+    }
+  }
+
+  const tokens = [...new Set(handle.split('-'))].filter((token) => token.length >= 3);
+  if (tokens.length === 0) return [];
+  const rarest = Math.min(...tokens.map((token) => frequency.get(token) ?? 1));
+  return tokens.filter((token) => (frequency.get(token) ?? 1) === rarest);
+}
+
+/** The `color`-ish query value the URL names, or null. */
+function colorFromUrl(resolvedUrl: string): string | null {
+  try {
+    for (const [key, value] of new URL(resolvedUrl).searchParams) {
+      if (/color/i.test(key) && value) return value;
+    }
+  } catch {
+    // An unparseable URL simply yields no colour to filter on.
+  }
+  return null;
+}
+
+/**
+ * Collapse size/format variants of one photo (`…_small`, `…_grande`, `…_1024x`,
+ * `?v=…`, and a CDN's transform path vs its static path) to a single candidate,
+ * keyed by the stable filename identity. First-seen order is preserved, and the
+ * best variant of each identity (absolute, un-downscaled, longest) is kept.
+ */
+function dedupeByIdentity(urls: string[]): string[] {
+  const order: string[] = [];
+  const groups = new Map<string, string[]>();
+  for (const url of urls) {
+    const id = imageIdentity(url);
+    const group = groups.get(id);
+    if (group) group.push(url);
+    else {
+      groups.set(id, [url]);
+      order.push(id);
+    }
+  }
+  return order.map((id) => pickBestVariant(groups.get(id) as string[]));
+}
+
+const SIZE_SUFFIX = /_(?:small|medium|large|grande|compact|master|pico|icon|thumb|\d+x\d*|x\d+)$/i;
+
+/** A photo's stable identity: its basename, minus query, extension and size tag. */
+function imageIdentity(url: string): string {
+  const path = url.split(/[?#]/)[0];
+  const base = path.substring(path.lastIndexOf('/') + 1).toLowerCase();
+  return base.replace(/\.(?:jpe?g|png|webp|avif)$/i, '').replace(SIZE_SUFFIX, '');
+}
+
+/** Prefer an absolute, full-size URL among variants of the same photo. */
+function pickBestVariant(urls: string[]): string {
+  return [...urls].sort((a, b) => variantRank(b) - variantRank(a) || b.length - a.length)[0];
+}
+
+function variantRank(url: string): number {
+  const base = basename(url).replace(/\.(?:jpe?g|png|webp|avif)$/i, '');
+  let rank = 0;
+  if (/^https?:\/\//i.test(url)) rank += 2;
+  if (!SIZE_SUFFIX.test(base)) rank += 1;
+  return rank;
+}
+
+/** The last path segment (query stripped), for filename-shaped inspection. */
+function basename(url: string): string {
+  const path = url.split(/[?#]/)[0];
+  return path.substring(path.lastIndexOf('/') + 1);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /** Image URLs in priority order, before absolutizing/dedup. */
@@ -206,10 +443,6 @@ function decodeEntities(value: string): string {
     .replace(/&#x27;/gi, "'")
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>');
-}
-
-function dedupe(values: string[]): string[] {
-  return [...new Set(values)];
 }
 
 function nonEmpty(value: string): boolean {
