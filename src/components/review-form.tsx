@@ -56,10 +56,21 @@ function Chip({
  * will give this same component a second entry point when its ticket lands;
  * that's why persistence stays with the caller rather than living here.
  */
-export function ReviewForm({ onSubmit }: { onSubmit: (submission: ReviewSubmission) => void }) {
+export function ReviewForm({
+  onSubmit,
+  initialName,
+  initialBrand,
+}: {
+  onSubmit: (submission: ReviewSubmission) => void;
+  // §5.3 — the web-import path pre-fills Name/Brand from the cleaned page
+  // metadata; camera/library leave these undefined and the fields start blank.
+  // Category and Season are never pre-filled — there's no page signal for them.
+  initialName?: string | null;
+  initialBrand?: string | null;
+}) {
   const [category, setCategory] = useState<Category | null>(null);
-  const [name, setName] = useState('');
-  const [brand, setBrand] = useState('');
+  const [name, setName] = useState(initialName ?? '');
+  const [brand, setBrand] = useState(initialBrand ?? '');
   const [season, setSeason] = useState<Season[]>([]);
 
   const canSave = category !== null;
