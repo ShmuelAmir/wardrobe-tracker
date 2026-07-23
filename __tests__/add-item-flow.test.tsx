@@ -1,4 +1,5 @@
 import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
 import SourceStep from '@/app/add-item/index';
 import ReviewStep from '@/app/add-item/review';
@@ -13,11 +14,20 @@ jest.mock('expo-router', () => ({
 }));
 
 const mockLaunch = jest.fn();
+const mockLaunchCamera = jest.fn();
+const mockRequestCamera = jest.fn();
+const mockRequestLibrary = jest.fn();
 jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: (...args: unknown[]) => mockLaunch(...args),
+  launchCameraAsync: (...args: unknown[]) => mockLaunchCamera(...args),
+  requestCameraPermissionsAsync: (...args: unknown[]) => mockRequestCamera(...args),
+  requestMediaLibraryPermissionsAsync: (...args: unknown[]) => mockRequestLibrary(...args),
 }));
 
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'a3f2c1de' }));
+
+const granted = { granted: true, status: 'granted', canAskAgain: true };
+const denied = { granted: false, status: 'denied', canAskAgain: false };
 
 const mockSetCapture = jest.fn();
 let mockCapture: unknown = null;
@@ -35,6 +45,11 @@ jest.mock('@/item-save', () => ({ saveItem: (...args: unknown[]) => mockSaveItem
 beforeEach(() => {
   jest.clearAllMocks();
   mockCapture = null;
+  // Permission is granted unless a test overrides it; both source paths pass
+  // through a permission gate before launching (§5.6).
+  mockRequestCamera.mockResolvedValue(granted);
+  mockRequestLibrary.mockResolvedValue(granted);
+  jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
 });
 
 /**
@@ -91,6 +106,96 @@ describe('source step — choose from library', () => {
     await waitFor(() => expect(mockLaunch).toHaveBeenCalled());
     expect(mockSetCapture).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * §5.2 / §5.6 — the camera tile is a live source: grant → capture → confirm,
+ * the same pipeline the library uses, with no page metadata to pre-fill.
+ */
+describe('source step — take a photo', () => {
+  it('requests permission, captures under a fresh UUID, and advances to confirm', async () => {
+    mockLaunchCamera.mockResolvedValueOnce({
+      canceled: false,
+      assets: [{ uri: 'file:///cache/shot.jpg', width: 3024, height: 4032 }],
+    });
+    const user = userEvent.setup();
+    await render(<SourceStep />);
+
+    await user.press(screen.getByTestId('source-camera'));
+
+    await waitFor(() => expect(mockRequestCamera).toHaveBeenCalled());
+    expect(mockSetCapture).toHaveBeenCalledWith({
+      uri: 'file:///cache/shot.jpg',
+      width: 3024,
+      height: 4032,
+      uuid: 'a3f2c1de',
+    });
+    expect(mockPush).toHaveBeenCalledWith('/add-item/confirm');
+  });
+
+  it('does nothing when the capture is canceled', async () => {
+    mockLaunchCamera.mockResolvedValueOnce({ canceled: true, assets: null });
+    const user = userEvent.setup();
+    await render(<SourceStep />);
+
+    await user.press(screen.getByTestId('source-camera'));
+
+    await waitFor(() => expect(mockLaunchCamera).toHaveBeenCalled());
+    expect(mockSetCapture).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * §5.6 — a denied source goes quiet in place: its tile becomes a reason card
+ * with a Settings deep link. The step never changes, the flow never restarts,
+ * and the other two sources stay live beside it.
+ */
+describe('source step — permission denial', () => {
+  it('replaces the camera tile in place while leaving the others usable', async () => {
+    mockRequestCamera.mockResolvedValue(denied);
+    const user = userEvent.setup();
+    await render(<SourceStep />);
+
+    await user.press(screen.getByTestId('source-camera'));
+
+    // The tile is gone; a reason card with a Settings link stands in its place.
+    await waitFor(() => expect(screen.getByTestId('source-camera-denied')).toBeOnTheScreen());
+    expect(screen.queryByTestId('source-camera')).toBeNull();
+    // Camera never launched, and the wizard did not advance or restart.
+    expect(mockLaunchCamera).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+    // The other two sources are untouched: web is still listed, library still works.
+    expect(screen.getByTestId('source-web')).toBeOnTheScreen();
+    expect(screen.getByTestId('source-library')).toBeOnTheScreen();
+  });
+
+  it('deep-links to Settings from the reason card', async () => {
+    mockRequestCamera.mockResolvedValue(denied);
+    const user = userEvent.setup();
+    await render(<SourceStep />);
+
+    await user.press(screen.getByTestId('source-camera'));
+    await waitFor(() => expect(screen.getByTestId('source-camera-denied')).toBeOnTheScreen());
+    await user.press(screen.getByTestId('source-camera-denied-settings'));
+
+    expect(Linking.openSettings).toHaveBeenCalled();
+  });
+
+  it('gives photo-library denial the identical treatment', async () => {
+    mockRequestLibrary.mockResolvedValue(denied);
+    const user = userEvent.setup();
+    await render(<SourceStep />);
+
+    await user.press(screen.getByTestId('source-library'));
+
+    await waitFor(() => expect(screen.getByTestId('source-library-denied')).toBeOnTheScreen());
+    expect(screen.queryByTestId('source-library')).toBeNull();
+    expect(mockLaunch).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+    // Camera stays live beside the silenced library tile.
+    expect(screen.getByTestId('source-camera')).toBeOnTheScreen();
   });
 });
 
