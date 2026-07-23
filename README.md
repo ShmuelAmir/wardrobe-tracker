@@ -31,3 +31,6 @@ the generated Xcode project (`ios/` is generated and gitignored — rerun
 npm test        # jest + @testing-library/react-native
 npm run typecheck
 ```
+
+<img width="586" height="267" alt="image" src="https://github.com/user-attachments/assets/279c725a-5b2d-49eb-a34a-06977803fd23" />
+
