@@ -66,3 +66,4 @@ export const wearEvent = sqliteTable('wear_event', {
 });
 
 export type Item = typeof item.$inferSelect;
+export type Outfit = typeof outfit.$inferSelect;

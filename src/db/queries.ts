@@ -1,8 +1,8 @@
-import { desc } from 'drizzle-orm';
+import { asc, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 import { db } from './client';
-import { item, type Item } from './schema';
+import { item, outfit, outfitItem, type Item, type Outfit } from './schema';
 
 /**
  * Every item, newest first — the Wardrobe grid's backing query. This is only
@@ -30,4 +30,65 @@ export function useItems(): { items: Item[]; loading: boolean } {
   // empty wardrobe; `updatedAt` is what tells the two apart. Getting this wrong
   // flashes the zero-state hero on every cold start.
   return { items: data ?? [], loading: updatedAt === undefined };
+}
+
+/**
+ * §6.2 — the occasion chip vocabulary, **built from the user's own history**,
+ * not a shipped enum. Most-used first, alphabetical tiebreak, capped at 8, so
+ * the Save sheet stays in thumb reach at outfit #200. `COLLATE NOCASE` on the
+ * group is what folds `work`/`Work` into one chip; normalization at save
+ * (§6.2) is what keeps that fold honest.
+ *
+ * A fresh install has zero outfits, so this returns `[]` — the Save sheet is a
+ * bare text field until outfit #2, with **no seeding** (§6.2).
+ */
+export const OCCASION_CHIP_CAP = 8;
+
+/**
+ * The §6.2 vocabulary query, extracted so it can be run against a real SQLite in
+ * tests: most-used first, alphabetical tiebreak, capped, `COLLATE NOCASE` on the
+ * group to fold `work`/`Work` into one chip. Typed against the app db, but any
+ * drizzle-sqlite connection satisfies the same builder API.
+ */
+export function occasionChipsQuery(database: typeof db) {
+  return database
+    .select({ occasion: outfit.occasion })
+    .from(outfit)
+    .where(isNotNull(outfit.occasion))
+    .groupBy(sql`${outfit.occasion} collate nocase`)
+    .orderBy(desc(count()), asc(outfit.occasion))
+    .limit(OCCASION_CHIP_CAP);
+}
+
+export function useOccasionChips(): string[] {
+  const { data } = useLiveQuery(occasionChipsQuery(db));
+
+  return (data ?? [])
+    .map((row) => row.occasion)
+    .filter((occasion): occasion is string => occasion !== null);
+}
+
+/**
+ * A single outfit and its items — the landing target after Save (§6.1.5). Full
+ * Detail (wear logging, stats strip, edit) is §8.5's ticket; this is the read
+ * that lets Save arrive somewhere real. `null` outfit means the id doesn't
+ * resolve; `loading` distinguishes a pre-read blank from a genuine miss.
+ */
+export type OutfitDetail = { outfit: Outfit; items: Item[] };
+
+export function useOutfitDetail(id: number): { detail: OutfitDetail | null; loading: boolean } {
+  const outfitQuery = useLiveQuery(db.select().from(outfit).where(eq(outfit.id, id)));
+  const itemsQuery = useLiveQuery(
+    db
+      .select()
+      .from(outfitItem)
+      .innerJoin(item, eq(outfitItem.itemId, item.id))
+      .where(eq(outfitItem.outfitId, id)),
+  );
+
+  const loading = outfitQuery.updatedAt === undefined || itemsQuery.updatedAt === undefined;
+  const row = outfitQuery.data?.[0];
+  const items = (itemsQuery.data ?? []).map((joined) => joined.item);
+
+  return { detail: row ? { outfit: row, items } : null, loading };
 }
