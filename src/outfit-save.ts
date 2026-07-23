@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { db } from './db/client';
 import { outfit, outfitItem } from './db/schema';
@@ -72,5 +72,27 @@ export function saveOutfit(input: NewOutfit): number {
     }
 
     return created.id;
+  });
+}
+
+/**
+ * §8.5 Edit item set — re-save an existing outfit's name, occasion, and item
+ * set. The item set is replaced wholesale (delete-then-insert the join rows) in
+ * one transaction, mirroring the builder's own semantics. **Wear history is
+ * untouched**: `wear_event` belongs to the outfit, not the join, so re-picking
+ * the garments never disturbs a single logged day.
+ */
+export function updateOutfit(id: number, input: NewOutfit): void {
+  const name = collapseWhitespace(input.name ?? '') || null;
+  const occasion = resolveOccasion(input.occasion);
+
+  db.transaction((tx) => {
+    tx.update(outfit).set({ name, occasion }).where(eq(outfit.id, id)).run();
+    tx.delete(outfitItem).where(eq(outfitItem.outfitId, id)).run();
+    if (input.itemIds.length > 0) {
+      tx.insert(outfitItem)
+        .values(input.itemIds.map((itemId) => ({ outfitId: id, itemId })))
+        .run();
+    }
   });
 }

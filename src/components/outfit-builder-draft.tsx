@@ -16,6 +16,8 @@ type BuilderDraft = {
   toggle: (id: number) => void;
   isSelected: (id: number) => boolean;
   setName: (name: string) => void;
+  /** Seed the draft from an existing outfit (§8.5 Edit) — pre-select + name. */
+  reset: (ids: number[], name: string) => void;
 };
 
 const BuilderContext = createContext<BuilderDraft | null>(null);
@@ -36,6 +38,10 @@ export function OutfitBuilderProvider({ children }: { children: ReactNode }) {
         ),
       isSelected: (id) => selection.includes(id),
       setName,
+      reset: (ids, seedName) => {
+        setSelection(ids);
+        setName(seedName);
+      },
     }),
     [selection, name],
   );

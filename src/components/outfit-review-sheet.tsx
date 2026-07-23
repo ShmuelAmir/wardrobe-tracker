@@ -13,17 +13,20 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
  */
 export function OutfitReviewSheet({
   initialName,
+  initialOccasion = '',
   occasions,
   onCommit,
   onCancel,
 }: {
   initialName: string;
+  /** The outfit's current occasion when re-saving in Edit mode (§8.5); '' when new. */
+  initialOccasion?: string;
   occasions: string[];
   onCommit: (name: string, occasion: string) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(initialName);
-  const [occasion, setOccasion] = useState('');
+  const [occasion, setOccasion] = useState(initialOccasion);
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onCancel} visible>
