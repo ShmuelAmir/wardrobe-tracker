@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ItemGrid } from '@/components/item-grid';
 import { useOutfitDetail } from '@/db/queries';
@@ -28,9 +28,10 @@ export default function OutfitDetailScreen() {
   const title = outfit.name ?? 'Untitled outfit';
   const count = items.length === 1 ? '1 item' : `${items.length} items`;
 
-  return (
-    <ScrollView contentContainerStyle={styles.content} testID="outfit-detail">
-      <Stack.Screen options={{ title }} />
+  // Header scrolls with the grid as the FlatList's own header — no ScrollView
+  // wrapping the list, so virtualization survives.
+  const header = (
+    <View style={styles.header} testID="outfit-detail">
       <Text style={styles.title}>{title}</Text>
       <View style={styles.meta}>
         <Text style={styles.count}>{count}</Text>
@@ -40,15 +41,22 @@ export default function OutfitDetailScreen() {
           </View>
         ) : null}
       </View>
-      <ItemGrid items={items} />
-    </ScrollView>
+    </View>
+  );
+
+  return (
+    <>
+      <Stack.Screen options={{ title }} />
+      <ItemGrid items={items} header={header} />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
+  header: {
     gap: 12,
-    paddingVertical: 16,
+    paddingBottom: 12,
+    paddingTop: 16,
   },
   title: {
     fontSize: 26,

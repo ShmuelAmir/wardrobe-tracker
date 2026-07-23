@@ -56,7 +56,9 @@ export function occasionChipsQuery(database: typeof db) {
     .from(outfit)
     .where(isNotNull(outfit.occasion))
     .groupBy(sql`${outfit.occasion} collate nocase`)
-    .orderBy(desc(count()), asc(outfit.occasion))
+    // Same NOCASE collation on the tiebreak as on the group, so equal-count
+    // chips sort truly alphabetically rather than ASCII (uppercase-first).
+    .orderBy(desc(count()), asc(sql`${outfit.occasion} collate nocase`))
     .limit(OCCASION_CHIP_CAP);
 }
 

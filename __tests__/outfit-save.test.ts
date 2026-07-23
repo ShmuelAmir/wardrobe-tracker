@@ -146,6 +146,15 @@ describe('occasionChipsQuery — self-building vocabulary', () => {
     expect(chips()).toEqual(['Work', 'Gym', 'Shul']);
   });
 
+  it('breaks equal-count ties alphabetically, case-insensitively', () => {
+    // ASCII order would put "Bag" (uppercase B, 66) before "apron" (lowercase
+    // a, 97); a true alphabetical tiebreak keeps "apron" first.
+    saveOutfit({ name: null, occasion: 'Bag', itemIds: [] });
+    saveOutfit({ name: null, occasion: 'apron', itemIds: [] });
+
+    expect(chips()).toEqual(['apron', 'Bag']);
+  });
+
   it('folds casing into one chip via COLLATE NOCASE', () => {
     // First spelling ("Work") is canonical, and "work" reuses it — so both the
     // count and the chip label converge on the one spelling.

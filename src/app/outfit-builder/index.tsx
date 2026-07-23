@@ -12,9 +12,9 @@ import { saveOutfit } from '@/outfit-save';
 /**
  * §6.1 — the builder screen. Items come from the reactive Wardrobe query;
  * selection and name live in the shared draft so the "See all" grid edits the
- * same set. Save opens the review sheet (§6.1.4); committing writes the outfit
- * and **lands on its Detail screen** (§6.1.5), replacing the builder so Back
- * doesn't return into a half-built flow.
+ * same set. Save opens the review sheet (§6.1.4); committing writes the outfit,
+ * dismisses the builder modal, and **lands on its Detail screen** (§6.1.5) as an
+ * ordinary card — so Back returns to the Outfits tab, not into a built flow.
  */
 export default function OutfitBuilderScreen() {
   const router = useRouter();
@@ -36,7 +36,10 @@ export default function OutfitBuilderScreen() {
     try {
       const id = saveOutfit({ name: sheetName, occasion, itemIds: selection });
       setReviewing(false);
-      router.replace(`/outfit/${id}`);
+      // Close the builder modal first, then push Detail onto the tabs stack so
+      // its Back lands on Outfits (§6.1.5) rather than back inside the builder.
+      router.dismissAll();
+      router.push(`/outfit/${id}`);
     } catch {
       setReviewing(false);
       Alert.alert("Couldn't save this outfit", 'Something went wrong. Please try again.');

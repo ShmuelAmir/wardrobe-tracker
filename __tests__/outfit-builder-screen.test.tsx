@@ -28,9 +28,9 @@ const mockSaveOutfit = jest.fn();
 jest.mock('@/outfit-save', () => ({ saveOutfit: (...args: unknown[]) => mockSaveOutfit(...args) }));
 
 const mockPush = jest.fn();
-const mockReplace = jest.fn();
+const mockDismissAll = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace, dismissAll: jest.fn() }),
+  useRouter: () => ({ push: mockPush, replace: jest.fn(), dismissAll: mockDismissAll }),
 }));
 
 beforeEach(() => {
@@ -77,7 +77,9 @@ describe('outfit builder screen — commit', () => {
     await waitFor(() =>
       expect(mockSaveOutfit).toHaveBeenCalledWith({ name: '', occasion: '', itemIds: [1] }),
     );
-    expect(mockReplace).toHaveBeenCalledWith('/outfit/7');
+    // The builder modal closes, then Detail is pushed as a card on the tabs.
+    expect(mockDismissAll).toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith('/outfit/7');
   });
 
   it('opens a category grid from "See all" without leaving the builder', async () => {
