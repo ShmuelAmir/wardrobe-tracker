@@ -5,10 +5,10 @@ import { AddItemDraftProvider } from '@/components/add-item-draft';
 
 /**
  * The add-item wizard (§5): a guided, always-forward stack with a per-step Back.
- * Only the photo-library source is wired in this slice; the source step also
- * lists web-import (the primary path, §5.1) and camera, which land in later
- * tickets. The draft provider spans every step so the picked image survives the
- * walk to Review.
+ * All three sources are wired: web-import (the primary path, §5.1) walks through
+ * paste-link → confirm-image, while camera/library share the confirm(-photo)
+ * step. The draft provider spans every step so the picked image — and the
+ * web-import parse result — survive the walk to Review.
  */
 export default function AddItemLayout() {
   const router = useRouter();
@@ -33,6 +33,8 @@ export default function AddItemLayout() {
             ),
           }}
         />
+        <Stack.Screen name="paste-link" options={{ title: 'Paste link' }} />
+        <Stack.Screen name="confirm-image" options={{ title: 'Confirm image' }} />
         <Stack.Screen name="confirm" options={{ title: 'Confirm photo' }} />
         <Stack.Screen name="review" options={{ title: 'Review' }} />
         <Stack.Screen name="saved" options={{ title: 'Saved', headerBackVisible: false }} />

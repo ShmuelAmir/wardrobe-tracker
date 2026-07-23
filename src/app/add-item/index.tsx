@@ -11,11 +11,11 @@ import { useAddItemDraft } from '@/components/add-item-draft';
 type DeniableSource = 'camera' | 'library';
 
 /**
- * Step 1 — pick a source (§5.1). All three are listed with **Import from web**
- * highlighted as the primary path; web is still inert until its own ticket
- * (§5.3). Camera and library are live: each mints the item's UUID **at capture**
- * (§4.2) and carries it, with the captured file, into the confirm step — no
- * page metadata means no name/brand pre-fill on either (§5.2).
+ * Step 1 — pick a source (§5.1). All three are live and listed with **Import
+ * from web** highlighted as the primary path — it walks to the paste-link step
+ * (§5.3). Camera and library each mint the item's UUID **at capture** (§4.2) and
+ * carry it, with the captured file, into the confirm step — no page metadata
+ * means no name/brand pre-fill on either (§5.2).
  *
  * Permission denial silences **one source in place** (§5.6): its tile becomes a
  * reason card with a Settings deep link, the other sources stay live, and the
@@ -68,8 +68,7 @@ export default function SourceStep() {
         primary
         title="Import from web"
         subtitle="Paste a product link — best photo, brand and name"
-        // Wired by the web-import ticket (§5.3); primary but inert here.
-        onPress={undefined}
+        onPress={() => router.push('/add-item/paste-link')}
       />
       {denied.has('camera') ? (
         <PermissionDeniedCard testID="source-camera-denied" source="Camera" />
@@ -127,27 +126,18 @@ function SourceTile({
   title: string;
   subtitle: string;
   primary?: boolean;
-  onPress?: () => void;
+  onPress: () => void;
   testID: string;
 }) {
-  // Inert this slice — but the web tile stays *visually* primary (§5.1), so it
-  // wears a "Soon" pill rather than being greyed into a dead button.
-  const disabled = onPress === undefined;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
+      accessibilityState={{ disabled: false }}
       onPress={onPress}
-      style={[styles.tile, primary && styles.tilePrimary, disabled && !primary && styles.tileMuted]}
+      style={[styles.tile, primary && styles.tilePrimary]}
       testID={testID}
     >
-      <View style={styles.tileHeader}>
-        <Text style={[styles.tileTitle, primary && styles.tileTitlePrimary]}>{title}</Text>
-        {disabled ? (
-          <Text style={[styles.soon, primary && styles.soonPrimary]}>Soon</Text>
-        ) : null}
-      </View>
+      <Text style={[styles.tileTitle, primary && styles.tileTitlePrimary]}>{title}</Text>
       <Text style={[styles.tileSubtitle, primary && styles.tileSubtitlePrimary]}>{subtitle}</Text>
     </Pressable>
   );
@@ -167,30 +157,6 @@ const styles = StyleSheet.create({
   },
   tilePrimary: {
     backgroundColor: '#3a2a6d',
-  },
-  tileMuted: {
-    opacity: 0.55,
-  },
-  tileHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'space-between',
-  },
-  soon: {
-    backgroundColor: '#dcd8ea',
-    borderRadius: 999,
-    color: '#4a4560',
-    fontSize: 11,
-    fontWeight: '700',
-    overflow: 'hidden',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    textTransform: 'uppercase',
-  },
-  soonPrimary: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    color: '#ffffff',
   },
   tileTitle: {
     color: '#1c1830',

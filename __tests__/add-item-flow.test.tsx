@@ -58,21 +58,29 @@ beforeEach(() => {
  * forward to confirm, carrying the picked file — it never restarts (§5).
  */
 describe('source step — choose from library', () => {
-  it('lists all three sources, with Import from web the primary one', async () => {
+  it('lists all three sources, all live, with Import from web the primary one', async () => {
     await render(<SourceStep />);
 
     expect(screen.getByTestId('source-web')).toBeOnTheScreen();
     expect(screen.getByTestId('source-camera')).toBeOnTheScreen();
     expect(screen.getByTestId('source-library')).toBeOnTheScreen();
-    // Web is primary; camera is inert this slice. Both are non-pressable here,
-    // so only the library advances.
     expect(screen.getByText('Import from web')).toBeOnTheScreen();
+    // Every source is live now — none is greyed out.
     expect(screen.getByTestId('source-web').props.accessibilityState).toMatchObject({
-      disabled: true,
+      disabled: false,
     });
     expect(screen.getByTestId('source-library').props.accessibilityState).toMatchObject({
       disabled: false,
     });
+  });
+
+  it('walks to the paste-link step when Import from web is chosen', async () => {
+    const user = userEvent.setup();
+    await render(<SourceStep />);
+
+    await user.press(screen.getByTestId('source-web'));
+
+    expect(mockPush).toHaveBeenCalledWith('/add-item/paste-link');
   });
 
   it('captures the picked photo under a fresh UUID and advances to confirm', async () => {

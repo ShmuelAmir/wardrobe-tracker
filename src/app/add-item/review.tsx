@@ -14,7 +14,7 @@ import { saveItem } from '@/item-save';
  */
 export default function ReviewStep() {
   const router = useRouter();
-  const { capture } = useAddItemDraft();
+  const { capture, webImport } = useAddItemDraft();
   const saving = useRef(false);
 
   if (capture === null) return <Redirect href="/add-item" />;
@@ -23,8 +23,9 @@ export default function ReviewStep() {
     if (saving.current || capture === null) return;
     saving.current = true;
     try {
-      // A library item has no source URL; the web-import path sets one (§5.3).
-      await saveItem(capture, { ...submission, sourceUrl: null });
+      // Camera/library items have no source URL; the web-import path carries the
+      // resolved product URL through the draft (§5.3).
+      await saveItem(capture, { ...submission, sourceUrl: webImport?.sourceUrl ?? null });
       router.replace('/add-item/saved');
     } catch {
       saving.current = false;
@@ -32,5 +33,13 @@ export default function ReviewStep() {
     }
   }
 
-  return <ReviewForm onSubmit={onSubmit} />;
+  // Web import pre-fills Name/Brand from the cleaned page metadata (§5.3);
+  // camera/library leave the draft's `webImport` null and the fields start blank.
+  return (
+    <ReviewForm
+      onSubmit={onSubmit}
+      initialName={webImport?.name}
+      initialBrand={webImport?.brand}
+    />
+  );
 }
