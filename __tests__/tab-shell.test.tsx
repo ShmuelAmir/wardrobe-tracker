@@ -23,7 +23,9 @@ describe('three-tab shell', () => {
   });
 
   it.each([
-    ['Outfits', 'tab-outfits', '/outfits', 'outfits-screen'],
+    // Default stub is an empty-but-read wardrobe, so Outfits lands on its gated
+    // zero state (§7.5) — the precondition screen, the way Wardrobe lands on its hero.
+    ['Outfits', 'tab-outfits', '/outfits', 'outfits-gated'],
     ['Stats', 'tab-stats', '/stats', 'stats-screen'],
     ['Wardrobe', 'tab-wardrobe', '/', 'wardrobe-hero'],
   ])('switches to the %s tab', async (_label, tabTestID, pathname, screenTestID) => {

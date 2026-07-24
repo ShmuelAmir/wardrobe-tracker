@@ -1,5 +1,6 @@
 import { asc, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { useMemo } from 'react';
 
 import { db } from './client';
 import { item, outfit, outfitItem, wearEvent, type Item, type Outfit } from './schema';
@@ -157,4 +158,129 @@ export function itemWearCountQuery(database: typeof db, itemId: number) {
     .from(outfitItem)
     .innerJoin(wearEvent, eq(wearEvent.outfitId, outfitItem.outfitId))
     .where(eq(outfitItem.itemId, itemId));
+}
+
+/**
+ * §7.1/§7.2 — the Outfits tab backing data: every outfit as a card carrying its
+ * cover, item count, and the two derived wear facts (last worn, times worn) the
+ * rail and list both sort and filter on. Wear stats are derived, never stored
+ * (§3 rule 4), so they can only be read from `wear_event`.
+ *
+ * The tab needs *live* wear data — "Wore it" and its Undo must reorder the rail
+ * and list the instant they write — but `useLiveQuery` re-runs only when **its
+ * own `from` table** changes (it tracks a single table). A wear touches
+ * `wear_event`, not `outfit`, so a query rooted at `outfit` would never react to
+ * a log. That forces the split: the covers read is rooted at `outfit`, the wear
+ * aggregate at `wear_event`, and `useOutfitCards` merges them — so a wear log
+ * re-runs the aggregate and the merge, and a new outfit re-runs the covers.
+ */
+export type OutfitCover = {
+  id: number;
+  name: string | null;
+  occasion: string | null;
+  createdAt: Date;
+  coverImage: string | null;
+  itemCount: number;
+};
+
+/**
+ * Every outfit with its cover and item count, rooted at `outfit` so it reacts to
+ * outfits being created, edited, or deleted. The cover is the outfit's
+ * lowest-id item — a stable, deterministic pick (the join carries no rank, §6.1)
+ * — and is `null` for a garment-less outfit (§8.4), which the card renders as a
+ * neutral tile rather than a broken image.
+ */
+export function outfitCoversQuery(database: typeof db) {
+  return database
+    .select({
+      id: outfit.id,
+      name: outfit.name,
+      occasion: outfit.occasion,
+      createdAt: outfit.createdAt,
+      // Written as literal, table-qualified SQL rather than drizzle column refs:
+      // interpolated columns render **unqualified** inside a raw `sql` template,
+      // which would leave the outer correlation (`outfit.id`) ambiguous against
+      // the joined `item`. The identifiers are the schema's own table/column
+      // names (§3.2), the same ones §3.3 spells out by hand.
+      coverImage: sql<string | null>`(
+        select item.image_file
+        from outfit_item
+        join item on item.id = outfit_item.item_id
+        where outfit_item.outfit_id = outfit.id
+        order by item.id
+        limit 1
+      )`,
+      itemCount: sql<number>`(
+        select count(*) from outfit_item where outfit_item.outfit_id = outfit.id
+      )`,
+    })
+    .from(outfit);
+}
+
+/**
+ * Per-outfit wear aggregate, rooted at `wear_event` so a logged or un-logged
+ * wear re-runs it. Only outfits with `≥ 1` wear appear — grouping over the
+ * events themselves can't produce a never-worn outfit — which is exactly the
+ * rail's `wears ≥ 1` scope (§7.1); the never-worn outfits are supplied by the
+ * covers read and merged back in as `timesWorn: 0`.
+ */
+export type WearAggregate = { outfitId: number; lastWorn: string | null; timesWorn: number };
+
+export function outfitWearAggregatesQuery(database: typeof db) {
+  return database
+    .select({
+      outfitId: wearEvent.outfitId,
+      lastWorn: sql<string | null>`max(${wearEvent.wornOn})`,
+      timesWorn: count(),
+    })
+    .from(wearEvent)
+    .groupBy(wearEvent.outfitId);
+}
+
+export type OutfitCard = OutfitCover & { lastWorn: string | null; timesWorn: number };
+
+/**
+ * §7.2 sort — `last_worn DESC NULLS LAST`: worn outfits newest-first, then
+ * **every** never-worn outfit below regardless of created date (`COALESCE(last_worn,
+ * created)` was rejected, §7.2). `worn_on` is `YYYY-MM-DD`, so a plain string
+ * compare is a date compare. A same-day tie (and the never-worn bucket) falls
+ * back to newest outfit first, which keeps the order stable and deterministic.
+ */
+function compareCards(a: OutfitCard, b: OutfitCard): number {
+  if (a.lastWorn !== b.lastWorn) {
+    if (a.lastWorn === null) return 1;
+    if (b.lastWorn === null) return -1;
+    return a.lastWorn < b.lastWorn ? 1 : -1;
+  }
+  return b.id - a.id;
+}
+
+/** Join the covers read to the wear aggregate and apply the §7.2 sort. */
+export function mergeOutfitCards(covers: OutfitCover[], aggregates: WearAggregate[]): OutfitCard[] {
+  const byOutfit = new Map(aggregates.map((row) => [row.outfitId, row]));
+  return covers
+    .map((cover) => {
+      const agg = byOutfit.get(cover.id);
+      return { ...cover, lastWorn: agg?.lastWorn ?? null, timesWorn: agg?.timesWorn ?? 0 };
+    })
+    .sort(compareCards);
+}
+
+/** The rail shows at most the 5 most recently worn outfits (§7.1). */
+export const WEAR_AGAIN_RAIL_SIZE = 5;
+
+export function useOutfitCards(): { cards: OutfitCard[]; loading: boolean } {
+  const covers = useLiveQuery(outfitCoversQuery(db));
+  const aggregates = useLiveQuery(outfitWearAggregatesQuery(db));
+
+  // Both reads must have resolved once; either still `undefined` is a genuine
+  // pre-read blank, not an empty tab (same trap as `useItems`).
+  const loading = covers.updatedAt === undefined || aggregates.updatedAt === undefined;
+
+  const cards = useMemo(
+    () => mergeOutfitCards(covers.data ?? [], aggregates.data ?? []),
+    [covers.data, aggregates.data],
+  );
+
+  return { cards, loading };
 }
