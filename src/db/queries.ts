@@ -2,7 +2,7 @@ import { asc, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 import { db } from './client';
-import { item, outfit, outfitItem, type Item, type Outfit } from './schema';
+import { item, outfit, outfitItem, wearEvent, type Item, type Outfit } from './schema';
 
 /**
  * Every item, newest first — the Wardrobe grid's backing query. This is only
@@ -93,4 +93,68 @@ export function useOutfitDetail(id: number): { detail: OutfitDetail | null; load
   const items = (itemsQuery.data ?? []).map((joined) => joined.item);
 
   return { detail: row ? { outfit: row, items } : null, loading };
+}
+
+/**
+ * §8.5 stats strip — times worn / first worn / last worn, **all derived** from
+ * `wear_event`, never stored (§3 rule 7). `count()` reads 0 and `min`/`max` read
+ * `null` for an outfit never worn, so the strip needs no separate empty case.
+ * Extracted as a pure query so it runs against a real SQLite in tests.
+ */
+export type OutfitStats = { timesWorn: number; firstWorn: string | null; lastWorn: string | null };
+
+export function outfitStatsQuery(database: typeof db, id: number) {
+  return database
+    .select({
+      timesWorn: count(),
+      firstWorn: sql<string | null>`min(${wearEvent.wornOn})`,
+      lastWorn: sql<string | null>`max(${wearEvent.wornOn})`,
+    })
+    .from(wearEvent)
+    .where(eq(wearEvent.outfitId, id));
+}
+
+export function useOutfitStats(id: number): OutfitStats {
+  const { data } = useLiveQuery(outfitStatsQuery(db, id));
+  const row = data?.[0];
+  return {
+    timesWorn: row?.timesWorn ?? 0,
+    firstWorn: row?.firstWorn ?? null,
+    lastWorn: row?.lastWorn ?? null,
+  };
+}
+
+/**
+ * §8.5 wear history sheet — one row per `wear_event`, newest day first (`id`
+ * breaks a same-day tie, as §9.7's queries do). This is the durable un-log path:
+ * each row carries its own event id so Remove deletes just that day's log.
+ */
+export type WearRow = { id: number; wornOn: string };
+
+export function wearHistoryQuery(database: typeof db, id: number) {
+  return database
+    .select({ id: wearEvent.id, wornOn: wearEvent.wornOn })
+    .from(wearEvent)
+    .where(eq(wearEvent.outfitId, id))
+    .orderBy(desc(wearEvent.wornOn), desc(wearEvent.id));
+}
+
+export function useWearHistory(id: number): WearRow[] {
+  const { data } = useLiveQuery(wearHistoryQuery(db, id));
+  return data ?? [];
+}
+
+/**
+ * A single item's wear count — the §3 invariant made a query: **per wear-event**,
+ * reaching the item through *every* outfit that contains it. Two outfits sharing
+ * the item and both worn the same day count twice, intentionally. Joining
+ * `outfit_item` to `wear_event` on the outfit id is what produces that double —
+ * one join row per (containing outfit × its wear).
+ */
+export function itemWearCountQuery(database: typeof db, itemId: number) {
+  return database
+    .select({ count: count() })
+    .from(outfitItem)
+    .innerJoin(wearEvent, eq(wearEvent.outfitId, outfitItem.outfitId))
+    .where(eq(outfitItem.itemId, itemId));
 }

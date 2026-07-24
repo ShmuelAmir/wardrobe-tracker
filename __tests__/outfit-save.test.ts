@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 
-import { collapseWhitespace, resolveOccasion, saveOutfit } from '@/outfit-save';
+import { collapseWhitespace, resolveOccasion, saveOutfit, updateOutfit } from '@/outfit-save';
 import { OCCASION_CHIP_CAP, occasionChipsQuery } from '@/db/queries';
-import { item, outfit, outfitItem } from '@/db/schema';
+import { item, outfit, outfitItem, wearEvent } from '@/db/schema';
 
 /**
  * §6.2's normalization is a database rule — "match case-insensitively against
@@ -117,6 +117,28 @@ describe('saveOutfit', () => {
 
     expect(readOutfit(named)?.name).toBe('Smart evening');
     expect(readOutfit(blank)?.name).toBeNull();
+  });
+});
+
+/**
+ * §8.5 Edit item set — re-saving replaces name, occasion, and the item set
+ * wholesale, but **never touches wear history** (a wear belongs to the outfit,
+ * not the join).
+ */
+describe('updateOutfit — edit without disturbing wears', () => {
+  it('replaces the item set and preserves logged wears', () => {
+    seedItems(1, 2, 3);
+    const id = saveOutfit({ name: 'Weekday', occasion: 'Work', itemIds: [1, 2] });
+    db.insert(wearEvent).values({ outfitId: id, wornOn: '2026-07-20' }).run();
+
+    updateOutfit(id, { name: 'Weekday default', occasion: 'Work', itemIds: [2, 3] });
+
+    const joins = db.select().from(outfitItem).where(eq(outfitItem.outfitId, id)).all();
+    expect(joins.map((row) => row.itemId).sort()).toEqual([2, 3]);
+    expect(readOutfit(id)?.name).toBe('Weekday default');
+    const wears = db.select().from(wearEvent).where(eq(wearEvent.outfitId, id)).all();
+    expect(wears).toHaveLength(1);
+    expect(wears[0].wornOn).toBe('2026-07-20');
   });
 });
 
