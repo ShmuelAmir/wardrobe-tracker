@@ -1,9 +1,7 @@
-import { Image } from 'expo-image';
-import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ItemImage } from '@/components/item-image';
 import type { WornItem } from '@/db/queries';
-import { itemImageUri } from '@/item-images';
 
 /**
  * §9.4 — the most-worn podium: the top three in **2–1–3** order (silver left,
@@ -33,7 +31,6 @@ const PLACE_STYLE = {
 } as const;
 
 function PodiumCard({ item, place }: { item: WornItem; place: 1 | 2 | 3 }) {
-  const [missing, setMissing] = useState(false);
   const meta = PLACE_STYLE[place];
   const size = place === 1 ? 84 : 64;
 
@@ -44,19 +41,12 @@ function PodiumCard({ item, place }: { item: WornItem; place: 1 | 2 | 3 }) {
           <Text style={styles.favoriteLabel}>Favorite</Text>
         </View>
       ) : null}
-      {missing ? (
-        <View style={[styles.image, styles.placeholder, { height: size, width: size }]}>
-          <Text style={styles.placeholderLabel}>{item.category}</Text>
-        </View>
-      ) : (
-        <Image
-          testID={`stats-podium-image-${item.id}`}
-          source={itemImageUri(item.imageFile)}
-          contentFit="cover"
-          style={[styles.image, { height: size, width: size }]}
-          onError={() => setMissing(true)}
-        />
-      )}
+      <ItemImage
+        item={item}
+        style={[styles.image, { height: size, width: size }]}
+        placeholderTextStyle={styles.placeholderLabel}
+        testIDPrefix="stats-podium-image"
+      />
       <Text style={styles.medal}>{meta.medal}</Text>
       <Text style={styles.cardName} numberOfLines={1}>
         {item.name ?? item.category}
@@ -101,14 +91,8 @@ const styles = StyleSheet.create({
   image: {
     borderRadius: 14,
   },
-  placeholder: {
-    alignItems: 'center',
-    backgroundColor: '#e9e6f0',
-    justifyContent: 'center',
-  },
   placeholderLabel: {
     fontSize: 11,
-    opacity: 0.55,
   },
   medal: {
     fontSize: 20,

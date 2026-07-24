@@ -1,11 +1,9 @@
-import { Image } from 'expo-image';
-import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ItemImage } from '@/components/item-image';
 import { humanizeDaysAgo, daysSinceDate, daysSinceIso } from '@/relative-time';
 import type { Item } from '@/db/schema';
 import type { WornItem } from '@/db/queries';
-import { itemImageUri } from '@/item-images';
 
 /**
  * §9.5 Stats rows. A leaderboard row and a never-worn row share a thumbnail,
@@ -17,21 +15,12 @@ import { itemImageUri } from '@/item-images';
 
 /** Shared square thumbnail — the §4.1 `contentFit: 'cover'` tile at row scale. */
 function Thumbnail({ item }: { item: Item }) {
-  const [missing, setMissing] = useState(false);
-  if (missing) {
-    return (
-      <View style={[styles.thumb, styles.thumbPlaceholder]} testID={`stats-thumb-placeholder-${item.id}`}>
-        <Text style={styles.placeholderLabel}>{item.category}</Text>
-      </View>
-    );
-  }
   return (
-    <Image
-      testID={`stats-thumb-${item.id}`}
-      source={itemImageUri(item.imageFile)}
-      contentFit="cover"
+    <ItemImage
+      item={item}
       style={styles.thumb}
-      onError={() => setMissing(true)}
+      placeholderTextStyle={styles.placeholderLabel}
+      testIDPrefix="stats-thumb"
     />
   );
 }
@@ -124,14 +113,8 @@ const styles = StyleSheet.create({
     height: THUMB,
     width: THUMB,
   },
-  thumbPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   placeholderLabel: {
     fontSize: 10,
-    opacity: 0.55,
-    textAlign: 'center',
   },
   body: {
     flex: 1,
