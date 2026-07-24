@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { useAddItemDraft } from '@/components/add-item-draft';
+import { PhotoFallback } from '@/components/photo-fallback';
 import { downloadCandidate } from '@/web-download';
 
 /**
@@ -26,12 +27,18 @@ import { downloadCandidate } from '@/web-download';
  * to Review. Nothing is written to the document dir until Save, so backing out
  * here leaves nothing behind (§4.3). If there's no parse result (a deep link
  * straight here), fall back to the source step rather than render an empty frame.
+ *
+ * §5.3 — "None of these — use a photo instead" and a **failed download** both
+ * drop into the *same* photo fallback: no new error screen, and the wizard does
+ * not restart. The draft still holds the successful parse's `source_url` and
+ * name/brand, so the fallback carries them to Review unchanged.
  */
 export default function ConfirmImageStep() {
   const router = useRouter();
   const { webImport, setCapture } = useAddItemDraft();
   const [selected, setSelected] = useState(0);
   const [downloading, setDownloading] = useState(false);
+  const [fallback, setFallback] = useState(false);
 
   if (webImport === null || webImport.candidates.length === 0) {
     return <Redirect href="/add-item" />;
@@ -47,9 +54,10 @@ export default function ConfirmImageStep() {
       setCapture(capture);
       router.push('/add-item/review');
     } catch {
-      // A failed download drops into §5.3's "None of these" branch in a later
-      // ticket; here we just re-open the button so the user can try again.
+      // A failed download is not its own error state — it joins the "None of
+      // these" branch (§5.3), offering the photo fallback in place.
       setDownloading(false);
+      setFallback(true);
     }
   }
 
@@ -87,20 +95,35 @@ export default function ConfirmImageStep() {
         </ScrollView>
       ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: downloading, busy: downloading }}
-        disabled={downloading}
-        onPress={useThisImage}
-        style={[styles.cta, downloading && styles.ctaDisabled]}
-        testID="confirm-image-use"
-      >
-        {downloading ? (
-          <ActivityIndicator color="#ffffff" testID="confirm-image-spinner" />
-        ) : (
-          <Text style={styles.ctaLabel}>Use this image</Text>
-        )}
-      </Pressable>
+      {fallback ? (
+        <PhotoFallback />
+      ) : (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: downloading, busy: downloading }}
+            disabled={downloading}
+            onPress={useThisImage}
+            style={[styles.cta, downloading && styles.ctaDisabled]}
+            testID="confirm-image-use"
+          >
+            {downloading ? (
+              <ActivityIndicator color="#ffffff" testID="confirm-image-spinner" />
+            ) : (
+              <Text style={styles.ctaLabel}>Use this image</Text>
+            )}
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={downloading}
+            onPress={() => setFallback(true)}
+            style={styles.none}
+            testID="confirm-image-none"
+          >
+            <Text style={styles.noneLabel}>None of these — use a photo instead</Text>
+          </Pressable>
+        </>
+      )}
     </View>
   );
 }
@@ -144,6 +167,15 @@ const styles = StyleSheet.create({
   ctaLabel: {
     color: '#ffffff',
     fontSize: 17,
+    fontWeight: '600',
+  },
+  none: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  noneLabel: {
+    color: '#3a2a6d',
+    fontSize: 15,
     fontWeight: '600',
   },
 });

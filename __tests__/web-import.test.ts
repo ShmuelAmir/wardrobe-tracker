@@ -1,5 +1,9 @@
 import { fetchProductPage, isFetchableUrl, parsePage } from '@/web-import';
 
+jest.mock('expo-network', () => ({
+  getNetworkStateAsync: async () => ({ isConnected: true, isInternetReachable: true }),
+}));
+
 /**
  * §5.3 — URL validation is `http(s)` syntax only, "just enough to enable Fetch".
  * We deliberately do **not** try to detect "is this a product page": that's
@@ -147,6 +151,7 @@ describe('fetchProductPage', () => {
 
   it('parses the fetched HTML and stores the post-redirect URL as sourceUrl', async () => {
     global.fetch = jest.fn().mockResolvedValue({
+      status: 200,
       url: 'https://acme.com/p/wool-overcoat', // resolved from a short link
       text: async () =>
         `<meta property="og:image" content="https://cdn.acme.com/hero.jpg">
@@ -154,22 +159,27 @@ describe('fetchProductPage', () => {
          <meta property="og:site_name" content="Acme">`,
     }) as unknown as typeof fetch;
 
-    const result = await fetchProductPage('https://acme.test/x9');
+    const outcome = await fetchProductPage('https://acme.test/x9');
 
-    expect(result.sourceUrl).toBe('https://acme.com/p/wool-overcoat');
-    expect(result.candidates[0]).toBe('https://cdn.acme.com/hero.jpg');
-    expect(result.name).toBe('Wool Overcoat');
-    expect(result.brand).toBe('Acme');
+    expect(outcome.status).toBe('ok');
+    if (outcome.status !== 'ok') throw new Error('expected ok');
+    expect(outcome.result.sourceUrl).toBe('https://acme.com/p/wool-overcoat');
+    expect(outcome.result.candidates[0]).toBe('https://cdn.acme.com/hero.jpg');
+    expect(outcome.result.name).toBe('Wool Overcoat');
+    expect(outcome.result.brand).toBe('Acme');
   });
 
   it('resolves relative image URLs against the post-redirect URL', async () => {
     global.fetch = jest.fn().mockResolvedValue({
+      status: 200,
       url: 'https://acme.com/p/wool-overcoat',
       text: async () => `<meta property="og:image" content="/img/hero.jpg">`,
     }) as unknown as typeof fetch;
 
-    const result = await fetchProductPage('https://acme.test/x9');
+    const outcome = await fetchProductPage('https://acme.test/x9');
 
-    expect(result.candidates[0]).toBe('https://acme.com/img/hero.jpg');
+    expect(outcome.status).toBe('ok');
+    if (outcome.status !== 'ok') throw new Error('expected ok');
+    expect(outcome.result.candidates[0]).toBe('https://acme.com/img/hero.jpg');
   });
 });

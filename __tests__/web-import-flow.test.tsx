@@ -34,6 +34,15 @@ jest.mock('@/web-download', () => ({
   downloadCandidate: (...args: unknown[]) => mockDownloadCandidate(...args),
 }));
 
+// The photo fallback (dead-end / "None of these") launches these; mocking the
+// launchers lets the flow drive a capture without a real picker.
+const mockCaptureFromCamera = jest.fn();
+const mockCaptureFromLibrary = jest.fn();
+jest.mock('@/photo-capture', () => ({
+  captureFromCamera: () => mockCaptureFromCamera(),
+  captureFromLibrary: () => mockCaptureFromLibrary(),
+}));
+
 const mockSaveItem = jest.fn();
 jest.mock('@/item-save', () => ({ saveItem: (...args: unknown[]) => mockSaveItem(...args) }));
 
@@ -99,16 +108,127 @@ describe('paste-link step', () => {
   });
 
   it('fetches, stores the parse in the draft, and advances to confirm-image', async () => {
-    mockFetchProductPage.mockResolvedValueOnce(aParse());
+    mockFetchProductPage.mockResolvedValueOnce({ status: 'ok', result: aParse() });
     const user = userEvent.setup();
     await render(<PasteLinkStep />);
 
     await user.type(screen.getByTestId('paste-link-url'), 'https://acme.test/x9');
     await user.press(screen.getByTestId('paste-link-fetch'));
 
-    await waitFor(() => expect(mockFetchProductPage).toHaveBeenCalledWith('https://acme.test/x9'));
+    await waitFor(() =>
+      expect(mockFetchProductPage).toHaveBeenCalledWith('https://acme.test/x9', expect.anything()),
+    );
     expect(mockSetWebImport).toHaveBeenCalledWith(aParse());
     expect(mockPush).toHaveBeenCalledWith('/add-item/confirm-image');
+  });
+});
+
+/**
+ * §5.3 — the two failure states split on the user's **next action**, not the
+ * diagnosis. Retryable keeps the field editable and promotes Retry; the dead-end
+ * withholds Retry but offers the photo fallback, keeps the field editable, and
+ * seeds the draft so nothing typed or parsed is thrown away.
+ */
+describe('paste-link step — failure states', () => {
+  async function fetchWith(outcome: unknown) {
+    mockFetchProductPage.mockResolvedValueOnce(outcome);
+    const user = userEvent.setup();
+    await render(<PasteLinkStep />);
+    await user.type(screen.getByTestId('paste-link-url'), 'https://acme.test/x9');
+    await user.press(screen.getByTestId('paste-link-fetch'));
+    return user;
+  }
+
+  it('shows the retryable error and relabels the button Retry, field still editable', async () => {
+    await fetchWith({ status: 'retryable', message: "You're offline. Reconnect and try again." });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('paste-link-error')).toHaveTextContent(
+        "You're offline. Reconnect and try again.",
+      ),
+    );
+    expect(screen.getByTestId('paste-link-fetch')).toHaveTextContent('Retry');
+    expect(screen.getByTestId('paste-link-url').props.editable).toBe(true);
+    // Retryable never reaches Review, so no metadata is carried and nowhere is navigated.
+    expect(mockSetWebImport).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+    // No photo fallback on the retryable state.
+    expect(screen.queryByTestId('photo-fallback')).toBeNull();
+  });
+
+  it('offers the photo fallback on a dead-end with no Retry, field and Fetch still live', async () => {
+    await fetchWith({
+      status: 'dead-end',
+      message: "Couldn't get an image from that page.",
+      sourceUrl: 'https://acme.com/p/wool-overcoat',
+      name: 'Wool Overcoat',
+      brand: 'Acme',
+    });
+
+    // The parse's source_url + name/brand are seeded so the fallback carries them.
+    await waitFor(() =>
+      expect(mockSetWebImport).toHaveBeenCalledWith({
+        candidates: [],
+        sourceUrl: 'https://acme.com/p/wool-overcoat',
+        name: 'Wool Overcoat',
+        brand: 'Acme',
+      }),
+    );
+    expect(screen.getByTestId('photo-fallback')).toBeOnTheScreen();
+    // No Retry: the button stays Fetch, and the field stays editable (the 403 hatch).
+    expect(screen.getByTestId('paste-link-fetch')).toHaveTextContent('Fetch');
+    expect(screen.getByTestId('paste-link-url').props.editable).toBe(true);
+  });
+
+  it('carries source_url to Review when a photo is taken from the dead-end — no restart', async () => {
+    mockCaptureFromCamera.mockResolvedValueOnce({
+      status: 'captured',
+      capture: { uri: 'file:///cache/shot.jpg', width: 3024, height: 4032, uuid: 'a3f2c1de' },
+    });
+    const user = await fetchWith({
+      status: 'dead-end',
+      message: "Couldn't get an image from that page.",
+      sourceUrl: 'https://acme.com/p/wool-overcoat',
+      name: 'Wool Overcoat',
+      brand: 'Acme',
+    });
+
+    await waitFor(() => expect(screen.getByTestId('photo-fallback')).toBeOnTheScreen());
+    await user.press(screen.getByTestId('fallback-camera'));
+
+    await waitFor(() =>
+      expect(mockSetCapture).toHaveBeenCalledWith({
+        uri: 'file:///cache/shot.jpg',
+        width: 3024,
+        height: 4032,
+        uuid: 'a3f2c1de',
+      }),
+    );
+    // Continues to Review (§5.3) — it does not restart the wizard at step 1.
+    expect(mockPush).toHaveBeenLastCalledWith('/add-item/review');
+  });
+
+  it('restores an editable field when the in-flight fetch is cancelled', async () => {
+    // Resolve only when the caller aborts — the same signal the 10s timeout uses.
+    mockFetchProductPage.mockImplementationOnce(
+      (_url: string, { signal }: { signal: AbortSignal }) =>
+        new Promise((resolve) => {
+          signal.addEventListener('abort', () => resolve({ status: 'cancelled' }));
+        }),
+    );
+    const user = userEvent.setup();
+    await render(<PasteLinkStep />);
+    await user.type(screen.getByTestId('paste-link-url'), 'https://acme.test/x9');
+    await user.press(screen.getByTestId('paste-link-fetch'));
+
+    // While fetching, the field is disabled and Cancel is offered.
+    expect(screen.getByTestId('paste-link-url').props.editable).toBe(false);
+    await user.press(screen.getByTestId('paste-link-cancel'));
+
+    // Cancel restores the editable field and surfaces no error.
+    await waitFor(() => expect(screen.getByTestId('paste-link-url').props.editable).toBe(true));
+    expect(screen.queryByTestId('paste-link-error')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
 
@@ -162,6 +282,38 @@ describe('confirm-image step', () => {
         'a3f2c1de',
       ),
     );
+  });
+
+  it('drops into the photo fallback on "None of these", carrying source_url to Review', async () => {
+    mockCaptureFromLibrary.mockResolvedValueOnce({
+      status: 'captured',
+      capture: { uri: 'file:///cache/pick.jpg', width: 1200, height: 1600, uuid: 'a3f2c1de' },
+    });
+    const user = userEvent.setup();
+    await render(<ConfirmImageStep />);
+
+    await user.press(screen.getByTestId('confirm-image-none'));
+    expect(screen.getByTestId('photo-fallback')).toBeOnTheScreen();
+    await user.press(screen.getByTestId('fallback-library'));
+
+    await waitFor(() => expect(mockSetCapture).toHaveBeenCalled());
+    expect(mockPush).toHaveBeenCalledWith('/add-item/review');
+    // The successful parse's draft (source_url + name/brand) is untouched — the
+    // fallback reuses it rather than re-seeding, so Review still reads it.
+    expect(mockSetWebImport).not.toHaveBeenCalled();
+  });
+
+  it('routes a failed download into the same fallback — no new error screen', async () => {
+    mockDownloadCandidate.mockReset();
+    mockDownloadCandidate.mockRejectedValueOnce(new Error('download failed'));
+    const user = userEvent.setup();
+    await render(<ConfirmImageStep />);
+
+    await user.press(screen.getByTestId('confirm-image-use'));
+
+    await waitFor(() => expect(screen.getByTestId('photo-fallback')).toBeOnTheScreen());
+    // The same branch, not a distinct error state.
+    expect(screen.queryByTestId('paste-link-error')).toBeNull();
   });
 });
 

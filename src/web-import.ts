@@ -24,8 +24,10 @@
  * extraction from server-rendered retail HTML doesn't need one. It is also kept
  * free of native imports so the whole parse is a pure function pinned by tests
  * (including three real retail pages under `__tests__/fixtures/`), with only
- * `fetchProductPage` reaching for the (mockable) global `fetch`.
+ * `fetchProductPage` reaching for the (mockable) global `fetch` and the
+ * connectivity pre-flight.
  */
+import * as Network from 'expo-network';
 
 export type WebImportResult = {
   /** Image URLs, best-first and deduplicated; `[0]` is step 3's auto-pick. */
@@ -66,13 +68,117 @@ export const BROWSER_HEADERS = {
     'Mozilla/5.0 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Mobile/15E148 Safari/604.1',
 };
 
-/** Fetch a page and parse it, storing the post-redirect URL as `sourceUrl`. */
-export async function fetchProductPage(pastedUrl: string): Promise<WebImportResult> {
-  const response = await fetch(pastedUrl.trim(), { headers: BROWSER_HEADERS });
-  const html = await response.text();
-  // `Response.url` is the final URL after redirects, so a shortener resolves to
-  // the durable product page. Fall back to the pasted string if it's absent.
-  return parsePage(html, response.url || pastedUrl.trim());
+/** §5.3 — the retryable copy shown when we couldn't even reach a page. */
+export const OFFLINE_MESSAGE = "You're offline. Reconnect and try again.";
+export const UNREACHABLE_MESSAGE = "Couldn't reach that page. Check your connection.";
+/** §5.3 — the dead-end copy: a page answered, but held no image we could use. */
+export const NO_IMAGE_MESSAGE = "Couldn't get an image from that page.";
+
+/** §5.3 — long enough for a slow retail page on cellular, short enough not to hang. */
+const FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * §5.3 — the outcome of a fetch, split on **the user's next action**, not on the
+ * diagnosis they can't act on:
+ *
+ * - `ok` — a page we parsed into at least one candidate; step 3 confirms it.
+ * - `retryable` — offline, a timeout, a network failure, or a 5xx/429. The page
+ *   is unreachable *right now*, so the promoted action is Retry.
+ * - `dead-end` — a 401/403/404, or a 200 with no usable image. Retrying the
+ *   parser can't help, so the escape hatch is a photo. `sourceUrl` is carried
+ *   **always** (the user typed it; it's true of the item regardless), and
+ *   `name`/`brand` **only when a page was actually parsed** (the no-image case) —
+ *   null on the status dead-ends, where there was no product page to read.
+ * - `cancelled` — the caller aborted; not an error, just restore the field.
+ */
+export type FetchOutcome =
+  | { status: 'ok'; result: WebImportResult }
+  | { status: 'retryable'; message: string }
+  | {
+      status: 'dead-end';
+      message: string;
+      sourceUrl: string;
+      name: string | null;
+      brand: string | null;
+    }
+  | { status: 'cancelled' };
+
+/**
+ * §5.3 — "would trying again plausibly help?" as one rule, not a case-by-case
+ * table: 2xx is a page to parse, 5xx/429 are transient (retryable), and every
+ * other status (401/403/404 and any stray 4xx) is a dead-end the parser can't
+ * get past however many times it re-runs.
+ */
+export function classifyStatus(status: number): 'ok' | 'retryable' | 'dead-end' {
+  if (status >= 200 && status < 300) return 'ok';
+  if (status === 429 || status >= 500) return 'retryable';
+  return 'dead-end';
+}
+
+/**
+ * §5.3 — fetch a page and classify the result. An **offline pre-flight** fires
+ * the retryable error immediately rather than waiting out the timeout; a **10s
+ * abort** caps a slow page into the same retryable error; and an external
+ * `signal` lets step 2's Cancel abort the very same request — distinguished from
+ * the timeout because a caller abort reports `cancelled`, not an error.
+ *
+ * `Response.url` (the post-redirect URL) becomes `sourceUrl` so a shortener
+ * resolves to the durable product page; the pasted string is the fallback.
+ */
+export async function fetchProductPage(
+  pastedUrl: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<FetchOutcome> {
+  const url = pastedUrl.trim();
+
+  // The pre-flight only rules out the certain-offline case; captive portals and
+  // stale state are why it never gates step 1 and why a "reachable" verdict still
+  // goes through the real fetch (and its timeout).
+  const network = await Network.getNetworkStateAsync();
+  if (network.isConnected === false || network.isInternetReachable === false) {
+    return { status: 'retryable', message: OFFLINE_MESSAGE };
+  }
+
+  // One internal controller aborts on **either** the 10s timer or the caller's
+  // Cancel, so a single `signal` drives the fetch; we read the caller's signal
+  // afterward to tell the two aborts apart.
+  const controller = new AbortController();
+  const onCallerAbort = () => controller.abort();
+  options.signal?.addEventListener('abort', onCallerAbort);
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, { headers: BROWSER_HEADERS, signal: controller.signal });
+  } catch {
+    if (options.signal?.aborted) return { status: 'cancelled' };
+    return { status: 'retryable', message: UNREACHABLE_MESSAGE };
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener('abort', onCallerAbort);
+  }
+
+  const category = classifyStatus(response.status);
+  if (category === 'retryable') {
+    return { status: 'retryable', message: UNREACHABLE_MESSAGE };
+  }
+  if (category === 'dead-end') {
+    // A status dead-end (403/404) has no product page to read, so no name/brand.
+    return { status: 'dead-end', message: NO_IMAGE_MESSAGE, sourceUrl: response.url || url, name: null, brand: null };
+  }
+
+  const result = parsePage(await response.text(), response.url || url);
+  if (result.candidates.length === 0) {
+    // The no-image dead-end: a 200 we *did* parse, so name/brand carry through.
+    return {
+      status: 'dead-end',
+      message: NO_IMAGE_MESSAGE,
+      sourceUrl: result.sourceUrl,
+      name: result.name,
+      brand: result.brand,
+    };
+  }
+  return { status: 'ok', result };
 }
 
 /** The pure parse: HTML + the resolved page URL in, candidates + metadata out. */
