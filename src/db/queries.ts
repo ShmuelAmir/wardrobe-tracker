@@ -3,7 +3,7 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
 
 import { db } from './client';
-import { item, outfit, outfitItem, wearEvent, type Item, type Outfit } from './schema';
+import { item, outfit, outfitItem, wearEvent, type Category, type Item, type Outfit } from './schema';
 
 /**
  * Every item, newest first — the Wardrobe grid's backing query. This is only
@@ -283,4 +283,145 @@ export function useOutfitCards(): { cards: OutfitCard[]; loading: boolean } {
   );
 
   return { cards, loading };
+}
+
+/**
+ * §9 Stats — the per-item wear aggregate, rooted at `wear_event` so a logged or
+ * un-logged wear re-runs it (the tab is read-only, but a wear logged on the
+ * Outfits tab must be reflected when this one is already mounted — the same
+ * single-table `useLiveQuery` constraint that forces the §7 covers/aggregate
+ * split). Grouping over the events themselves can't produce a never-worn item,
+ * so only worn items appear here; the never-worn set is every item **without** a
+ * row here, supplied by the items read and split back in JS (§9.7).
+ *
+ * `wearCount` is **per wear-event, reaching the item through every outfit that
+ * contains it** (§3 rule): joining `outfit_item` to `wear_event` on the outfit
+ * id yields one row per (containing outfit × its wear), so an item in two
+ * outfits both worn the same day counts twice — intentionally.
+ */
+export type ItemWearAggregate = { itemId: number; wearCount: number; lastWorn: string };
+
+export function itemWearAggregatesQuery(database: typeof db) {
+  return database
+    .select({
+      itemId: outfitItem.itemId,
+      wearCount: count(wearEvent.id),
+      lastWorn: sql<string>`max(${wearEvent.wornOn})`,
+    })
+    .from(wearEvent)
+    .innerJoin(outfitItem, eq(outfitItem.outfitId, wearEvent.outfitId))
+    .groupBy(outfitItem.itemId);
+}
+
+/** A worn item carries its two derived facts alongside the full item row. */
+export type WornItem = Item & { wearCount: number; lastWorn: string };
+
+/** `null` = the `All` scope; otherwise the six categories (§9.1). */
+export type StatsScope = Category | null;
+
+/**
+ * Most worn: `wear_count DESC, last_worn DESC, id DESC` (§9.2). `worn_on` is
+ * `YYYY-MM-DD`, so a string compare is a date compare. `id` never renders — it's
+ * the deterministic final tiebreak that stops a live re-render reshuffling tied
+ * rows.
+ */
+function mostWornOrder(a: WornItem, b: WornItem): number {
+  return b.wearCount - a.wearCount || b.lastWorn.localeCompare(a.lastWorn) || b.id - a.id;
+}
+
+/**
+ * Least worn: the **exact reverse** of `mostWornOrder`, including the `id`
+ * direction (§9.2). The reversal is load-bearing, not cosmetic: it's the only
+ * thing that keeps the two `floor(n/2)` slices disjoint when rows tie fully —
+ * `id ASC` in both lists would put the same item first in each.
+ */
+function leastWornOrder(a: WornItem, b: WornItem): number {
+  return a.wearCount - b.wearCount || a.lastWorn.localeCompare(b.lastWorn) || a.id - b.id;
+}
+
+/**
+ * Split a scoped item set into the worn set (with derived facts, most-worn
+ * order) and the never-worn set (oldest created first, §9.3). An item is worn
+ * iff it has an aggregate row; never-worn is the complement, so no separate
+ * `notExists` query is needed.
+ */
+export function partitionWear(
+  items: Item[],
+  aggregates: ItemWearAggregate[],
+): { worn: WornItem[]; neverWorn: Item[] } {
+  const byItem = new Map(aggregates.map((row) => [row.itemId, row]));
+  const worn: WornItem[] = [];
+  const neverWorn: Item[] = [];
+  for (const row of items) {
+    const agg = byItem.get(row.id);
+    if (agg) worn.push({ ...row, wearCount: agg.wearCount, lastWorn: agg.lastWorn });
+    else neverWorn.push(row);
+  }
+  worn.sort(mostWornOrder);
+  neverWorn.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id - b.id);
+  return { worn, neverWorn };
+}
+
+/**
+ * The two leaderboards from the worn set (§9.2). `k = min(5, floor(n/2))` caps
+ * both to guarantee **no item is ever in both** — unfiltered the cap never
+ * binds, filtered it's the normal case. Edge cases fall out: `n = 1` → both
+ * empty; `n = 2..3` → one row each.
+ */
+export function leaderboards(worn: WornItem[]): {
+  k: number;
+  mostWorn: WornItem[];
+  leastWorn: WornItem[];
+} {
+  const k = Math.min(5, Math.floor(worn.length / 2));
+  return {
+    k,
+    mostWorn: [...worn].sort(mostWornOrder).slice(0, k),
+    leastWorn: [...worn].sort(leastWornOrder).slice(0, k),
+  };
+}
+
+export type StatsData = {
+  /** Worn items in scope — `n` in the §9.2 sizing rule. */
+  wornCount: number;
+  k: number;
+  mostWorn: WornItem[];
+  leastWorn: WornItem[];
+  neverWorn: Item[];
+};
+
+/**
+ * The whole Stats derivation for one category scope (§9): filter the items to
+ * scope, split worn/never-worn, then size and slice the leaderboards. Pure, so
+ * the invariants are testable without a render.
+ */
+export function computeStats(
+  items: Item[],
+  aggregates: ItemWearAggregate[],
+  scope: StatsScope,
+): StatsData {
+  const inScope = scope ? items.filter((row) => row.category === scope) : items;
+  const { worn, neverWorn } = partitionWear(inScope, aggregates);
+  const { k, mostWorn, leastWorn } = leaderboards(worn);
+  return { wornCount: worn.length, k, mostWorn, leastWorn, neverWorn };
+}
+
+/**
+ * §9 Stats backing hook. Two live reads merged in JS: every item (reacts to
+ * adds/edits) and the per-item wear aggregate (reacts to logs). `scope` filters
+ * in JS — the wardrobe is personal-scale (§9.7), so one read serves every
+ * segment of the category filter without a re-query.
+ */
+export function useStats(scope: StatsScope): { data: StatsData; loading: boolean } {
+  const items = useLiveQuery(db.select().from(item));
+  const aggregates = useLiveQuery(itemWearAggregatesQuery(db));
+
+  const loading = items.updatedAt === undefined || aggregates.updatedAt === undefined;
+
+  const data = useMemo(
+    () => computeStats(items.data ?? [], aggregates.data ?? [], scope),
+    [items.data, aggregates.data, scope],
+  );
+
+  return { data, loading };
 }
