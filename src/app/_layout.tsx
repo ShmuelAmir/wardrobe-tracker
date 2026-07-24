@@ -19,6 +19,7 @@ export default function RootLayout() {
         <Stack.Screen name="add-item" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="outfit-builder" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="outfit/[id]" options={{ title: 'Outfit' }} />
+        <Stack.Screen name="item/[id]" options={{ title: 'Item' }} />
       </Stack>
     </MigrationGate>
   );

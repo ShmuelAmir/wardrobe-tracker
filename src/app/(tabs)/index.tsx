@@ -28,6 +28,6 @@ export default function WardrobeTab() {
   return isEmpty ? (
     <WardrobeHero onAddItem={() => router.push('/add-item')} />
   ) : (
-    <ItemGrid items={items} />
+    <ItemGrid items={items} onPressItem={(id) => router.push(`/item/${id}`)} />
   );
 }

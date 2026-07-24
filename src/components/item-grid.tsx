@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useState, type ReactElement } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Item } from '@/db/schema';
 import { itemImageUri } from '@/item-images';
@@ -17,8 +17,20 @@ const GAP = 2;
  * `header` scrolls with the grid as the list's own header — the way to put
  * content above a `FlatList` without nesting it in a `ScrollView` (which would
  * defeat virtualization).
+ *
+ * `onPressItem` makes a tile a doorway to the item's detail page (§8.1) — the
+ * Wardrobe grid passes it; the outfit-detail grid omits it, so those tiles stay
+ * inert (an item is a place you go *from the Wardrobe*, §8.1).
  */
-export function ItemGrid({ items, header }: { items: Item[]; header?: ReactElement }) {
+export function ItemGrid({
+  items,
+  header,
+  onPressItem,
+}: {
+  items: Item[];
+  header?: ReactElement;
+  onPressItem?: (id: number) => void;
+}) {
   return (
     <FlatList
       testID="wardrobe-grid"
@@ -28,18 +40,23 @@ export function ItemGrid({ items, header }: { items: Item[]; header?: ReactEleme
       ListHeaderComponent={header}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.grid}
-      renderItem={({ item }) => <ItemCell item={item} />}
+      renderItem={({ item }) => <ItemCell item={item} onPress={onPressItem} />}
     />
   );
 }
 
-function ItemCell({ item }: { item: Item }) {
+function ItemCell({ item, onPress }: { item: Item; onPress?: (id: number) => void }) {
   // A row whose file is missing shouldn't happen once §4.5's ordering holds,
   // but the grid degrades to a category placeholder rather than a broken tile.
   const [missing, setMissing] = useState(false);
 
   return (
-    <View style={styles.cell} testID={`item-cell-${item.id}`}>
+    <Pressable
+      style={styles.cell}
+      testID={`item-cell-${item.id}`}
+      disabled={onPress === undefined}
+      onPress={onPress ? () => onPress(item.id) : undefined}
+    >
       {missing ? (
         <View style={[styles.image, styles.placeholder]} testID={`item-placeholder-${item.id}`}>
           <Text style={styles.placeholderLabel}>{item.category}</Text>
@@ -53,7 +70,7 @@ function ItemCell({ item }: { item: Item }) {
           onError={() => setMissing(true)}
         />
       )}
-    </View>
+    </Pressable>
   );
 }
 
