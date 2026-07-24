@@ -161,6 +161,82 @@ export function itemWearCountQuery(database: typeof db, itemId: number) {
 }
 
 /**
+ * §8.1 item detail — the read-only page's single item, rooted at `item` so an
+ * §8.2 edit (name, category, season, replaced photo) re-runs it in place. `null`
+ * item means the id doesn't resolve; `loading` distinguishes a pre-read blank
+ * from a genuine miss, the same trap `useItems`/`useOutfitDetail` guard.
+ */
+export function useItemDetail(id: number): { item: Item | null; loading: boolean } {
+  const { data, updatedAt } = useLiveQuery(db.select().from(item).where(eq(item.id, id)));
+  return { item: data?.[0] ?? null, loading: updatedAt === undefined };
+}
+
+/**
+ * §8.1 stats strip — an item's wear count and last-worn day, both derived from
+ * `wear_event` reached through *every* outfit that contains the item, never
+ * stored (§3 rule 4/7). Rooted at `wear_event` so a wear logged anywhere re-runs
+ * it; the inner join to `outfit_item` is what both scopes the events to this
+ * item and produces the §3 double-count when two containing outfits are worn the
+ * same day (one join row per containing outfit × its wear). An item never worn
+ * yields an empty join, so `count()` reads 0 and `max` reads `null` with no
+ * separate empty case — the same shape as `outfitStatsQuery`.
+ */
+export type ItemStats = { wearCount: number; lastWorn: string | null };
+
+export function itemStatsQuery(database: typeof db, itemId: number) {
+  return database
+    .select({
+      wearCount: count(),
+      lastWorn: sql<string | null>`max(${wearEvent.wornOn})`,
+    })
+    .from(wearEvent)
+    .innerJoin(outfitItem, eq(outfitItem.outfitId, wearEvent.outfitId))
+    .where(eq(outfitItem.itemId, itemId));
+}
+
+export function useItemStats(itemId: number): ItemStats {
+  const { data } = useLiveQuery(itemStatsQuery(db, itemId));
+  const row = data?.[0];
+  return { wearCount: row?.wearCount ?? 0, lastWorn: row?.lastWorn ?? null };
+}
+
+/**
+ * §8.1 "In outfits" rail — the outfits containing this item, each tapping
+ * through to its own detail. Rooted at `outfit_item` so adding or removing the
+ * item from an outfit re-runs it; the cover is the same lowest-id-item read the
+ * cards use (§7.1), written as literal table-qualified SQL for the reason
+ * `outfitCoversQuery` spells out. Newest outfit first, matching the app's other
+ * lists. An item in no outfit yields `[]` — the rail's empty case, which the
+ * screen renders as the copy that *explains* a zero wear count.
+ */
+export type ItemOutfit = { id: number; name: string | null; coverImage: string | null };
+
+export function itemOutfitsQuery(database: typeof db, itemId: number) {
+  return database
+    .select({
+      id: outfit.id,
+      name: outfit.name,
+      coverImage: sql<string | null>`(
+        select item.image_file
+        from outfit_item
+        join item on item.id = outfit_item.item_id
+        where outfit_item.outfit_id = outfit.id
+        order by item.id
+        limit 1
+      )`,
+    })
+    .from(outfitItem)
+    .innerJoin(outfit, eq(outfit.id, outfitItem.outfitId))
+    .where(eq(outfitItem.itemId, itemId))
+    .orderBy(desc(outfit.id));
+}
+
+export function useItemOutfits(itemId: number): ItemOutfit[] {
+  const { data } = useLiveQuery(itemOutfitsQuery(db, itemId));
+  return data ?? [];
+}
+
+/**
  * §7.1/§7.2 — the Outfits tab backing data: every outfit as a card carrying its
  * cover, item count, and the two derived wear facts (last worn, times worn) the
  * rail and list both sort and filter on. Wear stats are derived, never stored
