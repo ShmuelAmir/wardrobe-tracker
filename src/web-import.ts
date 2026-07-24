@@ -140,45 +140,54 @@ export async function fetchProductPage(
   }
 
   // One internal controller aborts on **either** the 10s timer or the caller's
-  // Cancel, so a single `signal` drives the fetch; we read the caller's signal
-  // afterward to tell the two aborts apart.
+  // Cancel, so a single `signal` drives the request; we read the caller's signal
+  // afterward to tell the two aborts apart. The whole fetch **and body read**
+  // sit inside the try so a Cancel mid-download still aborts and a parse throw
+  // can't escape as an unhandled rejection that strands step 2's spinner.
   const controller = new AbortController();
   const onCallerAbort = () => controller.abort();
   options.signal?.addEventListener('abort', onCallerAbort);
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  let response: Response;
   try {
-    response = await fetch(url, { headers: BROWSER_HEADERS, signal: controller.signal });
+    const response = await fetch(url, { headers: BROWSER_HEADERS, signal: controller.signal });
+
+    const category = classifyStatus(response.status);
+    if (category === 'retryable') {
+      return { status: 'retryable', message: UNREACHABLE_MESSAGE };
+    }
+    if (category === 'dead-end') {
+      // A status dead-end (403/404) has no product page to read, so no name/brand.
+      return {
+        status: 'dead-end',
+        message: NO_IMAGE_MESSAGE,
+        sourceUrl: response.url || url,
+        name: null,
+        brand: null,
+      };
+    }
+
+    const result = parsePage(await response.text(), response.url || url);
+    if (result.candidates.length === 0) {
+      // The no-image dead-end: a 200 we *did* parse, so name/brand carry through.
+      return {
+        status: 'dead-end',
+        message: NO_IMAGE_MESSAGE,
+        sourceUrl: result.sourceUrl,
+        name: result.name,
+        brand: result.brand,
+      };
+    }
+    return { status: 'ok', result };
   } catch {
+    // A caller abort is a Cancel, not an error; the 10s timeout and any other
+    // failure (network drop, a body read that never lands) are retryable.
     if (options.signal?.aborted) return { status: 'cancelled' };
     return { status: 'retryable', message: UNREACHABLE_MESSAGE };
   } finally {
     clearTimeout(timeout);
     options.signal?.removeEventListener('abort', onCallerAbort);
   }
-
-  const category = classifyStatus(response.status);
-  if (category === 'retryable') {
-    return { status: 'retryable', message: UNREACHABLE_MESSAGE };
-  }
-  if (category === 'dead-end') {
-    // A status dead-end (403/404) has no product page to read, so no name/brand.
-    return { status: 'dead-end', message: NO_IMAGE_MESSAGE, sourceUrl: response.url || url, name: null, brand: null };
-  }
-
-  const result = parsePage(await response.text(), response.url || url);
-  if (result.candidates.length === 0) {
-    // The no-image dead-end: a 200 we *did* parse, so name/brand carry through.
-    return {
-      status: 'dead-end',
-      message: NO_IMAGE_MESSAGE,
-      sourceUrl: result.sourceUrl,
-      name: result.name,
-      brand: result.brand,
-    };
-  }
-  return { status: 'ok', result };
 }
 
 /** The pure parse: HTML + the resolved page URL in, candidates + metadata out. */

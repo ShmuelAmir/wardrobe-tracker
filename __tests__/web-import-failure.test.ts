@@ -153,6 +153,43 @@ describe('fetchProductPage', () => {
     });
   });
 
+  it('maps a body-read failure to retryable, never an unhandled rejection', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      status: 200,
+      url: 'https://acme.com/p/coat',
+      text: async () => {
+        throw new TypeError('Network request failed');
+      },
+    } as unknown as Response);
+
+    const outcome = await fetchProductPage('https://acme.com/p/coat');
+
+    expect(outcome).toEqual({ status: 'retryable', message: UNREACHABLE_MESSAGE });
+  });
+
+  it('reports a cancel during the body read as cancelled', async () => {
+    const controller = new AbortController();
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+      status: 200,
+      url: 'https://acme.com/p/coat',
+      // A body read that only settles on abort — the aborted-guard covers the
+      // case the abort already fired before text() was reached.
+      text: () =>
+        new Promise((_resolve, reject) => {
+          const fail = () => reject(new DOMException('Aborted', 'AbortError'));
+          if (controller.signal.aborted) fail();
+          else controller.signal.addEventListener('abort', fail);
+        }),
+    } as unknown as Response);
+
+    const pending = fetchProductPage('https://acme.com/p/coat', { signal: controller.signal });
+    // Flush the pre-flight + fetch so control is parked inside the body read.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort();
+
+    await expect(pending).resolves.toEqual({ status: 'cancelled' });
+  });
+
   it('returns the parse on a 200 that yields a usable image', async () => {
     const html = `<meta property="og:image" content="https://cdn.acme.com/coat.jpg" />`;
     jest
