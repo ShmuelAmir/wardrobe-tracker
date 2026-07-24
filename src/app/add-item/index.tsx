@@ -1,14 +1,15 @@
-import { randomUUID } from 'expo-crypto';
-import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAddItemDraft } from '@/components/add-item-draft';
-
-// The two sources iOS can permission-block. Web-import can never be denied
-// (§5.6), so it never appears here.
-type DeniableSource = 'camera' | 'library';
+import { PermissionDeniedCard } from '@/components/permission-denied-card';
+import {
+  captureFromCamera,
+  captureFromLibrary,
+  type CaptureResult,
+  type DeniableSource,
+} from '@/photo-capture';
 
 /**
  * Step 1 — pick a source (§5.1). All three are live and listed with **Import
@@ -27,38 +28,16 @@ export default function SourceStep() {
   const { setCapture } = useAddItemDraft();
   const [denied, setDenied] = useState<Set<DeniableSource>>(new Set());
 
-  function markDenied(source: DeniableSource) {
-    setDenied((prev) => new Set(prev).add(source));
-  }
-
-  function carryForward(result: ImagePicker.ImagePickerResult) {
-    if (result.canceled) return;
-    const asset = result.assets[0];
-    setCapture({
-      uri: asset.uri,
-      width: asset.width,
-      height: asset.height,
-      uuid: randomUUID(),
-    });
-    router.push('/add-item/confirm');
-  }
-
-  async function takePhoto() {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      markDenied('camera');
+  async function capture(source: DeniableSource, launch: () => Promise<CaptureResult>) {
+    const result = await launch();
+    if (result.status === 'denied') {
+      setDenied((prev) => new Set(prev).add(source));
       return;
     }
-    carryForward(await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 }));
-  }
-
-  async function pickFromLibrary() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      markDenied('library');
-      return;
+    if (result.status === 'captured') {
+      setCapture(result.capture);
+      router.push('/add-item/confirm');
     }
-    carryForward(await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 }));
   }
 
   return (
@@ -77,7 +56,7 @@ export default function SourceStep() {
           testID="source-camera"
           title="Take a photo"
           subtitle="Shoot the item with your camera"
-          onPress={takePhoto}
+          onPress={() => capture('camera', captureFromCamera)}
         />
       )}
       {denied.has('library') ? (
@@ -87,31 +66,9 @@ export default function SourceStep() {
           testID="source-library"
           title="Choose from library"
           subtitle="Pick an existing photo"
-          onPress={pickFromLibrary}
+          onPress={() => capture('library', captureFromLibrary)}
         />
       )}
-    </View>
-  );
-}
-
-/**
- * A denied source, replaced in place (§5.6). It states the reason and deep-links
- * to Settings; it never blocks the other sources or the wizard.
- */
-function PermissionDeniedCard({ source, testID }: { source: string; testID: string }) {
-  return (
-    <View style={styles.deniedCard} testID={testID}>
-      <Text style={styles.deniedTitle}>{source} access is off</Text>
-      <Text style={styles.deniedBody}>
-        Turn it on to add photos this way. The other options still work.
-      </Text>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => Linking.openSettings()}
-        testID={`${testID}-settings`}
-      >
-        <Text style={styles.deniedLink}>Turn it on in Settings →</Text>
-      </Pressable>
     </View>
   );
 }
@@ -172,28 +129,5 @@ const styles = StyleSheet.create({
   },
   tileSubtitlePrimary: {
     color: '#e6e1f5',
-  },
-  deniedCard: {
-    backgroundColor: '#faf0ee',
-    borderColor: '#e7c4bd',
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 6,
-    padding: 20,
-  },
-  deniedTitle: {
-    color: '#7a2e1f',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  deniedBody: {
-    color: '#7a5b54',
-    fontSize: 14,
-  },
-  deniedLink: {
-    color: '#b23c22',
-    fontSize: 15,
-    fontWeight: '600',
-    paddingTop: 6,
   },
 });
