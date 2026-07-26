@@ -1,4 +1,5 @@
-import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
+import { act, render, screen, userEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 
 import OutfitBuilderScreen from '@/app/outfit-builder/index';
 import { OutfitBuilderProvider } from '@/components/outfit-builder-draft';
@@ -33,11 +34,24 @@ jest.mock('@/outfit-save', () => ({
   updateOutfit: (...args: unknown[]) => mockUpdateOutfit(...args),
 }));
 
+const mockReadOutfitDeleteImpact = jest.fn();
+const mockDeleteOutfit = jest.fn();
+jest.mock('@/deletes', () => ({
+  readOutfitDeleteImpact: (id: number) => mockReadOutfitDeleteImpact(id),
+  deleteOutfit: (...args: unknown[]) => mockDeleteOutfit(...args),
+}));
+
 const mockPush = jest.fn();
 const mockDismissAll = jest.fn();
+const mockDismissTo = jest.fn();
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: jest.fn(), dismissAll: mockDismissAll }),
+  useRouter: () => ({
+    push: mockPush,
+    replace: jest.fn(),
+    dismissAll: mockDismissAll,
+    dismissTo: mockDismissTo,
+  }),
   useLocalSearchParams: () => mockParams,
   Stack: { Screen: () => null },
 }));
@@ -48,6 +62,7 @@ beforeEach(() => {
   mockUseItems.mockReturnValue({ items: [anItem(1), anItem(2)], loading: false });
   mockUseOccasionChips.mockReturnValue([]);
   mockUseOutfitDetail.mockReturnValue({ detail: null, loading: false });
+  mockReadOutfitDeleteImpact.mockReturnValue({ itemCount: 0, wearCount: 0 });
 });
 
 function renderScreen() {
@@ -138,5 +153,80 @@ describe('outfit builder screen — edit mode', () => {
     expect(mockDismissAll).toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
     expect(mockSaveOutfit).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * §8.3 / §8.5 — **Delete lives at the bottom of Edit, both times.** For an outfit
+ * that means the bottom of the builder, and only when the builder is editing an
+ * outfit that exists — there is nothing to delete while one is being built. This
+ * is the confirm that **warns**: the outfit's wear events cascade.
+ */
+describe('outfit builder screen — delete outfit (§8.3)', () => {
+  beforeEach(() => {
+    mockParams = { editId: '7' };
+    mockUseOutfitDetail.mockReturnValue({
+      detail: {
+        outfit: { id: 7, name: 'Weekday', occasion: 'Work', createdAt: new Date() },
+        items: [anItem(1)],
+      },
+      loading: false,
+    });
+  });
+
+  it('offers no delete while a new outfit is being built', async () => {
+    mockParams = {};
+    await renderScreen();
+
+    expect(screen.queryByTestId('outfit-delete')).toBeNull();
+  });
+
+  it('names the wears that die and the items whose counts will drop', async () => {
+    const alert = jest.spyOn(Alert, 'alert');
+    mockReadOutfitDeleteImpact.mockReturnValue({ itemCount: 4, wearCount: 12 });
+
+    const user = userEvent.setup();
+    await renderScreen();
+    await user.press(screen.getByTestId('outfit-delete'));
+
+    expect(mockReadOutfitDeleteImpact).toHaveBeenCalledWith(7);
+    expect(alert.mock.calls.at(-1)?.[1]).toBe(
+      'Its 12 wears will be deleted too, so the wear counts on its 4 items will drop. ' +
+        'The items themselves stay in your wardrobe.',
+    );
+  });
+
+  it('deletes the outfit and lands back on the Outfits tab', async () => {
+    const alert = jest.spyOn(Alert, 'alert');
+    mockReadOutfitDeleteImpact.mockReturnValue({ itemCount: 4, wearCount: 12 });
+
+    const user = userEvent.setup();
+    await renderScreen();
+    await user.press(screen.getByTestId('outfit-delete'));
+
+    const buttons = alert.mock.calls.at(-1)?.[2] as {
+      text: string;
+      style?: string;
+      onPress?: () => void;
+    }[];
+    expect(buttons.map((b) => b.text)).toEqual(['Delete Outfit', 'Cancel']);
+    await act(async () => {
+      buttons.find((b) => b.text === 'Delete Outfit')?.onPress?.();
+    });
+
+    expect(mockDeleteOutfit).toHaveBeenCalledWith(7);
+    // Both the builder and the Detail underneath it describe a deleted outfit.
+    expect(mockDismissTo).toHaveBeenCalledWith('/outfits');
+  });
+
+  it('writes nothing when the confirm is cancelled', async () => {
+    const alert = jest.spyOn(Alert, 'alert');
+    const user = userEvent.setup();
+    await renderScreen();
+    await user.press(screen.getByTestId('outfit-delete'));
+
+    const buttons = alert.mock.calls.at(-1)?.[2] as { text: string; style?: string }[];
+    expect(buttons.find((b) => b.text === 'Cancel')?.style).toBe('cancel');
+    expect(mockDeleteOutfit).not.toHaveBeenCalled();
   });
 });

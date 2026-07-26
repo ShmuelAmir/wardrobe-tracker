@@ -185,3 +185,53 @@ describe('outfit detail — wear history sheet', () => {
     expect(mockRemoveWear).toHaveBeenCalledWith(5);
   });
 });
+
+/**
+ * §8.4 — an outfit can outlive all its garments. Deleting every item in it one
+ * at a time and declining the cleanup each time leaves a **0-item outfit whose
+ * wears still count**. That state is legal, not broken, so Detail **labels** it
+ * rather than rendering a bare empty grid — the wears really did happen.
+ */
+describe('outfit detail — the zero-item outfit is labelled (§8.4)', () => {
+  it('names the emptying and insists the wears still count toward stats', async () => {
+    mockUseOutfitDetail.mockReturnValue({
+      detail: { outfit: anOutfit(), items: [] },
+      loading: false,
+    });
+    mockUseOutfitStats.mockReturnValue({
+      timesWorn: 12,
+      firstWorn: '2026-01-04',
+      lastWorn: '2026-07-20',
+    });
+
+    await render(<OutfitDetailScreen />);
+
+    expect(screen.getByTestId('outfit-zero-items')).toHaveTextContent(
+      'Every item in this outfit was deleted — its 12 wears still count toward your stats.',
+    );
+  });
+
+  it('claims no stats for an emptied outfit that was never worn', async () => {
+    mockUseOutfitDetail.mockReturnValue({
+      detail: { outfit: anOutfit(), items: [] },
+      loading: false,
+    });
+
+    await render(<OutfitDetailScreen />);
+
+    expect(screen.getByTestId('outfit-zero-items')).toHaveTextContent(
+      'Every item in this outfit was deleted.',
+    );
+  });
+
+  it('says nothing of the sort while the outfit still has garments', async () => {
+    mockUseOutfitDetail.mockReturnValue({
+      detail: { outfit: anOutfit(), items: [anItem(1)] },
+      loading: false,
+    });
+
+    await render(<OutfitDetailScreen />);
+
+    expect(screen.queryByTestId('outfit-zero-items')).toBeNull();
+  });
+});

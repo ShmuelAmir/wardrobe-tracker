@@ -1,8 +1,11 @@
+import { eq } from 'drizzle-orm';
+
 import {
   mergeOutfitCards,
-  outfitCoversQuery,
+  outfitMembershipsQuery,
+  outfitRowsQuery,
   outfitWearAggregatesQuery,
-  type OutfitCover,
+  type OutfitRow,
 } from '@/db/queries';
 import { item, outfit, outfitItem } from '@/db/schema';
 import { logWear } from '@/wear-log';
@@ -42,33 +45,58 @@ function seedOutfit(id: number, itemIds: number[], name: string | null = `Outfit
   }
 }
 
-const covers = () => outfitCoversQuery(db).all();
+const rows = () => outfitRowsQuery(db).all();
+const memberships = () => outfitMembershipsQuery(db).all();
 const aggregates = () => outfitWearAggregatesQuery(db).all();
-const cards = () => mergeOutfitCards(covers(), aggregates());
+const cards = () => mergeOutfitCards(rows(), memberships(), aggregates());
 
 beforeEach(() => {
   db.delete(outfit).run();
   db.delete(item).run();
 });
 
-describe('outfitCoversQuery — cover and item count', () => {
+describe('outfitMembershipsQuery — cover and item count, rooted at the join', () => {
   it('picks the lowest-id item as the cover and counts the set', () => {
     seedItems(3, 7, 5);
     seedOutfit(10, [7, 3, 5]);
 
-    const row = covers().find((c) => c.id === 10);
-
-    expect(row?.coverImage).toBe('3.jpg');
-    expect(row?.itemCount).toBe(3);
+    expect(memberships()).toEqual([{ outfitId: 10, coverImage: '3.jpg', itemCount: 3 }]);
   });
 
-  it('reports a garment-less outfit with a null cover and zero count (§8.4)', () => {
+  it('keeps each outfit’s cover to its own members', () => {
+    seedItems(1, 2);
+    seedOutfit(10, [2]);
+    seedOutfit(20, [1, 2]);
+
+    expect(memberships()).toEqual([
+      { outfitId: 10, coverImage: '2.jpg', itemCount: 1 },
+      { outfitId: 20, coverImage: '1.jpg', itemCount: 2 },
+    ]);
+  });
+
+  it('omits a garment-less outfit, which the merge reads back as zero (§8.4)', () => {
     seedOutfit(10, []);
 
-    const row = covers().find((c) => c.id === 10);
+    expect(memberships()).toEqual([]);
 
-    expect(row?.coverImage).toBeNull();
-    expect(row?.itemCount).toBe(0);
+    const card = cards().find((c) => c.id === 10);
+    expect(card?.coverImage).toBeNull();
+    expect(card?.itemCount).toBe(0);
+  });
+
+  /**
+   * The reason membership is its own read: an item delete cascades into
+   * `outfit_item` and never touches `outfit`, so a card whose count came from a
+   * query rooted at `outfit` would go stale under a mounted Outfits tab
+   * (`useLiveQuery` tracks a single table).
+   */
+  it('shrinks the count and re-picks the cover when an item is deleted (§8.3)', () => {
+    seedItems(1, 2);
+    seedOutfit(10, [1, 2]);
+
+    db.delete(item).where(eq(item.id, 1)).run();
+
+    expect(memberships()).toEqual([{ outfitId: 10, coverImage: '2.jpg', itemCount: 1 }]);
   });
 });
 
@@ -109,18 +137,16 @@ describe('mergeOutfitCards — the §7.2 sort', () => {
     expect(cards().map((c) => c.id)).toEqual([20, 10]);
   });
 
-  it('defaults an unworn outfit to null last-worn and zero times-worn', () => {
-    const cover: OutfitCover = {
+  it('defaults an outfit missing from both aggregates rather than dropping it', () => {
+    const row: OutfitRow = {
       id: 5,
       name: 'Aspirational',
       occasion: null,
       createdAt: new Date(),
-      coverImage: null,
-      itemCount: 0,
     };
 
-    expect(mergeOutfitCards([cover], [])).toEqual([
-      { ...cover, lastWorn: null, timesWorn: 0 },
+    expect(mergeOutfitCards([row], [], [])).toEqual([
+      { ...row, coverImage: null, itemCount: 0, lastWorn: null, timesWorn: 0 },
     ]);
   });
 });

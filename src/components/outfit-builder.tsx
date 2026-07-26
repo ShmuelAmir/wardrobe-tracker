@@ -14,6 +14,12 @@ const MINI_STACK = 4;
  * a mini-stack of the first few picks, the count, a name field, and Save. Save
  * is **disabled until ≥1 item is selected**. Categories with no items are
  * skipped — the app never shows a rail that can't be built from (§3.1 rule 6).
+ *
+ * `onDelete` puts a `Delete Outfit` row at the very bottom of the scroll — the
+ * outfit half of §8.3's rule that **delete lives at the bottom of Edit, both
+ * times**. It is omitted while a *new* outfit is being built, because there is
+ * nothing yet to delete (§10 rule 6: the app never offers a button that can't
+ * work).
  */
 export function OutfitBuilder({
   items,
@@ -23,6 +29,7 @@ export function OutfitBuilder({
   onSetName,
   onSeeAll,
   onSave,
+  onDelete,
 }: {
   items: Item[];
   selection: number[];
@@ -31,6 +38,7 @@ export function OutfitBuilder({
   onSetName: (name: string) => void;
   onSeeAll: (category: Category) => void;
   onSave: () => void;
+  onDelete?: () => void;
 }) {
   const byCategory = new Map<Category, Item[]>();
   for (const item of items) {
@@ -61,6 +69,17 @@ export function OutfitBuilder({
             onSeeAll={onSeeAll}
           />
         ))}
+
+        {onDelete ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={onDelete}
+            style={styles.delete}
+            testID="outfit-delete"
+          >
+            <Text style={styles.deleteLabel}>Delete Outfit</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       <View style={styles.summary} testID="summary-bar">
@@ -162,6 +181,16 @@ const styles = StyleSheet.create({
   },
   saveLabel: {
     color: '#ffffff',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  delete: {
+    alignItems: 'center',
+    marginTop: 6,
+    paddingVertical: 16,
+  },
+  deleteLabel: {
+    color: '#c0392b',
     fontSize: 17,
     fontWeight: '600',
   },

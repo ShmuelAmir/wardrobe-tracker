@@ -53,6 +53,11 @@ ADR-0012).
 **Never worn** — items with **zero** wear events, in scope of the active filter.
 A finite set (not a leaderboard), shown in full, oldest-first.
 
+**Zero-item outfit** — an outfit whose every item has been deleted. A **legal,
+labelled state**, not a broken one: its wear events survive and keep counting,
+because those wears really did happen. Reachable only by declining the cleanup
+offered on each item delete (§8.4).
+
 **Occasion** — a single free-text tag on an outfit (e.g. "Work", "Shul"). Its chip
 vocabulary is **built from the user's own history**, not a shipped enum (see
 ADR-0011).

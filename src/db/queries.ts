@@ -237,60 +237,131 @@ export function useItemOutfits(itemId: number): ItemOutfit[] {
 }
 
 /**
+ * §8.3/§8.4 — everything the **item** delete confirm is allowed to claim: the
+ * containing outfits, each with its own item count and wear count. The item
+ * count is what identifies a §8.4 last-item outfit (`itemCount === 1`); the wear
+ * count is the history that cleaning that outfit up would cost, and the confirm
+ * is never silent about it.
+ *
+ * A one-shot read, not a hook: the confirm is a single alert raised on a tap,
+ * and it must describe the wardrobe **at the moment of the tap** rather than
+ * re-render under the user.
+ *
+ * Newest outfit first, matching the "In outfits" rail, so the names in the
+ * confirm arrive in the order the item's own detail page just showed them.
+ */
+export function itemDeleteImpactQuery(database: typeof db, itemId: number) {
+  return database
+    .select({
+      id: outfit.id,
+      name: outfit.name,
+      // Literal, table-qualified SQL for the reason `outfitCoversQuery` spells
+      // out: interpolated columns render unqualified inside a raw `sql`
+      // template, which would leave the correlation to the outer `outfit`
+      // ambiguous against the joined `outfit_item`.
+      itemCount: sql<number>`(
+        select count(*) from outfit_item where outfit_item.outfit_id = outfit.id
+      )`,
+      wearCount: sql<number>`(
+        select count(*) from wear_event where wear_event.outfit_id = outfit.id
+      )`,
+    })
+    .from(outfitItem)
+    .innerJoin(outfit, eq(outfit.id, outfitItem.outfitId))
+    .where(eq(outfitItem.itemId, itemId))
+    .orderBy(desc(outfit.id));
+}
+
+/**
+ * §8.3 — everything the **outfit** delete confirm is allowed to claim: the wear
+ * count that will cascade away, and the item count whose derived wear counts
+ * will therefore drop. Rooted at `outfit` so a garment-less, never-worn outfit
+ * (§8.4) still reads a row of zeros rather than nothing at all.
+ */
+export function outfitDeleteImpactQuery(database: typeof db, id: number) {
+  return database
+    .select({
+      itemCount: sql<number>`(
+        select count(*) from outfit_item where outfit_item.outfit_id = outfit.id
+      )`,
+      wearCount: sql<number>`(
+        select count(*) from wear_event where wear_event.outfit_id = outfit.id
+      )`,
+    })
+    .from(outfit)
+    .where(eq(outfit.id, id));
+}
+
+/**
  * §7.1/§7.2 — the Outfits tab backing data: every outfit as a card carrying its
  * cover, item count, and the two derived wear facts (last worn, times worn) the
  * rail and list both sort and filter on. Wear stats are derived, never stored
  * (§3 rule 4), so they can only be read from `wear_event`.
  *
- * The tab needs *live* wear data — "Wore it" and its Undo must reorder the rail
- * and list the instant they write — but `useLiveQuery` re-runs only when **its
- * own `from` table** changes (it tracks a single table). A wear touches
- * `wear_event`, not `outfit`, so a query rooted at `outfit` would never react to
- * a log. That forces the split: the covers read is rooted at `outfit`, the wear
- * aggregate at `wear_event`, and `useOutfitCards` merges them — so a wear log
- * re-runs the aggregate and the merge, and a new outfit re-runs the covers.
+ * The tab needs *live* wear and membership data — "Wore it" and its Undo must
+ * reorder the rail the instant they write, and an item delete (§8.3) must shrink
+ * the item count under it — but `useLiveQuery` re-runs only when **its own `from`
+ * table** changes (it tracks a single table). A wear touches `wear_event` and an
+ * item delete cascades into `outfit_item`; neither touches `outfit`, so a single
+ * query rooted at `outfit` would react to neither. That forces the three-way
+ * split — identity from `outfit`, membership from `outfit_item`, wear facts from
+ * `wear_event` — which `useOutfitCards` merges. Each write re-runs exactly the
+ * read whose table it changed.
  */
-export type OutfitCover = {
+export type OutfitRow = {
   id: number;
   name: string | null;
   occasion: string | null;
   createdAt: Date;
-  coverImage: string | null;
-  itemCount: number;
 };
 
-/**
- * Every outfit with its cover and item count, rooted at `outfit` so it reacts to
- * outfits being created, edited, or deleted. The cover is the outfit's
- * lowest-id item — a stable, deterministic pick (the join carries no rank, §6.1)
- * — and is `null` for a garment-less outfit (§8.4), which the card renders as a
- * neutral tile rather than a broken image.
- */
-export function outfitCoversQuery(database: typeof db) {
+/** Every outfit's own row, rooted at `outfit` so a create/edit/delete re-runs it. */
+export function outfitRowsQuery(database: typeof db) {
   return database
     .select({
       id: outfit.id,
       name: outfit.name,
       occasion: outfit.occasion,
       createdAt: outfit.createdAt,
+    })
+    .from(outfit);
+}
+
+/**
+ * Per-outfit cover and item count, rooted at `outfit_item` so **deleting an item
+ * re-runs it** (§8.3 — the cascade lands here, never on `outfit`). The cover is
+ * the outfit's lowest-id item, a stable deterministic pick since the join
+ * carries no rank (§6.1).
+ *
+ * Grouping over the join rows can't produce a garment-less outfit, exactly as the
+ * wear aggregate can't produce a never-worn one; §8.4's zero-item outfit is
+ * simply absent here and merged back in as `coverImage: null, itemCount: 0`,
+ * which the card renders as a neutral tile rather than a broken image.
+ */
+export type OutfitMembership = { outfitId: number; coverImage: string | null; itemCount: number };
+
+export function outfitMembershipsQuery(database: typeof db) {
+  return database
+    .select({
+      outfitId: outfitItem.outfitId,
       // Written as literal, table-qualified SQL rather than drizzle column refs:
       // interpolated columns render **unqualified** inside a raw `sql` template,
-      // which would leave the outer correlation (`outfit.id`) ambiguous against
-      // the joined `item`. The identifiers are the schema's own table/column
-      // names (§3.2), the same ones §3.3 spells out by hand.
+      // which would leave the outer correlation ambiguous against the aliased
+      // inner copy of the same table. Correlating on `outfit_item.outfit_id` is
+      // safe inside the aggregate because it *is* the grouping key. The
+      // identifiers are the schema's own table/column names (§3.2).
       coverImage: sql<string | null>`(
         select item.image_file
-        from outfit_item
-        join item on item.id = outfit_item.item_id
-        where outfit_item.outfit_id = outfit.id
+        from outfit_item member
+        join item on item.id = member.item_id
+        where member.outfit_id = outfit_item.outfit_id
         order by item.id
         limit 1
       )`,
-      itemCount: sql<number>`(
-        select count(*) from outfit_item where outfit_item.outfit_id = outfit.id
-      )`,
+      itemCount: count(),
     })
-    .from(outfit);
+    .from(outfitItem)
+    .groupBy(outfitItem.outfitId);
 }
 
 /**
@@ -298,7 +369,7 @@ export function outfitCoversQuery(database: typeof db) {
  * wear re-runs it. Only outfits with `≥ 1` wear appear — grouping over the
  * events themselves can't produce a never-worn outfit — which is exactly the
  * rail's `wears ≥ 1` scope (§7.1); the never-worn outfits are supplied by the
- * covers read and merged back in as `timesWorn: 0`.
+ * outfit rows read and merged back in as `timesWorn: 0`.
  */
 export type WearAggregate = { outfitId: number; lastWorn: string | null; timesWorn: number };
 
@@ -313,7 +384,12 @@ export function outfitWearAggregatesQuery(database: typeof db) {
     .groupBy(wearEvent.outfitId);
 }
 
-export type OutfitCard = OutfitCover & { lastWorn: string | null; timesWorn: number };
+export type OutfitCard = OutfitRow & {
+  coverImage: string | null;
+  itemCount: number;
+  lastWorn: string | null;
+  timesWorn: number;
+};
 
 /**
  * §7.2 sort — `last_worn DESC NULLS LAST`: worn outfits newest-first, then
@@ -331,13 +407,30 @@ function compareCards(a: OutfitCard, b: OutfitCard): number {
   return b.id - a.id;
 }
 
-/** Join the covers read to the wear aggregate and apply the §7.2 sort. */
-export function mergeOutfitCards(covers: OutfitCover[], aggregates: WearAggregate[]): OutfitCard[] {
-  const byOutfit = new Map(aggregates.map((row) => [row.outfitId, row]));
-  return covers
-    .map((cover) => {
-      const agg = byOutfit.get(cover.id);
-      return { ...cover, lastWorn: agg?.lastWorn ?? null, timesWorn: agg?.timesWorn ?? 0 };
+/**
+ * Join the three reads and apply the §7.2 sort. The outfit rows drive the set —
+ * an outfit missing from *either* aggregate is a real outfit with nothing to
+ * aggregate, so it defaults to a garment-less (§8.4) and/or never-worn card
+ * rather than disappearing.
+ */
+export function mergeOutfitCards(
+  rows: OutfitRow[],
+  memberships: OutfitMembership[],
+  aggregates: WearAggregate[],
+): OutfitCard[] {
+  const membershipOf = new Map(memberships.map((row) => [row.outfitId, row]));
+  const wearsOf = new Map(aggregates.map((row) => [row.outfitId, row]));
+  return rows
+    .map((row) => {
+      const membership = membershipOf.get(row.id);
+      const wears = wearsOf.get(row.id);
+      return {
+        ...row,
+        coverImage: membership?.coverImage ?? null,
+        itemCount: membership?.itemCount ?? 0,
+        lastWorn: wears?.lastWorn ?? null,
+        timesWorn: wears?.timesWorn ?? 0,
+      };
     })
     .sort(compareCards);
 }
@@ -346,16 +439,20 @@ export function mergeOutfitCards(covers: OutfitCover[], aggregates: WearAggregat
 export const WEAR_AGAIN_RAIL_SIZE = 5;
 
 export function useOutfitCards(): { cards: OutfitCard[]; loading: boolean } {
-  const covers = useLiveQuery(outfitCoversQuery(db));
+  const rows = useLiveQuery(outfitRowsQuery(db));
+  const memberships = useLiveQuery(outfitMembershipsQuery(db));
   const aggregates = useLiveQuery(outfitWearAggregatesQuery(db));
 
-  // Both reads must have resolved once; either still `undefined` is a genuine
+  // Every read must have resolved once; any still `undefined` is a genuine
   // pre-read blank, not an empty tab (same trap as `useItems`).
-  const loading = covers.updatedAt === undefined || aggregates.updatedAt === undefined;
+  const loading =
+    rows.updatedAt === undefined ||
+    memberships.updatedAt === undefined ||
+    aggregates.updatedAt === undefined;
 
   const cards = useMemo(
-    () => mergeOutfitCards(covers.data ?? [], aggregates.data ?? []),
-    [covers.data, aggregates.data],
+    () => mergeOutfitCards(rows.data ?? [], memberships.data ?? [], aggregates.data ?? []),
+    [rows.data, memberships.data, aggregates.data],
   );
 
   return { cards, loading };
