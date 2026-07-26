@@ -10,6 +10,7 @@ import { WearLogger } from '@/components/wear-logger';
 import { WearToast } from '@/components/wear-toast';
 import { formatDay } from '@/date-format';
 import { useOutfitDetail, useOutfitStats, useWearHistory } from '@/db/queries';
+import { zeroItemOutfitLabel } from '@/delete-copy';
 import { isoToday, logWear, removeWear } from '@/wear-log';
 
 /**
@@ -79,6 +80,19 @@ export default function OutfitDetailScreen() {
 
       <OutfitStatsStrip stats={stats} onPressWears={() => setShowHistory(true)} />
       <WearLogger onToday={() => log(isoToday())} onOtherDay={() => setPickingDay(true)} />
+
+      {/*
+       * §8.4 — a garment-less outfit is a **legal, labelled state**, not a bug:
+       * every item in it was deleted and the offered cleanup was declined each
+       * time. The label exists so the empty grid below reads as explained rather
+       * than broken, and it names the wears **because those wears really did
+       * happen** — they keep counting toward stats.
+       */}
+      {items.length === 0 ? (
+        <Text style={styles.zeroItems} testID="outfit-zero-items">
+          {zeroItemOutfitLabel(stats.timesWorn)}
+        </Text>
+      ) : null}
     </View>
   );
 
@@ -166,6 +180,15 @@ const styles = StyleSheet.create({
     color: '#3a2a6d',
     fontSize: 14,
     fontWeight: '600',
+  },
+  zeroItems: {
+    backgroundColor: '#f5f4f8',
+    borderRadius: 12,
+    fontSize: 14,
+    lineHeight: 20,
+    marginHorizontal: 20,
+    opacity: 0.7,
+    padding: 14,
   },
   edit: {
     color: '#3a2a6d',

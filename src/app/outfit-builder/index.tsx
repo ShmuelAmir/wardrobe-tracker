@@ -7,6 +7,8 @@ import { useOutfitBuilder } from '@/components/outfit-builder-draft';
 import { OutfitReviewSheet } from '@/components/outfit-review-sheet';
 import { useItems, useOccasionChips, useOutfitDetail } from '@/db/queries';
 import type { Category } from '@/db/schema';
+import { outfitDeleteMessage } from '@/delete-copy';
+import { deleteOutfit, readOutfitDeleteImpact } from '@/deletes';
 import { saveOutfit, updateOutfit } from '@/outfit-save';
 
 /**
@@ -70,6 +72,37 @@ export default function OutfitBuilderScreen() {
     }
   }
 
+  /**
+   * §8.3 — the outfit confirm, and the one that **warns**: an outfit's
+   * `wear_event` rows cascade, so this is the delete that destroys history. The
+   * impact is read from the *stored* outfit at the moment of the tap, not from
+   * the draft selection — an uncommitted re-pick isn't what's about to be
+   * deleted.
+   */
+  function promptDelete(id: number) {
+    Alert.alert('Delete this outfit?', outfitDeleteMessage(readOutfitDeleteImpact(id)), [
+      { text: 'Delete Outfit', style: 'destructive', onPress: () => remove(id) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
+
+  function remove(id: number) {
+    try {
+      deleteOutfit(id);
+    } catch {
+      Alert.alert("Couldn't delete this outfit", 'Something went wrong. Please try again.');
+      return;
+    }
+    // The builder *and* the Detail underneath it both describe a row that no
+    // longer exists, so leave the pair rather than popping into a tombstone.
+    // Close the modal, then pop Detail — which lands wherever Detail was opened
+    // from (the Outfits tab, or item detail's "In outfits" rail, §8.1), rather
+    // than throwing the user onto one particular tab and discarding a stack
+    // that is still perfectly valid.
+    router.dismissAll();
+    router.back();
+  }
+
   return (
     <>
       {editingId !== null ? <Stack.Screen options={{ title: 'Edit outfit' }} /> : null}
@@ -81,6 +114,8 @@ export default function OutfitBuilderScreen() {
         onSetName={setName}
         onSeeAll={onSeeAll}
         onSave={() => setReviewing(true)}
+        // Edit mode only — a new outfit has nothing to delete (§8.3).
+        onDelete={editingId !== null ? () => promptDelete(editingId) : undefined}
       />
       {reviewing ? (
         <OutfitReviewSheet

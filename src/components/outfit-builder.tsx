@@ -5,6 +5,7 @@ import { CATEGORIES, type Category, type Item } from '@/db/schema';
 import { itemImageUri } from '@/item-images';
 
 import { CategoryRail } from './category-rail';
+import { DeleteRow } from './delete-row';
 
 const MINI_STACK = 4;
 
@@ -14,6 +15,12 @@ const MINI_STACK = 4;
  * a mini-stack of the first few picks, the count, a name field, and Save. Save
  * is **disabled until ≥1 item is selected**. Categories with no items are
  * skipped — the app never shows a rail that can't be built from (§3.1 rule 6).
+ *
+ * `onDelete` puts a `Delete Outfit` row at the very bottom of the scroll — the
+ * outfit half of §8.3's rule that **delete lives at the bottom of Edit, both
+ * times**. It is omitted while a *new* outfit is being built, because there is
+ * nothing yet to delete (§10 rule 6: the app never offers a button that can't
+ * work).
  */
 export function OutfitBuilder({
   items,
@@ -23,6 +30,7 @@ export function OutfitBuilder({
   onSetName,
   onSeeAll,
   onSave,
+  onDelete,
 }: {
   items: Item[];
   selection: number[];
@@ -31,6 +39,7 @@ export function OutfitBuilder({
   onSetName: (name: string) => void;
   onSeeAll: (category: Category) => void;
   onSave: () => void;
+  onDelete?: () => void;
 }) {
   const byCategory = new Map<Category, Item[]>();
   for (const item of items) {
@@ -61,6 +70,10 @@ export function OutfitBuilder({
             onSeeAll={onSeeAll}
           />
         ))}
+
+        {onDelete ? (
+          <DeleteRow label="Delete Outfit" onPress={onDelete} testID="outfit-delete" />
+        ) : null}
       </ScrollView>
 
       <View style={styles.summary} testID="summary-bar">
