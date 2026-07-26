@@ -24,6 +24,71 @@ function textToNullable(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/**
+ * The §5.5 form's state and validation, extracted from the view so the wizard's
+ * in-content Save (create) and §8.2's nav-bar Save (edit) can both drive the
+ * *same* fields from the *same* rules. Category is the one required field in
+ * either mode; `build()` returns null until it's set, which is what both Save
+ * affordances gate on. Initial values pre-fill it — page metadata in create
+ * (§5.3), the existing row in edit (§8.2) — so the identity the two modes share
+ * is this hook plus `ReviewFields`, not two parallel editors.
+ */
+export type ReviewFormInitial = {
+  category?: Category | null;
+  name?: string | null;
+  brand?: string | null;
+  season?: Season[] | null;
+};
+
+export type ReviewFormState = {
+  category: Category | null;
+  setCategory: (value: Category) => void;
+  name: string;
+  setName: (value: string) => void;
+  brand: string;
+  setBrand: (value: string) => void;
+  season: Season[];
+  toggleSeason: (value: Season) => void;
+  canSave: boolean;
+  build: () => ReviewSubmission | null;
+};
+
+export function useReviewForm(initial?: ReviewFormInitial): ReviewFormState {
+  const [category, setCategory] = useState<Category | null>(initial?.category ?? null);
+  const [name, setName] = useState(initial?.name ?? '');
+  const [brand, setBrand] = useState(initial?.brand ?? '');
+  const [season, setSeason] = useState<Season[]>(initial?.season ?? []);
+
+  function toggleSeason(value: Season) {
+    setSeason((current) =>
+      current.includes(value) ? current.filter((s) => s !== value) : [...current, value],
+    );
+  }
+
+  function build(): ReviewSubmission | null {
+    if (category === null) return null;
+    return {
+      category,
+      name: textToNullable(name),
+      brand: textToNullable(brand),
+      season: season.length > 0 ? season : null,
+    };
+  }
+
+  return {
+    category,
+    setCategory,
+    name,
+    setName,
+    brand,
+    setBrand,
+    season,
+    toggleSeason,
+    canSave: category !== null,
+    build,
+  };
+}
+
 function Chip({
   label,
   selected,
@@ -49,12 +114,71 @@ function Chip({
 }
 
 /**
- * §5.5 — Review & fill. **Category is the only required field** (chip picker,
- * the fixed six); name and brand are text, season is a four-value multi-select
- * with no "all-season" option. The screen owns only its form state and hands a
- * clean submission to its caller — the wizard saves it (§4.4). Edit mode (§8)
- * will give this same component a second entry point when its ticket lands;
- * that's why persistence stays with the caller rather than living here.
+ * §5.5 — the field set itself: the fixed-six Category chip picker (the only
+ * required field), free-text Name and Brand, and the four-value Season
+ * multi-select with no "all-season" option. Presentational and mode-agnostic —
+ * it renders whatever `useReviewForm` holds — which is exactly why §8.2's editor
+ * can reuse it around a different nav bar and a Delete row rather than forking a
+ * second form.
+ */
+export function ReviewFields({ state }: { state: ReviewFormState }) {
+  return (
+    <>
+      <Text style={styles.label}>Category</Text>
+      <View style={styles.chips}>
+        {CATEGORIES.map((value) => (
+          <Chip
+            key={value}
+            label={value}
+            selected={state.category === value}
+            onPress={() => state.setCategory(value)}
+            testID={`category-chip-${value}`}
+          />
+        ))}
+      </View>
+
+      <Text style={styles.label}>Name</Text>
+      <TextInput
+        placeholder="Optional"
+        value={state.name}
+        onChangeText={state.setName}
+        style={styles.input}
+        testID="review-name"
+      />
+
+      <Text style={styles.label}>Brand</Text>
+      <TextInput
+        placeholder="Optional"
+        value={state.brand}
+        onChangeText={state.setBrand}
+        style={styles.input}
+        testID="review-brand"
+      />
+
+      <Text style={styles.label}>Season</Text>
+      <View style={styles.chips}>
+        {SEASONS.map((value) => (
+          <Chip
+            key={value}
+            label={SEASON_LABELS[value]}
+            selected={state.season.includes(value)}
+            onPress={() => state.toggleSeason(value)}
+            testID={`season-chip-${value}`}
+          />
+        ))}
+      </View>
+    </>
+  );
+}
+
+/**
+ * §5.5 — Review & fill, the wizard's create-mode step: the shared field set plus
+ * an in-content Save that hands a clean submission to its caller (the wizard
+ * saves it, §4.4). Category and Season are never pre-filled here — there's no
+ * page signal for them; only Name/Brand carry the §5.3 web-import metadata. Edit
+ * mode (§8.2) reuses `ReviewFields`/`useReviewForm` around a nav-bar Save
+ * instead, which is why persistence — and now the Save affordance — stays with
+ * the caller rather than living in the shared parts.
  */
 export function ReviewForm({
   onSubmit,
@@ -68,81 +192,23 @@ export function ReviewForm({
   initialName?: string | null;
   initialBrand?: string | null;
 }) {
-  const [category, setCategory] = useState<Category | null>(null);
-  const [name, setName] = useState(initialName ?? '');
-  const [brand, setBrand] = useState(initialBrand ?? '');
-  const [season, setSeason] = useState<Season[]>([]);
-
-  const canSave = category !== null;
-
-  function toggleSeason(value: Season) {
-    setSeason((current) =>
-      current.includes(value) ? current.filter((s) => s !== value) : [...current, value],
-    );
-  }
+  const state = useReviewForm({ name: initialName, brand: initialBrand });
 
   function submit() {
-    if (category === null) return;
-    onSubmit({
-      category,
-      name: textToNullable(name),
-      brand: textToNullable(brand),
-      season: season.length > 0 ? season : null,
-    });
+    const submission = state.build();
+    if (submission) onSubmit(submission);
   }
 
   return (
     <ScrollView contentContainerStyle={styles.content} testID="review-form">
-      <Text style={styles.label}>Category</Text>
-      <View style={styles.chips}>
-        {CATEGORIES.map((value) => (
-          <Chip
-            key={value}
-            label={value}
-            selected={category === value}
-            onPress={() => setCategory(value)}
-            testID={`category-chip-${value}`}
-          />
-        ))}
-      </View>
-
-      <Text style={styles.label}>Name</Text>
-      <TextInput
-        placeholder="Optional"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-        testID="review-name"
-      />
-
-      <Text style={styles.label}>Brand</Text>
-      <TextInput
-        placeholder="Optional"
-        value={brand}
-        onChangeText={setBrand}
-        style={styles.input}
-        testID="review-brand"
-      />
-
-      <Text style={styles.label}>Season</Text>
-      <View style={styles.chips}>
-        {SEASONS.map((value) => (
-          <Chip
-            key={value}
-            label={SEASON_LABELS[value]}
-            selected={season.includes(value)}
-            onPress={() => toggleSeason(value)}
-            testID={`season-chip-${value}`}
-          />
-        ))}
-      </View>
+      <ReviewFields state={state} />
 
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: !canSave }}
-        disabled={!canSave}
+        accessibilityState={{ disabled: !state.canSave }}
+        disabled={!state.canSave}
         onPress={submit}
-        style={[styles.save, !canSave && styles.saveDisabled]}
+        style={[styles.save, !state.canSave && styles.saveDisabled]}
         testID="review-save"
       >
         <Text style={styles.saveLabel}>Save</Text>

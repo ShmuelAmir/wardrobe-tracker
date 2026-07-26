@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -48,9 +48,9 @@ export default function ItemDetailScreen() {
             <Pressable
               accessibilityRole="button"
               hitSlop={12}
-              // §8.2's editor is a separate ticket; this screen only owns the
-              // affordance. Cast until that route exists to be type-checked.
-              onPress={() => router.push(`/item/${itemId}/edit` as Href)}
+              // Edit re-enters §8.2's editor — the wizard's own Review screen in
+              // Edit mode — rather than opening a surface of its own (§5.5).
+              onPress={() => router.push(`/item/${itemId}/edit`)}
               testID="item-edit"
             >
               <Text style={styles.edit}>Edit</Text>

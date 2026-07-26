@@ -1,10 +1,24 @@
-import { resizePlan, saveItem } from '@/item-save';
+import { updateItem, resizePlan, saveItem } from '@/item-save';
 import { item } from '@/db/schema';
 
 const mockRun = jest.fn();
 const mockValues = jest.fn((..._args: unknown[]) => ({ run: mockRun }));
 const mockInsert = jest.fn((..._args: unknown[]) => ({ values: mockValues }));
-jest.mock('@/db/client', () => ({ db: { insert: (...args: unknown[]) => mockInsert(...args) } }));
+const mockWhere = jest.fn((..._args: unknown[]) => ({ run: mockRun }));
+const mockSet = jest.fn((..._args: unknown[]) => ({ where: mockWhere }));
+const mockUpdate = jest.fn((..._args: unknown[]) => ({ set: mockSet }));
+jest.mock('@/db/client', () => ({
+  db: {
+    insert: (...args: unknown[]) => mockInsert(...args),
+    update: (...args: unknown[]) => mockUpdate(...args),
+  },
+}));
+
+// `eq(item.id, id)` — a where predicate we only need to be able to render and
+// assert on shape; a tagged tuple stands in for drizzle's SQL wrapper.
+jest.mock('drizzle-orm', () => ({
+  eq: (column: unknown, value: unknown) => ({ eq: [column, value] }),
+}));
 
 const mockResize = jest.fn();
 const mockSaveAsync = jest.fn(async () => ({ uri: 'file:///cache/ImageManipulator/out.jpg' }));
@@ -66,6 +80,16 @@ const aFieldSet = (overrides = {}) => ({
   brand: null,
   season: null,
   sourceUrl: null,
+  ...overrides,
+});
+
+// Edit's field set — the four form fields, no `source_url` (it's preserved, not
+// re-derived, §5.5).
+const anEditFieldSet = (overrides = {}) => ({
+  category: 'Top' as const,
+  name: 'Grey tee',
+  brand: null,
+  season: null,
   ...overrides,
 });
 
@@ -178,5 +202,78 @@ describe('saveItem — the pipeline', () => {
 
     await expect(saveItem(aCapture({ uuid: 'a3f2c1de' }), aFieldSet())).rejects.toBe(boom);
     expect(mockDeletes).toEqual(['doc/items/a3f2c1de.jpg']);
+  });
+});
+
+/**
+ * §8.2 Edit — the same fields committed to an existing row, in two shapes: a
+ * plain field update and a replace-photo that re-runs the §4.4 pipeline. The two
+ * invariants pinned here are that `source_url` is never written (preserved, §5.5)
+ * and that a replace always fails toward an orphan, never a dangling reference
+ * (ADR-0008): new file first, row flip, old file unlinked.
+ */
+describe('updateItem — fields only', () => {
+  it('updates the row with the edited fields and touches no image pipeline', async () => {
+    await updateItem(7, anEditFieldSet({ category: 'Bag', brand: 'Acme' }), null);
+
+    expect(mockUpdate).toHaveBeenCalledWith(item);
+    expect(mockSet).toHaveBeenCalledWith({
+      category: 'Bag',
+      name: 'Grey tee',
+      brand: 'Acme',
+      season: null,
+    });
+    expect(mockWhere).toHaveBeenCalledWith({ eq: [item.id, 7] });
+    expect(mockManipulate).not.toHaveBeenCalled();
+    expect(mockMoves).toEqual([]);
+  });
+
+  it('never writes source_url — the imported source is preserved, not re-derived', async () => {
+    await updateItem(7, anEditFieldSet(), null);
+
+    expect(mockSet.mock.calls[0][0]).not.toHaveProperty('sourceUrl');
+  });
+});
+
+describe('updateItem — replace photo', () => {
+  it('runs the standard pipeline, points the row at the new file, then unlinks the old', async () => {
+    await updateItem(7, anEditFieldSet({ category: 'Footwear' }), {
+      image: aCapture({ uuid: 'newuuid', width: 4032, height: 3024 }),
+      previousImageFile: 'old.jpg',
+    });
+
+    // Normalized identically to a fresh add: resized on its longest edge, JPEG 0.8.
+    expect(mockResize).toHaveBeenCalledWith({ width: 1600 });
+    expect(mockSaveAsync).toHaveBeenCalledWith({ format: 'jpeg', compress: 0.8 });
+    // New file lands first, then the row flips to it.
+    expect(mockMoves).toEqual([
+      { from: 'file:///cache/ImageManipulator/out.jpg', to: 'doc/items/newuuid.jpg' },
+    ]);
+    expect(mockSet).toHaveBeenCalledWith({
+      imageFile: 'newuuid.jpg',
+      category: 'Footwear',
+      name: 'Grey tee',
+      brand: null,
+      season: null,
+    });
+    // Old file unlinked last — an orphan now, never a dangling reference.
+    expect(mockDeletes).toEqual(['doc/items/old.jpg']);
+  });
+
+  it('unlinks the just-moved new file and rethrows when the update fails — old file kept', async () => {
+    const boom = new Error('update failed');
+    mockRun.mockImplementationOnce(() => {
+      throw boom;
+    });
+
+    await expect(
+      updateItem(7, anEditFieldSet(), {
+        image: aCapture({ uuid: 'newuuid' }),
+        previousImageFile: 'old.jpg',
+      }),
+    ).rejects.toBe(boom);
+
+    // The new file is the orphan; the old file the row still points at is untouched.
+    expect(mockDeletes).toEqual(['doc/items/newuuid.jpg']);
   });
 });
