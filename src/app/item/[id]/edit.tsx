@@ -3,10 +3,11 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { DeleteRow } from '@/components/delete-row';
 import { ReviewFields, useReviewForm } from '@/components/review-form';
 import { useItemDetail } from '@/db/queries';
 import type { Category, Item } from '@/db/schema';
-import { itemDeleteActions, itemDeleteMessage } from '@/delete-copy';
+import { itemDeleteActions, itemDeleteMessage, lastItemOutfits } from '@/delete-copy';
 import { deleteItem, readItemDeleteImpact } from '@/deletes';
 import { itemImageUri } from '@/item-images';
 import { updateItem } from '@/item-save';
@@ -99,24 +100,33 @@ function ItemEditForm({ item }: { item: Item }) {
   /**
    * §8.3 / §8.4 — the delete confirm. The impact is read **at the moment of the
    * tap**, so the outfit names and counts it quotes are the wardrobe's, not a
-   * render-old snapshot's. `Delete item only` comes first and is the default;
-   * §8.4's cleanup is an extra button that only exists when there is actually an
-   * outfit this item would empty, and it carries only those outfits' ids — the
-   * ones the message just named.
+   * render-old snapshot's. §8.4's cleanup is an extra button that only exists
+   * when there is actually an outfit this item would empty, and it carries only
+   * those outfits' ids — the ones `itemDeleteMessage` just named, from the same
+   * `lastItemOutfits` read, so message and button can't disagree.
+   *
+   * **`Delete item only` is the default; cleanup is opt-in.** It comes first,
+   * and it is the one button here *not* styled destructive — deleting the item
+   * alone costs no wear history, and only the outcome that does should look like
+   * it might.
    */
   function promptDelete() {
     const outfits = readItemDeleteImpact(item.id);
-    const doomed = outfits.filter((outfit) => outfit.itemCount === 1);
-    const actions = itemDeleteActions(doomed.length);
+    const emptied = lastItemOutfits(outfits);
+    const actions = itemDeleteActions(emptied.length);
 
     Alert.alert('Delete this item?', itemDeleteMessage(outfits), [
-      { text: actions.confirm, style: 'destructive', onPress: () => remove([]) },
+      {
+        text: actions.confirm,
+        style: actions.cleanup ? 'default' : 'destructive',
+        onPress: () => remove([]),
+      },
       ...(actions.cleanup
         ? [
             {
               text: actions.cleanup,
               style: 'destructive' as const,
-              onPress: () => remove(doomed.map((outfit) => outfit.id)),
+              onPress: () => remove(emptied.map((outfit) => outfit.id)),
             },
           ]
         : []),
@@ -186,14 +196,7 @@ function ItemEditForm({ item }: { item: Item }) {
          * only ever reachable from the bottom of an Edit surface** (§8.3), which
          * is why this is the item's single delete affordance in the whole app.
          */}
-        <Pressable
-          accessibilityRole="button"
-          onPress={promptDelete}
-          style={styles.delete}
-          testID="item-delete"
-        >
-          <Text style={styles.deleteLabel}>Delete Item</Text>
-        </Pressable>
+        <DeleteRow label="Delete Item" onPress={promptDelete} testID="item-delete" />
       </ScrollView>
     </>
   );
@@ -286,16 +289,6 @@ const styles = StyleSheet.create({
   },
   navActionDisabled: {
     opacity: 0.4,
-  },
-  delete: {
-    alignItems: 'center',
-    marginTop: 28,
-    paddingVertical: 16,
-  },
-  deleteLabel: {
-    color: '#c0392b',
-    fontSize: 17,
-    fontWeight: '600',
   },
   missing: {
     alignItems: 'center',

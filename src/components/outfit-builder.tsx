@@ -5,6 +5,7 @@ import { CATEGORIES, type Category, type Item } from '@/db/schema';
 import { itemImageUri } from '@/item-images';
 
 import { CategoryRail } from './category-rail';
+import { DeleteRow } from './delete-row';
 
 const MINI_STACK = 4;
 
@@ -71,14 +72,7 @@ export function OutfitBuilder({
         ))}
 
         {onDelete ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={onDelete}
-            style={styles.delete}
-            testID="outfit-delete"
-          >
-            <Text style={styles.deleteLabel}>Delete Outfit</Text>
-          </Pressable>
+          <DeleteRow label="Delete Outfit" onPress={onDelete} testID="outfit-delete" />
         ) : null}
       </ScrollView>
 
@@ -181,16 +175,6 @@ const styles = StyleSheet.create({
   },
   saveLabel: {
     color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  delete: {
-    alignItems: 'center',
-    marginTop: 6,
-    paddingVertical: 16,
-  },
-  deleteLabel: {
-    color: '#c0392b',
     fontSize: 17,
     fontWeight: '600',
   },

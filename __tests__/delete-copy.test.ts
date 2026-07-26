@@ -1,6 +1,7 @@
 import {
   itemDeleteActions,
   itemDeleteMessage,
+  lastItemOutfits,
   outfitDeleteMessage,
   zeroItemOutfitLabel,
   type DeleteImpactOutfit,
@@ -97,6 +98,18 @@ describe('itemDeleteMessage — the last-item third outcome (§8.4)', () => {
     expect(itemDeleteMessage(outfits)).toContain(
       "The others keep their remaining items, and your wear history won't change.",
     );
+  });
+});
+
+describe('lastItemOutfits — the one rule the message and the buttons share (§8.4)', () => {
+  it('keeps only the outfits this item is the sole garment of', () => {
+    const emptied = anOutfit({ id: 2, name: 'Smart evening', itemCount: 1 });
+
+    expect(lastItemOutfits([anOutfit({ id: 1, itemCount: 4 }), emptied])).toEqual([emptied]);
+  });
+
+  it('is empty when every containing outfit keeps other garments', () => {
+    expect(lastItemOutfits([anOutfit({ itemCount: 2 })])).toEqual([]);
   });
 });
 

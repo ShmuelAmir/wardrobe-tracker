@@ -95,7 +95,12 @@ export default function OutfitBuilderScreen() {
     }
     // The builder *and* the Detail underneath it both describe a row that no
     // longer exists, so leave the pair rather than popping into a tombstone.
-    router.dismissTo('/outfits');
+    // Close the modal, then pop Detail — which lands wherever Detail was opened
+    // from (the Outfits tab, or item detail's "In outfits" rail, §8.1), rather
+    // than throwing the user onto one particular tab and discarding a stack
+    // that is still perfectly valid.
+    router.dismissAll();
+    router.back();
   }
 
   return (

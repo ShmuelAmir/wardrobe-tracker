@@ -19,16 +19,9 @@ const NAMED_OUTFITS = 2;
 /** Outfits are titled at the user's option; the app-wide fallback is one string. */
 const UNTITLED = 'Untitled outfit';
 
-function countedWears(count: number): string {
-  return count === 1 ? '1 wear' : `${count} wears`;
-}
-
-function countedItems(count: number): string {
-  return count === 1 ? '1 item' : `${count} items`;
-}
-
-function countedOutfits(count: number): string {
-  return count === 1 ? '1 outfit' : `${count} outfits`;
+/** `counted(1, 'wear')` → `"1 wear"`; `counted(12, 'wear')` → `"12 wears"`. */
+function counted(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`;
 }
 
 /**
@@ -42,6 +35,17 @@ export type DeleteImpactOutfit = {
   itemCount: number;
   wearCount: number;
 };
+
+/**
+ * §8.4 — the outfits this item is the **last garment** in, and so the ones the
+ * third outcome would clean up. Exported because the message and the buttons
+ * must name the same set: the confirm screen builds its cleanup action from this
+ * list, and `itemDeleteMessage` writes its paragraph from it, so the rule lives
+ * in one place rather than being re-derived at each call site.
+ */
+export function lastItemOutfits(outfits: DeleteImpactOutfit[]): DeleteImpactOutfit[] {
+  return outfits.filter((outfit) => outfit.itemCount === 1);
+}
 
 /**
  * Name the outfits, capped: the first two, then a `+N more` tail. Naming *some*
@@ -79,24 +83,32 @@ function survivalClause(total: number, survivors: number): string {
  * does, so it is named here rather than slipped in as tidying. A never-worn
  * doomed outfit has no cost to name, so the sentence simply doesn't claim one.
  */
-function lastItemParagraph(doomed: DeleteImpactOutfit[]): string {
-  const many = doomed.length > 1;
-  const wears = doomed.reduce((total, outfit) => total + outfit.wearCount, 0);
+function lastItemParagraph(emptied: DeleteImpactOutfit[]): string {
+  const many = emptied.length > 1;
+  const wears = emptied.reduce((total, outfit) => total + outfit.wearCount, 0);
 
-  const subject = many ? `${doomed.length} outfits` : 'an outfit';
-  const heading = `This is the last item in ${subject} — ${nameOutfits(doomed, true)}.`;
+  const subject = many ? `${emptied.length} outfits` : 'an outfit';
+  const heading = `This is the last item in ${subject} — ${nameOutfits(emptied, true)}.`;
 
-  const keep = many ? "Keep them and they'll have no garments left" : "Keep it and it'll have no garments left";
+  const keep = many
+    ? "Keep them and they'll have no garments left"
+    : "Keep it and it'll have no garments left";
   const kept =
     wears === 0
       ? `${keep}.`
-      : `${keep}, but ${many ? 'their' : 'its'} ${countedWears(wears)} ${wears === 1 ? 'keeps' : 'keep'} counting.`;
+      : `${keep}, but ${many ? 'their' : 'its'} ${counted(wears, 'wear')} ${
+          wears === 1 ? 'keeps' : 'keep'
+        } counting.`;
 
   const cleanup = many ? 'Delete them too and' : 'Delete it too and';
   const cleaned =
     wears === 0
-      ? `${cleanup} ${many ? "they're" : "it's"} gone from your outfits.`
-      : `${cleanup} ${wears === 1 ? 'that 1 wear disappears' : `those ${wears} wears disappear`} from your stats.`;
+      ? // Nothing to name: a never-worn outfit has no wear cost, and inventing
+        // one would be its own kind of dishonesty.
+        `${cleanup} ${many ? "they're" : "it's"} gone from your outfits.`
+      : `${cleanup} ${
+          wears === 1 ? 'that 1 wear disappears' : `those ${wears} wears disappear`
+        } from your stats.`;
 
   return [heading, kept, cleaned].join('\n');
 }
@@ -109,14 +121,13 @@ function lastItemParagraph(doomed: DeleteImpactOutfit[]): string {
 export function itemDeleteMessage(outfits: DeleteImpactOutfit[]): string {
   if (outfits.length === 0) return 'Nothing else changes.';
 
-  const doomed = outfits.filter((outfit) => outfit.itemCount === 1);
-  const survivors = outfits.length - doomed.length;
-  const usage = `Used in ${countedOutfits(outfits.length)} — ${nameOutfits(outfits, false)}. ${survivalClause(
-    outfits.length,
-    survivors,
-  )}`;
+  const emptied = lastItemOutfits(outfits);
+  const survivors = outfits.length - emptied.length;
+  const usage =
+    `Used in ${counted(outfits.length, 'outfit')} — ${nameOutfits(outfits, false)}. ` +
+    survivalClause(outfits.length, survivors);
 
-  return doomed.length === 0 ? usage : [usage, lastItemParagraph(doomed)].join('\n\n');
+  return emptied.length === 0 ? usage : [usage, lastItemParagraph(emptied)].join('\n\n');
 }
 
 /**
@@ -127,12 +138,11 @@ export function itemDeleteMessage(outfits: DeleteImpactOutfit[]): string {
  */
 export type ItemDeleteActions = { confirm: string; cleanup: string | null };
 
-export function itemDeleteActions(lastItemOutfits: number): ItemDeleteActions {
-  if (lastItemOutfits === 0) return { confirm: 'Delete Item', cleanup: null };
+export function itemDeleteActions(emptiedOutfits: number): ItemDeleteActions {
+  if (emptiedOutfits === 0) return { confirm: 'Delete Item', cleanup: null };
   return {
     confirm: 'Delete item only',
-    cleanup:
-      lastItemOutfits === 1 ? 'Delete item + outfit' : `Delete item + ${lastItemOutfits} outfits`,
+    cleanup: `Delete item + ${emptiedOutfits === 1 ? 'outfit' : `${emptiedOutfits} outfits`}`,
   };
 }
 
@@ -145,24 +155,25 @@ export type OutfitDeleteImpact = { wearCount: number; itemCount: number };
  * and only then reassures about the garments, which don't.
  */
 export function outfitDeleteMessage({ wearCount, itemCount }: OutfitDeleteImpact): string {
-  const doomed = `Its ${countedWears(wearCount)} will be deleted too`;
+  const wearsDie = `Its ${counted(wearCount, 'wear')} will be deleted too`;
 
   if (itemCount === 0) {
     // §8.4's zero-item outfit: nothing leaves the wardrobe, but the wears still die.
     return wearCount === 0
       ? 'It has never been worn and has no items left. Nothing else changes.'
-      : `${doomed}. It has no items left, so nothing leaves your wardrobe.`;
+      : `${wearsDie}. It has no items left, so nothing leaves your wardrobe.`;
   }
 
   if (wearCount === 0) {
-    return `It has never been worn, so no wear counts change. Its ${countedItems(itemCount)} ${
+    return `It has never been worn, so no wear counts change. Its ${counted(itemCount, 'item')} ${
       itemCount === 1 ? 'stays' : 'stay'
     } in your wardrobe.`;
   }
 
   return (
-    `${doomed}, so the wear ${itemCount === 1 ? 'count' : 'counts'} on its ${countedItems(itemCount)} ` +
-    `will drop. ${itemCount === 1 ? 'The item itself stays' : 'The items themselves stay'} in your wardrobe.`
+    `${wearsDie}, so the wear ${itemCount === 1 ? 'count' : 'counts'} on its ` +
+    `${counted(itemCount, 'item')} will drop. ` +
+    `${itemCount === 1 ? 'The item itself stays' : 'The items themselves stay'} in your wardrobe.`
   );
 }
 
@@ -175,7 +186,7 @@ export function outfitDeleteMessage({ wearCount, itemCount }: OutfitDeleteImpact
 export function zeroItemOutfitLabel(wearCount: number): string {
   if (wearCount === 0) return 'Every item in this outfit was deleted.';
   return (
-    `Every item in this outfit was deleted — its ${countedWears(wearCount)} still ` +
+    `Every item in this outfit was deleted — its ${counted(wearCount, 'wear')} still ` +
     `${wearCount === 1 ? 'counts' : 'count'} toward your stats.`
   );
 }

@@ -43,14 +43,14 @@ jest.mock('@/deletes', () => ({
 
 const mockPush = jest.fn();
 const mockDismissAll = jest.fn();
-const mockDismissTo = jest.fn();
+const mockBack = jest.fn();
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
   useRouter: () => ({
     push: mockPush,
     replace: jest.fn(),
     dismissAll: mockDismissAll,
-    dismissTo: mockDismissTo,
+    back: mockBack,
   }),
   useLocalSearchParams: () => mockParams,
   Stack: { Screen: () => null },
@@ -196,7 +196,7 @@ describe('outfit builder screen — delete outfit (§8.3)', () => {
     );
   });
 
-  it('deletes the outfit and lands back on the Outfits tab', async () => {
+  it('deletes the outfit and pops back to wherever Detail was opened from', async () => {
     const alert = jest.spyOn(Alert, 'alert');
     mockReadOutfitDeleteImpact.mockReturnValue({ itemCount: 4, wearCount: 12 });
 
@@ -215,8 +215,11 @@ describe('outfit builder screen — delete outfit (§8.3)', () => {
     });
 
     expect(mockDeleteOutfit).toHaveBeenCalledWith(7);
-    // Both the builder and the Detail underneath it describe a deleted outfit.
-    expect(mockDismissTo).toHaveBeenCalledWith('/outfits');
+    // Both the builder and the Detail underneath it describe a deleted outfit,
+    // so the modal closes and Detail pops — landing on the Outfits tab or on
+    // item detail's "In outfits" rail, whichever opened it.
+    expect(mockDismissAll).toHaveBeenCalled();
+    expect(mockBack).toHaveBeenCalled();
   });
 
   it('writes nothing when the confirm is cancelled', async () => {

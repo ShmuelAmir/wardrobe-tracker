@@ -212,7 +212,11 @@ describe('item edit — delete confirm (§8.3)', () => {
 
     expect(mockReadItemDeleteImpact).toHaveBeenCalledWith(3);
     expect(alert.mock.calls.at(-1)?.[1]).toBe('Nothing else changes.');
-    expect(pressedButtons(alert).map((b) => b.text)).toEqual(['Delete Item', 'Cancel']);
+    const buttons = pressedButtons(alert);
+    expect(buttons.map((b) => b.text)).toEqual(['Delete Item', 'Cancel']);
+    // With no third outcome to weigh it against, the single action is the
+    // destructive one.
+    expect(buttons[0].style).toBe('destructive');
   });
 
   it('names the real outfits and promises wear history is untouched', async () => {
@@ -273,11 +277,16 @@ describe('item edit — the last-item third outcome (§8.4)', () => {
     await render(<ItemEditScreen />);
     await user.press(screen.getByTestId('item-delete'));
 
-    expect(pressedButtons(alert).map((b) => b.text)).toEqual([
+    const buttons = pressedButtons(alert);
+    expect(buttons.map((b) => b.text)).toEqual([
       'Delete item only',
       'Delete item + outfit',
       'Cancel',
     ]);
+    // Item-only is the default: first, and the one outcome here that isn't
+    // styled destructive, because it's the one that costs no wear history.
+    expect(buttons[0].style).toBe('default');
+    expect(buttons[1].style).toBe('destructive');
     // The offer is never silent about the wear cost.
     expect(alert.mock.calls.at(-1)?.[1]).toContain(
       'Delete it too and those 12 wears disappear from your stats.',
