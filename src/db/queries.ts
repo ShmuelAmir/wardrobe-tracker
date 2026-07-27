@@ -598,3 +598,13 @@ export function useStats(scope: StatsScope): { data: StatsData; loading: boolean
 
   return { data, loading };
 }
+
+/**
+ * §4.6 — the database half of the startup orphan sweep's diff: every filename
+ * a row still claims. One column over ~200 rows, which is what lets the sweep
+ * be unconditional. Extracted like the other reads so it runs against a real
+ * SQLite in tests.
+ */
+export function itemImageFilesQuery(database: typeof db) {
+  return database.select({ imageFile: item.imageFile }).from(item);
+}

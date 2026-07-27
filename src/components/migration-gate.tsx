@@ -1,8 +1,9 @@
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { db } from '@/db/client';
+import { sweepOrphanImagesOnce } from '@/orphan-sweep';
 
 import migrations from '../../drizzle/migrations';
 
@@ -13,9 +14,28 @@ import migrations from '../../drizzle/migrations';
  *
  * Recovery from a *failed* migration is deliberately out of scope for v1
  * (§11): there is no backup to roll back to, so the honest thing is to say so.
+ *
+ * It is also, by being the one place that knows migrations have resolved, the
+ * only correct moment to fire §4.6's orphan sweep — see below.
  */
 export function MigrationGate({ children }: { children: ReactNode }) {
   const { success, error } = useMigrations(db, migrations);
+
+  /**
+   * §4.6's orphan sweep, and the *only* place it is ever fired from — this is
+   * the one component that knows migrations have resolved, which is the
+   * earliest moment the `image_file` column can be read. Never a timer, an
+   * interval, or an app-foreground subscription; `orphan-sweep.ts` explains
+   * why the timing is the feature, and owns the once-per-launch guard.
+   *
+   * An effect rather than a render-phase call: housekeeping the user never
+   * asked for must not sit between them and the first frame. Nothing can be
+   * tapped before effects flush, so the wizard is still unreachable when it
+   * runs.
+   */
+  useEffect(() => {
+    if (success) sweepOrphanImagesOnce();
+  }, [success]);
 
   if (error) {
     return (
