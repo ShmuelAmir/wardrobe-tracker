@@ -26,3 +26,21 @@ export function ensureItemsDirectory() {
   const directory = new Directory(Paths.document, ITEMS_DIRECTORY);
   if (!directory.exists) directory.create({ intermediates: true });
 }
+
+/**
+ * Every image filename currently on disk — the disk half of §4.6's diff, in
+ * the same bare-filename shape `item.image_file` stores so the two sides
+ * compare directly.
+ *
+ * Deliberately **does not** create the directory: a fresh install has no items
+ * dir and nothing to reclaim, and a sweep is not a reason to make one. Only
+ * files are listed, so a subdirectory is never a sweep candidate.
+ */
+export function listItemImageFiles(): string[] {
+  const directory = new Directory(Paths.document, ITEMS_DIRECTORY);
+  if (!directory.exists) return [];
+  return directory
+    .list()
+    .filter((entry): entry is File => entry instanceof File)
+    .map((entry) => entry.name);
+}
