@@ -18,12 +18,17 @@ export function itemImageFile(imageFile: string) {
   return new File(Paths.document, ITEMS_DIRECTORY, imageFile);
 }
 
+/** A `Directory` handle to the items directory — existing or not. */
+function itemsDirectory() {
+  return new Directory(Paths.document, ITEMS_DIRECTORY);
+}
+
 /**
  * Create the items directory on first use (§4.2), idempotently. `intermediates`
  * builds `document/` too if the OS ever hands us a container without it.
  */
 export function ensureItemsDirectory() {
-  const directory = new Directory(Paths.document, ITEMS_DIRECTORY);
+  const directory = itemsDirectory();
   if (!directory.exists) directory.create({ intermediates: true });
 }
 
@@ -37,7 +42,7 @@ export function ensureItemsDirectory() {
  * files are listed, so a subdirectory is never a sweep candidate.
  */
 export function listItemImageFiles(): string[] {
-  const directory = new Directory(Paths.document, ITEMS_DIRECTORY);
+  const directory = itemsDirectory();
   if (!directory.exists) return [];
   return directory
     .list()

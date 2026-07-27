@@ -1,9 +1,9 @@
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { db } from '@/db/client';
-import { sweepOrphanImages } from '@/orphan-sweep';
+import { sweepOrphanImagesOnce } from '@/orphan-sweep';
 
 import migrations from '../../drizzle/migrations';
 
@@ -22,25 +22,19 @@ export function MigrationGate({ children }: { children: ReactNode }) {
   const { success, error } = useMigrations(db, migrations);
 
   /**
-   * §4.6 / ADR-0008 — the startup orphan sweep, and the *only* place it is
-   * ever fired from. It is deliberately not a timer, an interval, or an
-   * app-foreground subscription: save is "move file → insert row", so a
-   * concurrent sweep could unlink a legitimate file out from under an
-   * in-flight save. Firing once here — after migrations resolve, before a tap
-   * can reach the wizard — rules that race out by construction.
+   * §4.6's orphan sweep, and the *only* place it is ever fired from — this is
+   * the one component that knows migrations have resolved, which is the
+   * earliest moment the `image_file` column can be read. Never a timer, an
+   * interval, or an app-foreground subscription; `orphan-sweep.ts` explains
+   * why the timing is the feature, and owns the once-per-launch guard.
    *
-   * The ref is what makes "once" hold: `useMigrations` returns a fresh object
-   * on every render, so a dependency on it alone would re-sweep on each one.
-   * An effect rather than a render-phase call because housekeeping the user
-   * never asked for must not sit between them and the first frame; nothing can
-   * be tapped before effects flush, so the wizard is still unreachable until
-   * after it has run.
+   * An effect rather than a render-phase call: housekeeping the user never
+   * asked for must not sit between them and the first frame. Nothing can be
+   * tapped before effects flush, so the wizard is still unreachable when it
+   * runs.
    */
-  const hasSwept = useRef(false);
   useEffect(() => {
-    if (!success || hasSwept.current) return;
-    hasSwept.current = true;
-    sweepOrphanImages();
+    if (success) sweepOrphanImagesOnce();
   }, [success]);
 
   if (error) {

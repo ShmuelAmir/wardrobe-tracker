@@ -1,5 +1,5 @@
 import { db } from './db/client';
-import { item } from './db/schema';
+import { itemImageFilesQuery } from './db/queries';
 import { itemImageFile, listItemImageFiles } from './item-images';
 
 /**
@@ -18,7 +18,7 @@ import { itemImageFile, listItemImageFiles } from './item-images';
  * > file sits on disk with no row yet. A concurrent sweep would delete it out
  * > from under an in-flight save. Running once, after migrations resolve and
  * > before the UI can open the wizard, rules that race out *by construction*
- * > rather than by locking. `migration-gate.tsx` is the only caller.
+ * > rather than by locking.
  *
  * Cheap enough to be unconditional: one directory listing plus one column over
  * ~200 rows.
@@ -33,9 +33,7 @@ export function sweepOrphanImages(): void {
     if (onDisk.length === 0) return;
 
     const referenced = new Set(
-      db
-        .select({ imageFile: item.imageFile })
-        .from(item)
+      itemImageFilesQuery(db)
         .all()
         .map((row) => row.imageFile),
     );
@@ -60,4 +58,19 @@ export function sweepOrphanImages(): void {
     // as a log. Nothing about the sweep is ever surfaced (§4.6).
     console.warn('[orphan-sweep] skipped', error);
   }
+}
+
+/**
+ * Module scope *is* launch scope, so this — not a component's ref — is what
+ * makes "exactly once per launch" true by construction: it survives a remount
+ * of whatever fires it, which is the case that would otherwise put a sweep in
+ * the middle of a session where the wizard is reachable and a save can be in
+ * flight. `migration-gate.tsx` is the only caller.
+ */
+let hasSwept = false;
+
+export function sweepOrphanImagesOnce(): void {
+  if (hasSwept) return;
+  hasSwept = true;
+  sweepOrphanImages();
 }

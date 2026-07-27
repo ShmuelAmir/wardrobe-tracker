@@ -4,18 +4,14 @@ import { Text } from 'react-native';
 import { MigrationGate } from '@/components/migration-gate';
 
 /**
- * §4.6 / ADR-0008 — **the timing is the load-bearing part.** Save is "move file
- * → insert row", so a legitimate file exists with no row for a real window; a
- * sweep running concurrently would delete it out from under an in-flight save.
- * Pinning the sweep to startup rules that race out by construction rather than
- * by locking, which makes *when* it runs the thing worth testing.
- *
- * The gate is where "after migrations resolve" is knowable, so it is where the
- * sweep is fired from and where these assertions live.
+ * §4.6's *when*, which ADR-0008 makes the load-bearing half. The gate is where
+ * "after migrations resolve" is knowable, so it is where the sweep is fired
+ * from and where these assertions belong; what the sweep then does to disk is
+ * `orphan-sweep.test.ts`.
  */
 const mockSweep = jest.fn();
 jest.mock('@/orphan-sweep', () => ({
-  sweepOrphanImages: () => mockSweep(),
+  sweepOrphanImagesOnce: () => mockSweep(),
 }));
 
 let mockMigrations: { success: boolean; error: Error | undefined } = {
@@ -33,7 +29,7 @@ beforeEach(() => {
   mockMigrations = { success: true, error: undefined };
 });
 
-describe('the sweep runs exactly once per launch, after migrations resolve', () => {
+describe('MigrationGate — fires the sweep once, after migrations resolve (§4.6)', () => {
   it('sweeps once when the gate opens', async () => {
     await render(
       <MigrationGate>
@@ -78,8 +74,9 @@ describe('the sweep runs exactly once per launch, after migrations resolve', () 
       </MigrationGate>,
     );
 
-    // `useMigrations` hands back a fresh object each render; the guard has to
-    // survive that, or a chatty hook re-sweeps under an in-flight save.
+    // `useMigrations` hands back a fresh object each render, so the effect has
+    // to key off the resolved flag rather than the result — otherwise a chatty
+    // hook re-sweeps under an in-flight save.
     mockMigrations = { success: true, error: undefined };
     await rerender(
       <MigrationGate>
@@ -107,7 +104,7 @@ describe('the sweep runs exactly once per launch, after migrations resolve', () 
   });
 });
 
-describe('never on a timer, never in the background', () => {
+describe('MigrationGate — never on a timer, never in the background (§4.6)', () => {
   it('never fires again, however long the app is left open', async () => {
     jest.useFakeTimers();
     try {
