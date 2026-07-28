@@ -1,13 +1,16 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { StatsCategoryFilter } from '@/components/stats-category-filter';
 import { StatsPodium } from '@/components/stats-podium';
 import { LeaderboardRow, NeverWornRow } from '@/components/stats-row';
+import { SeeAllLink } from '@/components/stats-see-all';
 import { StatsSubTabs, type SubTab } from '@/components/stats-subtabs';
-import { useStats, type StatsScope, type WornItem } from '@/db/queries';
+import { useStats, type StatsScope, type WardrobeSort, type WornItem } from '@/db/queries';
 import type { Item } from '@/db/schema';
 import { mostWornEmptyCopy } from '@/stats-copy';
+import { wardrobeParams } from '@/wardrobe-view';
 
 /**
  * The Stats tab (§9) — **a leaderboard you read**, not a to-do list you act
@@ -25,18 +28,30 @@ export default function StatsTab() {
   const [subTab, setSubTab] = useState<SubTab>('least');
   const { data, loading } = useStats(scope);
   const today = useMemo(() => new Date(), []);
+  const router = useRouter();
 
   // The §9.4 forcing rule: at `k = 0` the Least tab is empty and disabled, so
   // the screen shows Never regardless of the user's last pick; above `k = 0`
   // their choice stands (default Least).
   const activeTab: SubTab = data.k === 0 ? 'never' : subTab;
 
+  /**
+   * "See all →" — the Wardrobe tab, re-sorted to match the list tapped from and
+   * **carrying the active category** (§9.2/§9.6). Carrying it is the decision:
+   * "See all" means more rows of the same question, so dropping the filter would
+   * discard a just-expressed intent and land the user on a list whose top row
+   * isn't what they were looking at. `navigate`, not `push` — the Wardrobe is a
+   * tab you switch to, not a screen to stack a second copy of.
+   */
+  const seeAll = (sort: WardrobeSort) =>
+    router.navigate({ pathname: '/', params: wardrobeParams({ sort, category: scope }) });
+
   if (loading) return <View testID="stats-loading" />;
 
   const header = (
     <View>
       <StatsCategoryFilter scope={scope} onChange={setScope} />
-      <MostWornHead data={data} scope={scope} today={today} />
+      <MostWornHead data={data} scope={scope} today={today} onSeeAll={() => seeAll('most')} />
       <StatsSubTabs
         active={activeTab}
         leastCount={data.k}
@@ -54,6 +69,20 @@ export default function StatsTab() {
       data={rows}
       keyExtractor={(row) => String(row.id)}
       ListHeaderComponent={header}
+      // The least-worn list's own "See all →" sits at its end — the point where
+      // the `k` cap ran out is exactly where "more rows" belongs. Never-worn has
+      // none: it is already the full set (§9.3).
+      ListFooterComponent={
+        activeTab === 'least' ? (
+          <View style={styles.listFooter}>
+            <SeeAllLink
+              onPress={() => seeAll('least')}
+              accessibilityLabel="See all least-worn items in the Wardrobe"
+              testID="stats-see-all-least"
+            />
+          </View>
+        ) : null
+      }
       contentContainerStyle={styles.content}
       renderItem={({ item, index }) =>
         activeTab === 'never' ? (
@@ -76,13 +105,16 @@ function MostWornHead({
   data,
   scope,
   today,
+  onSeeAll,
 }: {
   data: ReturnType<typeof useStats>['data'];
   scope: StatsScope;
   today: Date;
+  onSeeAll: () => void;
 }) {
   const { k, mostWorn } = data;
 
+  // At `k = 0` there is no ranking, so there is nothing to see all of either.
   if (k === 0) {
     return (
       <Text style={styles.notice} testID="stats-most-worn-empty">
@@ -91,25 +123,32 @@ function MostWornHead({
     );
   }
 
-  if (k >= 3) {
-    const trailing = mostWorn.slice(3);
-    return (
-      <View>
-        <StatsPodium top={mostWorn.slice(0, 3)} />
-        {trailing.map((item, index) => (
-          <LeaderboardRow key={item.id} item={item} rank={index + 4} today={today} />
-        ))}
-      </View>
-    );
-  }
-
-  // k of 1–2: no podium, ranked rows under a plain header.
   return (
     <View>
-      <Text style={styles.headerLabel}>Most worn</Text>
-      {mostWorn.map((item, index) => (
-        <LeaderboardRow key={item.id} item={item} rank={index + 1} today={today} />
-      ))}
+      {/* The label belongs to §9.4's `k = 1–2` head only — the podium carries its
+          own meaning, and this ticket has no business relabelling it. Above the
+          podium the row holds nothing but the link. */}
+      <View style={[styles.sectionHead, k >= 3 && styles.sectionHeadLinkOnly]}>
+        {k >= 3 ? null : <Text style={styles.headerLabel}>Most worn</Text>}
+        <SeeAllLink
+          onPress={onSeeAll}
+          accessibilityLabel="See all most-worn items in the Wardrobe"
+          testID="stats-see-all-most"
+        />
+      </View>
+      {k >= 3 ? (
+        <View>
+          <StatsPodium top={mostWorn.slice(0, 3)} />
+          {mostWorn.slice(3).map((item, index) => (
+            <LeaderboardRow key={item.id} item={item} rank={index + 4} today={today} />
+          ))}
+        </View>
+      ) : (
+        // k of 1–2: no podium, ranked rows under the plain header.
+        mostWorn.map((item, index) => (
+          <LeaderboardRow key={item.id} item={item} rank={index + 1} today={today} />
+        ))
+      )}
     </View>
   );
 }
@@ -126,13 +165,26 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     textAlign: 'center',
   },
+  sectionHead: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  sectionHeadLinkOnly: {
+    justifyContent: 'flex-end',
+  },
   headerLabel: {
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.4,
     opacity: 0.5,
-    paddingHorizontal: 20,
-    paddingTop: 12,
     textTransform: 'uppercase',
+  },
+  listFooter: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
   },
 });
