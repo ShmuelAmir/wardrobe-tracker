@@ -1,10 +1,5 @@
-import {
-  parseWardrobeView,
-  wardrobeChips,
-  wardrobeParams,
-  wardrobeTitle,
-  type WardrobeView,
-} from '@/wardrobe-view';
+import type { WardrobeView } from '@/db/queries';
+import { parseWardrobeView, wardrobeChips, wardrobeParams, wardrobeTitle } from '@/wardrobe-view';
 
 /**
  * §9.6 — the Wardrobe's sort and category are **nav params**, not screen state.

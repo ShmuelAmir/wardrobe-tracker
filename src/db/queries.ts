@@ -2,7 +2,6 @@ import { asc, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
 
-import type { WardrobeView } from '../wardrobe-view';
 import { db } from './client';
 import { item, outfit, outfitItem, wearEvent, type Category, type Item, type Outfit } from './schema';
 
@@ -494,6 +493,20 @@ export type WornItem = Item & { wearCount: number; lastWorn: string };
 export type StatsScope = Category | null;
 
 /**
+ * §9.6 — the Wardrobe's arrived-at view: which rows and in what order. It lives
+ * here, beside `StatsScope` and the comparators a sort selects between, because
+ * mapping `most`/`least` onto the leaderboards' own orderings is what the type
+ * exists to make possible; `@/wardrobe-view` owns turning nav params into one.
+ */
+export type WardrobeSort = 'recent' | 'most' | 'least';
+export type WardrobeView = { sort: WardrobeSort; category: Category | null };
+
+/** The scoped item set — `null` is the whole wardrobe (§9.1). */
+function inScope(items: Item[], scope: Category | null): Item[] {
+  return scope ? items.filter((row) => row.category === scope) : items;
+}
+
+/**
  * Most worn: `wear_count DESC, last_worn DESC, id DESC` (§9.2). `worn_on` is
  * `YYYY-MM-DD`, so a string compare is a date compare. `id` never renders — it's
  * the deterministic final tiebreak that stops a live re-render reshuffling tied
@@ -574,8 +587,7 @@ export function computeStats(
   aggregates: ItemWearAggregate[],
   scope: StatsScope,
 ): StatsData {
-  const inScope = scope ? items.filter((row) => row.category === scope) : items;
-  const { worn, neverWorn } = partitionWear(inScope, aggregates);
+  const { worn, neverWorn } = partitionWear(inScope(items, scope), aggregates);
   const { k, mostWorn, leastWorn } = leaderboards(worn);
   return { wornCount: worn.length, k, mostWorn, leastWorn, neverWorn };
 }
@@ -601,6 +613,16 @@ export function useStats(scope: StatsScope): { data: StatsData; loading: boolean
 }
 
 /**
+ * §9.6's default `recent` sort, restated in JS: newest first, `id` breaking a
+ * same-millisecond tie. **The same order `useItems` asks SQLite for** — kept
+ * explicit so `computeWardrobe` is total rather than quietly inheriting its
+ * caller's ordering, which means the two must be changed together.
+ */
+function recentOrder(a: Item, b: Item): number {
+  return b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id;
+}
+
+/**
  * §9.6 — the Wardrobe grid's rows for an arrived-at view: the scoped item set in
  * the order the nav params asked for.
  *
@@ -619,17 +641,13 @@ export function computeWardrobe(
   aggregates: ItemWearAggregate[],
   view: WardrobeView,
 ): Item[] {
-  const inScope = view.category ? items.filter((row) => row.category === view.category) : items;
+  const scoped = inScope(items, view.category);
 
-  if (view.sort === 'recent') {
-    return [...inScope].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id,
-    );
-  }
+  if (view.sort === 'recent') return [...scoped].sort(recentOrder);
 
   // `partitionWear` already hands back the worn set in most-worn order and the
   // never-worn set oldest-first (§9.3); only the least-worn re-sort is extra.
-  const { worn, neverWorn } = partitionWear(inScope, aggregates);
+  const { worn, neverWorn } = partitionWear(scoped, aggregates);
   const ranked = view.sort === 'most' ? worn : [...worn].sort(leastWornOrder);
   return [...ranked, ...neverWorn];
 }

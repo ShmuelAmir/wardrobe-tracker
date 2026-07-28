@@ -56,15 +56,14 @@ export default function WardrobeTab() {
 
   // A filter can empty the grid on a wardrobe that isn't empty — the last item
   // in the arrived-at category gets deleted while you're standing there. That's
-  // a list to clear a chip from, never first-run onboarding.
-  if (items.length === 0) {
+  // a list to clear a chip from, never first-run onboarding. Only a *category*
+  // can cause it; a sort never removes rows.
+  if (items.length === 0 && view.category) {
     return (
       <View>
         {chips}
         <Text style={styles.emptyNote} testID="wardrobe-filtered-empty">
-          {view.category
-            ? `Nothing in ${view.category} right now — clear the filter to see everything.`
-            : 'Nothing to show.'}
+          {`Nothing in ${view.category} right now — clear the filter to see everything.`}
         </Text>
       </View>
     );

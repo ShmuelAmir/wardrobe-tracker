@@ -4,14 +4,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { WardrobeChip } from '@/wardrobe-view';
 
 /**
- * §9.6 — the arrived-at indicator: **one removable chip per active param**, each
- * clearing **independently**. That independence is the decision, not a detail —
- * a single "Clear all" can't express "drop the category but keep the most-worn
- * sort", which is a thing you genuinely want to do after tapping "See all" from
- * a filtered leaderboard.
+ * §9.6 — the arrived-at indicator: one removable chip per active param. Each
+ * chip arrives carrying the params that drop only itself (`@/wardrobe-view`
+ * spells out why that independence is the decision), so this renders and reports
+ * the tap; it decides nothing.
  *
- * The chips are the only filter surface on the Wardrobe in v1: they *report* and
- * *undo* state the screen was navigated into, and offer no way to set it.
+ * These chips are the only filter surface on the Wardrobe in v1: they *report*
+ * and *undo* state the screen was navigated into, and offer no way to set it.
  */
 export function WardrobeChips({
   chips,

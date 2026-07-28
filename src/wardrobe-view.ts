@@ -1,4 +1,5 @@
-import { CATEGORIES, type Category } from '@/db/schema';
+import type { WardrobeSort, WardrobeView } from '@/db/queries';
+import { CATEGORIES } from '@/db/schema';
 
 /**
  * §9.6 — the Wardrobe tab's **arrived-at** state, expressed as nav params.
@@ -13,11 +14,13 @@ import { CATEGORIES, type Category } from '@/db/schema';
  * chips — so the screen renders it and nothing else decides what it means.
  */
 
-/** `recent` is the default; `most`/`least` mirror the two §9.2 leaderboards. */
-export const WARDROBE_SORTS = ['recent', 'most', 'least'] as const;
-export type WardrobeSort = (typeof WARDROBE_SORTS)[number];
-
-export type WardrobeView = { sort: WardrobeSort; category: Category | null };
+/**
+ * The spellings a param may legally carry. Type-only dependency on `@/db/queries`
+ * for the sorts themselves: the ordering vocabulary belongs beside the
+ * comparators it selects between, and this module owns only how it's written
+ * down in a URL.
+ */
+const WARDROBE_SORTS = ['recent', 'most', 'least'] as const satisfies readonly WardrobeSort[];
 
 /** The whole wardrobe, newest first — what the tab shows when tapped directly. */
 export const DEFAULT_WARDROBE_VIEW: WardrobeView = { sort: 'recent', category: null };
@@ -27,6 +30,9 @@ export const DEFAULT_WARDROBE_VIEW: WardrobeView = { sort: 'recent', category: n
  * string, or (on a repeated key) an array of strings.
  */
 export type WardrobeParams = { sort?: string | string[]; category?: string | string[] };
+
+/** …and as a navigation carries them: every key present, a default spelled `''`. */
+export type WardrobeParamValues = { sort: string; category: string };
 
 const first = (value: string | string[] | undefined): string =>
   Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
@@ -47,7 +53,7 @@ export function parseWardrobeView(params: WardrobeParams): WardrobeView {
  * omitted one: `router.setParams` merges, so clearing a chip by omission would
  * leave the old value standing and the chip would refuse to go away.
  */
-export function wardrobeParams(view: WardrobeView): { sort: string; category: string } {
+export function wardrobeParams(view: WardrobeView): WardrobeParamValues {
   return {
     sort: view.sort === DEFAULT_WARDROBE_VIEW.sort ? '' : view.sort,
     category: view.category ?? '',
@@ -63,8 +69,8 @@ export function wardrobeTitle(view: WardrobeView): string {
   return view.category ?? 'Wardrobe';
 }
 
-const SORT_LABEL: Record<WardrobeSort, string> = {
-  recent: 'Recently added',
+/** Only the ranked sorts get a chip — `recent` is the absence of one. */
+const SORT_LABEL: Record<Exclude<WardrobeSort, 'recent'>, string> = {
   most: 'Most worn',
   least: 'Least worn',
 };
@@ -73,7 +79,7 @@ const SORT_LABEL: Record<WardrobeSort, string> = {
 export type WardrobeChip = {
   key: 'category' | 'sort';
   label: string;
-  clearedParams: { sort: string; category: string };
+  clearedParams: WardrobeParamValues;
 };
 
 /**
@@ -91,7 +97,7 @@ export function wardrobeChips(view: WardrobeView): WardrobeChip[] {
       clearedParams: wardrobeParams({ ...view, category: null }),
     });
   }
-  if (view.sort !== DEFAULT_WARDROBE_VIEW.sort) {
+  if (view.sort !== 'recent') {
     chips.push({
       key: 'sort',
       label: SORT_LABEL[view.sort],

@@ -7,10 +7,10 @@ import { StatsPodium } from '@/components/stats-podium';
 import { LeaderboardRow, NeverWornRow } from '@/components/stats-row';
 import { SeeAllLink } from '@/components/stats-see-all';
 import { StatsSubTabs, type SubTab } from '@/components/stats-subtabs';
-import { useStats, type StatsScope, type WornItem } from '@/db/queries';
+import { useStats, type StatsScope, type WardrobeSort, type WornItem } from '@/db/queries';
 import type { Item } from '@/db/schema';
 import { mostWornEmptyCopy } from '@/stats-copy';
-import { wardrobeParams, type WardrobeSort } from '@/wardrobe-view';
+import { wardrobeParams } from '@/wardrobe-view';
 
 /**
  * The Stats tab (§9) — **a leaderboard you read**, not a to-do list you act
@@ -125,8 +125,11 @@ function MostWornHead({
 
   return (
     <View>
-      <View style={styles.sectionHead}>
-        <Text style={styles.headerLabel}>Most worn</Text>
+      {/* The label belongs to §9.4's `k = 1–2` head only — the podium carries its
+          own meaning, and this ticket has no business relabelling it. Above the
+          podium the row holds nothing but the link. */}
+      <View style={[styles.sectionHead, k >= 3 && styles.sectionHeadLinkOnly]}>
+        {k >= 3 ? null : <Text style={styles.headerLabel}>Most worn</Text>}
         <SeeAllLink
           onPress={onSeeAll}
           accessibilityLabel="See all most-worn items in the Wardrobe"
@@ -168,6 +171,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 12,
+  },
+  sectionHeadLinkOnly: {
+    justifyContent: 'flex-end',
   },
   headerLabel: {
     fontSize: 13,

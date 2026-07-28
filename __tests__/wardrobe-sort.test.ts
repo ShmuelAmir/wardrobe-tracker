@@ -81,7 +81,6 @@ describe('the most/least sorts rank worn items exactly as the leaderboards do (Â
 
     expect(ids(rows)).toEqual([3, 6, 5, 1, 4, 2]);
   });
-
 });
 
 /**
