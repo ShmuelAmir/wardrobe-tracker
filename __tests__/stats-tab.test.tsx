@@ -9,6 +9,9 @@ jest.mock('@/db/queries', () => ({
   useStats: (scope: StatsScope) => mockUseStats(scope),
 }));
 
+const mockNavigate = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ navigate: mockNavigate }) }));
+
 function anItem(id: number, overrides: Partial<Item> = {}): Item {
   return {
     id,
@@ -104,6 +107,85 @@ describe('podium is sized by k, never fixed at 3 (§9.4)', () => {
     expect(screen.queryByTestId('stats-podium')).toBeNull();
     // Most-worn head shows as ranked rows; Least tab (default) shows its rows.
     expect(screen.getByTestId('stats-leader-row-1')).toBeOnTheScreen();
+  });
+});
+
+/**
+ * §9.2/§9.6 — "See all →" is the *only* way into the Wardrobe's filtered state,
+ * so what it carries is the feature: the sort of the list tapped from **and**
+ * the active category. Dropping the category would discard a just-expressed
+ * intent and land the user on a list whose top row isn't what they were looking
+ * at.
+ */
+describe('"See all →" hands the leaderboard to the Wardrobe tab (§9.2)', () => {
+  const worn = [1, 2, 3, 4, 5, 6].map((id) => aWorn(id, 10 - id));
+  const populated = statsData({
+    wornCount: 6,
+    k: 3,
+    mostWorn: worn.slice(0, 3),
+    leastWorn: worn.slice(3),
+    neverWorn: [anItem(9)],
+  });
+
+  it('re-sorts the Wardrobe most-worn from the most-worn list', async () => {
+    const user = userEvent.setup();
+    returns(populated);
+
+    await render(<StatsTab />);
+    await user.press(screen.getByTestId('stats-see-all-most'));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      pathname: '/',
+      params: { sort: 'most', category: '' },
+    });
+  });
+
+  it('re-sorts the Wardrobe least-worn from the least-worn list', async () => {
+    const user = userEvent.setup();
+    returns(populated);
+
+    await render(<StatsTab />);
+    await user.press(screen.getByTestId('stats-see-all-least'));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      pathname: '/',
+      params: { sort: 'least', category: '' },
+    });
+  });
+
+  it('carries the active category filter through', async () => {
+    const user = userEvent.setup();
+    mockUseStats.mockReturnValue({ data: populated, loading: false });
+
+    await render(<StatsTab />);
+    await user.press(screen.getByTestId('stats-filter-Footwear'));
+    await user.press(screen.getByTestId('stats-see-all-most'));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      pathname: '/',
+      params: { sort: 'most', category: 'Footwear' },
+    });
+  });
+
+  it('offers nothing to see all of when there is no leaderboard (k = 0)', async () => {
+    returns(statsData({ neverWorn: [anItem(1), anItem(2)] }));
+
+    await render(<StatsTab />);
+
+    expect(screen.queryByTestId('stats-see-all-most')).toBeNull();
+    expect(screen.queryByTestId('stats-see-all-least')).toBeNull();
+  });
+
+  // Never-worn is a finite set already shown in full (§9.3) — there is no
+  // "more rows of the same question" to go to.
+  it('does not offer it on the never-worn list', async () => {
+    const user = userEvent.setup();
+    returns(populated);
+
+    await render(<StatsTab />);
+    await user.press(screen.getByTestId('stats-subtab-never'));
+
+    expect(screen.queryByTestId('stats-see-all-least')).toBeNull();
   });
 });
 

@@ -2,14 +2,15 @@ import { asc, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
 
+import type { WardrobeView } from '../wardrobe-view';
 import { db } from './client';
 import { item, outfit, outfitItem, wearEvent, type Category, type Item, type Outfit } from './schema';
 
 /**
- * Every item, newest first — the Wardrobe grid's backing query. This is only
- * §9.6's default `recent` sort; the category filter and the `most`/`least`
- * sorts arrive as nav params with the Stats "See all →" entry point, which is
- * the ticket that gives them somewhere to be set from.
+ * Every item, newest first — the wardrobe's base read, shared by the outfit
+ * builder and by the Wardrobe grid through `useWardrobeItems`. The order here is
+ * §9.6's default `recent` sort; the category filter and the `most`/`least` sorts
+ * arrive as nav params and are applied on top of this read.
  *
  * `createdAt` is ms-granular, so two items saved in the same millisecond would
  * otherwise order arbitrarily; `id` breaks the tie the same way §9.7's queries
@@ -597,6 +598,75 @@ export function useStats(scope: StatsScope): { data: StatsData; loading: boolean
   );
 
   return { data, loading };
+}
+
+/**
+ * §9.6 — the Wardrobe grid's rows for an arrived-at view: the scoped item set in
+ * the order the nav params asked for.
+ *
+ * The `most`/`least` orders are the **same comparators the leaderboards use**,
+ * not a re-derivation of them. That is what makes "See all →" honest: the rows
+ * tapped from are the head of what you land on, in the same order, so the
+ * destination is a strict superset rather than a similar-looking list (§9.2).
+ *
+ * Never-worn items trail *both* rankings, in §9.3's oldest-added-first order.
+ * They're a separate question from "worn rarely" (§9.2), so they never displace
+ * leaderboard rows — on the least-worn sort especially, a wall of zeros on top
+ * would bury the once-worn coat the user tapped through to see.
+ */
+export function computeWardrobe(
+  items: Item[],
+  aggregates: ItemWearAggregate[],
+  view: WardrobeView,
+): Item[] {
+  const inScope = view.category ? items.filter((row) => row.category === view.category) : items;
+
+  if (view.sort === 'recent') {
+    return [...inScope].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id,
+    );
+  }
+
+  // `partitionWear` already hands back the worn set in most-worn order and the
+  // never-worn set oldest-first (§9.3); only the least-worn re-sort is extra.
+  const { worn, neverWorn } = partitionWear(inScope, aggregates);
+  const ranked = view.sort === 'most' ? worn : [...worn].sort(leastWornOrder);
+  return [...ranked, ...neverWorn];
+}
+
+/**
+ * The Wardrobe grid's backing hook (§9.6): the base item read plus the per-item
+ * wear aggregate, merged in JS by `computeWardrobe`.
+ *
+ * The aggregate is read even on the default `recent` sort. Deliberate: a hook
+ * can't be called conditionally, the wardrobe is personal-scale (§9.7 — one
+ * grouped read over ~200 rows), and paying for it unconditionally is what lets
+ * the sort stay a **pure param** that any future entry point can set.
+ *
+ * `wardrobeEmpty` is the whole wardrobe, not the scoped rows: an empty *filter*
+ * result is a shortened list to clear a chip from, while an empty *wardrobe* is
+ * §7.5's onboarding hero. Conflating them would show first-run onboarding to
+ * someone who owns 40 things and tapped through to a category they've emptied.
+ */
+export function useWardrobeItems(view: WardrobeView): {
+  items: Item[];
+  wardrobeEmpty: boolean;
+  loading: boolean;
+} {
+  const { items, loading: itemsLoading } = useItems();
+  const aggregates = useLiveQuery(itemWearAggregatesQuery(db));
+  const { sort, category } = view;
+
+  const rows = useMemo(
+    () => computeWardrobe(items, aggregates.data ?? [], { sort, category }),
+    [items, aggregates.data, sort, category],
+  );
+
+  return {
+    items: rows,
+    wardrobeEmpty: items.length === 0,
+    loading: itemsLoading || aggregates.updatedAt === undefined,
+  };
 }
 
 /**
