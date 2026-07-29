@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { MigrationGate } from '@/components/migration-gate';
+import { ThemeProvider } from '@/theme';
 
 /**
  * Root stack. The tab shell is one screen in it; the add-item wizard (§5) and
@@ -12,16 +13,21 @@ import { MigrationGate } from '@/components/migration-gate';
  */
 export default function RootLayout() {
   return (
-    <MigrationGate>
-      <StatusBar style="auto" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="add-item" options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="outfit-builder" options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="outfit/[id]" options={{ title: 'Outfit' }} />
-        <Stack.Screen name="item/[id]/index" options={{ title: 'Item' }} />
-        <Stack.Screen name="item/[id]/edit" options={{ title: 'Edit item' }} />
-      </Stack>
-    </MigrationGate>
+    <ThemeProvider>
+      <MigrationGate>
+        <StatusBar style="auto" />
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="add-item" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen
+            name="outfit-builder"
+            options={{ headerShown: false, presentation: 'modal' }}
+          />
+          <Stack.Screen name="outfit/[id]" options={{ title: 'Outfit' }} />
+          <Stack.Screen name="item/[id]/index" options={{ title: 'Item' }} />
+          <Stack.Screen name="item/[id]/edit" options={{ title: 'Edit item' }} />
+        </Stack>
+      </MigrationGate>
+    </ThemeProvider>
   );
 }
