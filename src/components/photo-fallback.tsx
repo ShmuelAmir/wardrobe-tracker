@@ -1,15 +1,17 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useAddItemDraft } from '@/components/add-item-draft';
 import { PermissionDeniedCard } from '@/components/permission-denied-card';
+import { Text } from '@/components/text';
 import {
   captureFromCamera,
   captureFromLibrary,
   type CaptureResult,
   type DeniableSource,
 } from '@/photo-capture';
+import { spacing, useTheme, type Theme } from '@/theme';
 
 /**
  * §5.3 — the escape hatch shared by both routes to the fallback: the paste-link
@@ -28,6 +30,8 @@ import {
  */
 export function PhotoFallback({ message }: { message?: string }) {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { setCapture } = useAddItemDraft();
   const [denied, setDenied] = useState<Set<DeniableSource>>(new Set());
 
@@ -74,23 +78,25 @@ export function PhotoFallback({ message }: { message?: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  fallback: {
-    gap: 12,
-  },
-  message: {
-    color: '#4a4560',
-    fontSize: 15,
-  },
-  action: {
-    alignItems: 'center',
-    backgroundColor: '#f2f1f6',
-    borderRadius: 14,
-    paddingVertical: 16,
-  },
-  actionLabel: {
-    color: '#1c1830',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    fallback: {
+      gap: spacing.md,
+    },
+    message: {
+      color: theme.textSecondary,
+      fontSize: 15,
+    },
+    action: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      borderRadius: 14,
+      paddingVertical: spacing.lg,
+    },
+    actionLabel: {
+      color: theme.textPrimary,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+}
