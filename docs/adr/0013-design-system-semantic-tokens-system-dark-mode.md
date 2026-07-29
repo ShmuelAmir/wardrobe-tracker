@@ -41,10 +41,14 @@ reason a token refactor enables dark mode rather than just relocating hex:
 justify a new role in review, not sneak in as a literal:
 
 `background, surface, border, textPrimary, textSecondary, accent, onAccent,
-danger, onDanger` — plus **`heroGradient`**, a special case resolving to an
-*array* of stops per theme (the `WardrobeHero` gradient doesn't fit a
-single-color role). No `success` and no shadow/elevation tokens yet — neither
-exists in the current palette.
+onHero, danger, onDanger` — plus **`heroGradient`**, a special case resolving to
+an *array* of stops per theme (the `WardrobeHero` gradient doesn't fit a
+single-color role). `onHero` was added by the pilot (#55) through this same
+review gate: the hero block is dark in *both* themes, so its foreground stays
+light in both, whereas `onAccent` flips (dark text, for legibility on the
+lightened dark-mode accent) — collapsing the two would make one illegible. No
+`success` and no shadow/elevation tokens yet — neither exists in the current
+palette.
 
 **Colors are theme-reactive; spacing, radii and typography are flat.** Colors
 flow through `useTheme()`. Spacing (a 4/8/12/16/24/32 scale), radii

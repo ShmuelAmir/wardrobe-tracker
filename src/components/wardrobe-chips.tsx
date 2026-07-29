@@ -1,6 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
+import { radii, spacing, useTheme, type Theme } from '@/theme';
 import type { WardrobeChip } from '@/wardrobe-view';
 
 /**
@@ -19,13 +22,18 @@ export function WardrobeChips({
   chips: WardrobeChip[];
   onClear: (chip: WardrobeChip) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   if (chips.length === 0) return null;
 
   return (
     <View style={styles.row} testID="wardrobe-chips">
       {chips.map((chip) => (
         <View key={chip.key} style={styles.chip} testID={`wardrobe-chip-${chip.key}`}>
-          <Text style={styles.label}>{chip.label}</Text>
+          <Text variant="caption" style={styles.label}>
+            {chip.label}
+          </Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Clear ${chip.label}`}
@@ -33,7 +41,7 @@ export function WardrobeChips({
             onPress={() => onClear(chip)}
             testID={`wardrobe-chip-clear-${chip.key}`}
           >
-            <Ionicons name="close" size={15} color="#3a2a6d" />
+            <Ionicons name="close" size={15} color={theme.accent} />
           </Pressable>
         </View>
       ))}
@@ -41,27 +49,28 @@ export function WardrobeChips({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  chip: {
-    alignItems: 'center',
-    backgroundColor: '#eceaf2',
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 7,
-    paddingLeft: 13,
-    paddingRight: 10,
-    paddingVertical: 7,
-  },
-  label: {
-    color: '#3a2a6d',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    chip: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      borderRadius: radii.pill,
+      flexDirection: 'row',
+      gap: 7,
+      paddingLeft: 13,
+      paddingRight: 10,
+      paddingVertical: 7,
+    },
+    label: {
+      color: theme.accent,
+      fontWeight: '600',
+    },
+  });
+}

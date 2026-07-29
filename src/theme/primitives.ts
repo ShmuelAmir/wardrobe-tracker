@@ -32,8 +32,12 @@ export const primitives = {
   grey075: '#f2f1f6',
   grey100: '#eceaf2',
 
-  // Warm destructive reds, plus their dark-mode softened pair (higher = darker).
+  // Warm destructive reds, plus their dark-mode pair (higher = darker). `red300`
+  // is the coral the `danger` role lands on in dark: `red600` goes muddy on an
+  // off-black surface, so dark lifts to a warmer, brighter red that still reads
+  // unmistakably as "dangerous".
   red200: '#f2b8b5',
+  red300: '#ff8a80',
   red600: '#b3261e',
   red900: '#4a0e0a',
 } as const;

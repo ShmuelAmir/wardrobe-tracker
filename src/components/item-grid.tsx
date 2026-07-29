@@ -1,9 +1,11 @@
 import { Image } from 'expo-image';
-import { useState, type ReactElement } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState, type ReactElement } from 'react';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import type { Item } from '@/db/schema';
 import { itemImageUri } from '@/item-images';
+import { useTheme, type Theme } from '@/theme';
 
 const COLUMNS = 3;
 const GAP = 2;
@@ -31,6 +33,9 @@ export function ItemGrid({
   header?: ReactElement;
   onPressItem?: (id: number) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   return (
     <FlatList
       testID="wardrobe-grid"
@@ -40,12 +45,20 @@ export function ItemGrid({
       ListHeaderComponent={header}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.grid}
-      renderItem={({ item }) => <ItemCell item={item} onPress={onPressItem} />}
+      renderItem={({ item }) => <ItemCell item={item} styles={styles} onPress={onPressItem} />}
     />
   );
 }
 
-function ItemCell({ item, onPress }: { item: Item; onPress?: (id: number) => void }) {
+function ItemCell({
+  item,
+  styles,
+  onPress,
+}: {
+  item: Item;
+  styles: ReturnType<typeof makeStyles>;
+  onPress?: (id: number) => void;
+}) {
   // A row whose file is missing shouldn't happen once §4.5's ordering holds,
   // but the grid degrades to a category placeholder rather than a broken tile.
   const [missing, setMissing] = useState(false);
@@ -74,28 +87,30 @@ function ItemCell({ item, onPress }: { item: Item; onPress?: (id: number) => voi
   );
 }
 
-const styles = StyleSheet.create({
-  grid: {
-    gap: GAP,
-  },
-  row: {
-    gap: GAP,
-  },
-  cell: {
-    flex: 1 / COLUMNS,
-    aspectRatio: 1,
-  },
-  image: {
-    height: '100%',
-    width: '100%',
-  },
-  placeholder: {
-    alignItems: 'center',
-    backgroundColor: '#e9e6f0',
-    justifyContent: 'center',
-  },
-  placeholderLabel: {
-    fontSize: 12,
-    opacity: 0.55,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    grid: {
+      gap: GAP,
+    },
+    row: {
+      gap: GAP,
+    },
+    cell: {
+      flex: 1 / COLUMNS,
+      aspectRatio: 1,
+    },
+    image: {
+      height: '100%',
+      width: '100%',
+    },
+    placeholder: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      justifyContent: 'center',
+    },
+    placeholderLabel: {
+      color: theme.textSecondary,
+      fontSize: 12,
+    },
+  });
+}
