@@ -9,7 +9,7 @@ import { getTheme, navigationTheme, type Theme } from '@/theme';
  * pinning it here would be brittle.
  */
 
-// The closed role set (9 single-color roles + `heroGradient`). A role added to
+// The closed role set (10 single-color roles + `heroGradient`). A role added to
 // the theme has to be added here too — that is the point of the completeness
 // guard below.
 const ROLES: (keyof Theme)[] = [
@@ -20,6 +20,7 @@ const ROLES: (keyof Theme)[] = [
   'textSecondary',
   'accent',
   'onAccent',
+  'onHero',
   'danger',
   'onDanger',
   'heroGradient',

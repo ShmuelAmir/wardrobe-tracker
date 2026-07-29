@@ -9,6 +9,12 @@ import { primitives } from './primitives';
  *
  * `heroGradient` is the one non-single-color role: the `WardrobeHero` gradient
  * is an ordered array of stops, so it resolves to `string[]` per theme.
+ *
+ * `onHero` is the light foreground that sits on the hero's brand block (its
+ * title, body and CTA pill). It is a *distinct* role from `onAccent`: the hero
+ * gradient is dark in **both** themes, so its foreground stays light in both,
+ * whereas `onAccent` flips (dark text, for legibility on the lightened dark-mode
+ * accent). Collapsing the two would make one of them illegible.
  */
 export type Theme = {
   background: string;
@@ -18,9 +24,12 @@ export type Theme = {
   textSecondary: string;
   accent: string;
   onAccent: string;
+  onHero: string;
   danger: string;
   onDanger: string;
-  heroGradient: string[];
+  // A gradient needs at least two stops; typing it as a non-empty tuple lets it
+  // flow straight into `LinearGradient` (which demands ≥2 colors) without a cast.
+  heroGradient: readonly [string, string, ...string[]];
 };
 
 /**
@@ -35,6 +44,7 @@ export const light: Theme = {
   textSecondary: primitives.ink500,
   accent: primitives.purple700,
   onAccent: primitives.white,
+  onHero: primitives.white,
   danger: primitives.red600,
   onDanger: primitives.white,
   heroGradient: [primitives.purple900, primitives.purple700, primitives.purple500],

@@ -1,11 +1,13 @@
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useLayoutEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useLayoutEffect, useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { ItemGrid } from '@/components/item-grid';
+import { Text } from '@/components/text';
 import { WardrobeChips } from '@/components/wardrobe-chips';
 import { WardrobeHero } from '@/components/wardrobe-hero';
 import { useWardrobeItems } from '@/db/queries';
+import { spacing, useTheme, type Theme } from '@/theme';
 import { parseWardrobeView, wardrobeChips, wardrobeTitle } from '@/wardrobe-view';
 
 /**
@@ -17,6 +19,8 @@ import { parseWardrobeView, wardrobeChips, wardrobeTitle } from '@/wardrobe-view
  * rework.
  */
 export default function WardrobeTab() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const view = parseWardrobeView(useLocalSearchParams());
   const { items, wardrobeEmpty, loading } = useWardrobeItems(view);
   const navigation = useNavigation();
@@ -74,13 +78,15 @@ export default function WardrobeTab() {
   );
 }
 
-const styles = StyleSheet.create({
-  emptyNote: {
-    fontSize: 15,
-    lineHeight: 22,
-    opacity: 0.6,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    textAlign: 'center',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    emptyNote: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      lineHeight: 22,
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.xl,
+      textAlign: 'center',
+    },
+  });
+}
