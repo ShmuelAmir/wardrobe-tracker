@@ -7,8 +7,7 @@ import { DeleteRow } from '@/components/delete-row';
 import { ReviewFields, useReviewForm } from '@/components/review-form';
 import { useItemDetail } from '@/db/queries';
 import type { Category, Item } from '@/db/schema';
-import { itemDeleteActions, itemDeleteMessage, lastItemOutfits } from '@/delete-copy';
-import { deleteItem, readItemDeleteImpact } from '@/deletes';
+import { deleteItem, planItemDelete, readItemDeleteImpact } from '@/item-delete';
 import { itemImageUri } from '@/item-images';
 import { updateItem } from '@/item-save';
 import {
@@ -100,37 +99,21 @@ function ItemEditForm({ item }: { item: Item }) {
   /**
    * §8.3 / §8.4 — the delete confirm. The impact is read **at the moment of the
    * tap**, so the outfit names and counts it quotes are the wardrobe's, not a
-   * render-old snapshot's. §8.4's cleanup is an extra button that only exists
-   * when there is actually an outfit this item would empty, and it carries only
-   * those outfits' ids — the ones `itemDeleteMessage` just named, from the same
-   * `lastItemOutfits` read, so message and button can't disagree.
-   *
-   * **`Delete item only` is the default; cleanup is opt-in.** It comes first,
-   * and it is the one button here *not* styled destructive — deleting the item
-   * alone costs no wear history, and only the outcome that does should look like
-   * it might.
+   * render-old snapshot's. `planItemDelete` assembles the whole confirm from that
+   * one read — title, body, and the ordered actions — so the message that names
+   * the doomed outfits and the button that carries their ids agree by
+   * construction (§8.4). The screen just renders it and appends the inert Cancel.
    */
   function promptDelete() {
-    const outfits = readItemDeleteImpact(item.id);
-    const emptied = lastItemOutfits(outfits);
-    const actions = itemDeleteActions(emptied.length);
+    const plan = planItemDelete(readItemDeleteImpact(item.id));
 
-    Alert.alert('Delete this item?', itemDeleteMessage(outfits), [
-      {
-        text: actions.confirm,
-        style: actions.cleanup ? 'default' : 'destructive',
-        onPress: () => remove([]),
-      },
-      ...(actions.cleanup
-        ? [
-            {
-              text: actions.cleanup,
-              style: 'destructive' as const,
-              onPress: () => remove(emptied.map((outfit) => outfit.id)),
-            },
-          ]
-        : []),
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(plan.title, plan.message, [
+      ...plan.actions.map((action) => ({
+        text: action.label,
+        style: action.style,
+        onPress: () => remove(action.outfitIds),
+      })),
+      { text: 'Cancel', style: 'cancel' as const },
     ]);
   }
 

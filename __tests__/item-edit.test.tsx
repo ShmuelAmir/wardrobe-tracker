@@ -2,7 +2,7 @@ import { act, render, screen, userEvent } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 
 import ItemEditScreen from '@/app/item/[id]/edit';
-import type { DeleteImpactOutfit } from '@/delete-copy';
+import type { DeleteImpactOutfit } from '@/item-delete';
 import type { CaptureResult } from '@/photo-capture';
 import type { Item } from '@/db/schema';
 
@@ -45,9 +45,16 @@ jest.mock('@/photo-capture', () => ({
   captureFromLibrary: () => mockCaptureFromLibrary(),
 }));
 
+// `@/item-delete` imports the real db client at module top; stub it so the
+// module evaluates under jsdom. The read and the write are the only db-touching
+// members — stub those, and let the **real** `planItemDelete` assemble the
+// confirm so this render test exercises the true button→outfit-id wiring.
+jest.mock('@/db/client', () => ({ db: {} }));
+
 const mockReadItemDeleteImpact = jest.fn<DeleteImpactOutfit[], [number]>();
 const mockDeleteItem = jest.fn();
-jest.mock('@/deletes', () => ({
+jest.mock('@/item-delete', () => ({
+  ...jest.requireActual('@/item-delete'),
   readItemDeleteImpact: (id: number) => mockReadItemDeleteImpact(id),
   deleteItem: (...args: unknown[]) => mockDeleteItem(...args),
 }));
