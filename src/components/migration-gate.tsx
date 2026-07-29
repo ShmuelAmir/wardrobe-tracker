@@ -1,9 +1,11 @@
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
-import { useEffect, type ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, type ReactNode } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { db } from '@/db/client';
 import { sweepOrphanImagesOnce } from '@/orphan-sweep';
+import { useTheme, type Theme } from '@/theme';
 
 import migrations from '../../drizzle/migrations';
 
@@ -19,6 +21,8 @@ import migrations from '../../drizzle/migrations';
  * only correct moment to fire §4.6's orphan sweep — see below.
  */
 export function MigrationGate({ children }: { children: ReactNode }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { success, error } = useMigrations(db, migrations);
 
   /**
@@ -57,22 +61,26 @@ export function MigrationGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 32,
-  },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  errorBody: {
-    fontSize: 14,
-    opacity: 0.6,
-    textAlign: 'center',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.background,
+      gap: 8,
+      paddingHorizontal: 32,
+    },
+    errorTitle: {
+      color: theme.textPrimary,
+      fontSize: 18,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    errorBody: {
+      color: theme.textSecondary,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+  });
+}

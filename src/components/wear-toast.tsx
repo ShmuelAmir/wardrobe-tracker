@@ -1,5 +1,8 @@
-import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+
+import { Text } from '@/components/text';
+import { spacing, useTheme, type Theme } from '@/theme';
 
 /** How long a wear toast — and with it, the chance to Undo — stays on screen. */
 export const TOAST_MS = 4000;
@@ -12,6 +15,10 @@ export const TOAST_MS = 4000;
  *
  * The parent owns the just-written event id; this component owns only the timer,
  * firing `onExpire` once so the parent can drop the toast.
+ *
+ * The toast is an `accent` block: the accent purple carries it in light and its
+ * lifted dark-mode purple carries it in dark, with `onAccent` text legible on
+ * both.
  */
 export function WearToast({
   message,
@@ -22,6 +29,9 @@ export function WearToast({
   onUndo: () => void;
   onExpire: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   useEffect(() => {
     const timer = setTimeout(onExpire, TOAST_MS);
     return () => clearTimeout(timer);
@@ -42,28 +52,30 @@ export function WearToast({
   );
 }
 
-const styles = StyleSheet.create({
-  toast: {
-    alignItems: 'center',
-    backgroundColor: '#2a2440',
-    borderRadius: 14,
-    bottom: 32,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    left: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    position: 'absolute',
-    right: 20,
-  },
-  message: {
-    color: '#ffffff',
-    flex: 1,
-    fontSize: 15,
-  },
-  undo: {
-    color: '#c9bdf0',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    toast: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 14,
+      bottom: spacing.xxl,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      left: 20,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      position: 'absolute',
+      right: 20,
+    },
+    message: {
+      color: theme.onAccent,
+      flex: 1,
+      fontSize: 15,
+    },
+    undo: {
+      color: theme.onAccent,
+      fontSize: 16,
+      fontWeight: '700',
+    },
+  });
+}
