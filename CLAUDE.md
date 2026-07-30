@@ -13,3 +13,7 @@ The five canonical triage roles use their default label strings. See `docs/agent
 ### Domain docs
 
 Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Design system
+
+Colors are semantic tokens read off `useTheme()`; raw hex lives only in `src/theme/primitives.ts`, guarded by `__tests__/no-raw-hex.test.ts`. See `docs/agents/design-system.md`.
