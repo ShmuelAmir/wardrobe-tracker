@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,6 +11,7 @@ import {
 
 import { useAddItemDraft } from '@/components/add-item-draft';
 import { PhotoFallback } from '@/components/photo-fallback';
+import { useTheme, type Theme } from '@/theme';
 import { fetchProductPage, isFetchableUrl } from '@/web-import';
 
 /**
@@ -41,6 +42,8 @@ type Phase =
   | { kind: 'dead-end'; message: string };
 
 export default function PasteLinkStep() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { setWebImport } = useAddItemDraft();
   const [url, setUrl] = useState('');
@@ -100,6 +103,7 @@ export default function PasteLinkStep() {
         keyboardType="url"
         onChangeText={setUrl}
         placeholder="https://…"
+        placeholderTextColor={theme.textSecondary}
         style={[styles.input, fetching && styles.inputDisabled]}
         testID="paste-link-url"
         value={url}
@@ -114,7 +118,7 @@ export default function PasteLinkStep() {
         testID="paste-link-fetch"
       >
         {fetching ? (
-          <ActivityIndicator color="#ffffff" testID="paste-link-spinner" />
+          <ActivityIndicator color={theme.onAccent} testID="paste-link-spinner" />
         ) : (
           <Text style={styles.fetchLabel}>{phase.kind === 'retryable' ? 'Retry' : 'Fetch'}</Text>
         )}
@@ -142,49 +146,52 @@ export default function PasteLinkStep() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    gap: 16,
-    padding: 20,
-  },
-  input: {
-    backgroundColor: '#f5f4f8',
-    borderRadius: 10,
-    fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  inputDisabled: {
-    opacity: 0.5,
-  },
-  fetch: {
-    alignItems: 'center',
-    backgroundColor: '#3a2a6d',
-    borderRadius: 14,
-    justifyContent: 'center',
-    minHeight: 52,
-    paddingVertical: 16,
-  },
-  fetchDisabled: {
-    opacity: 0.4,
-  },
-  fetchLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  cancel: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  cancelLabel: {
-    color: '#3a2a6d',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  error: {
-    color: '#7a2e1f',
-    fontSize: 15,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      gap: 16,
+      padding: 20,
+    },
+    input: {
+      backgroundColor: theme.fill,
+      borderRadius: 10,
+      color: theme.textPrimary,
+      fontSize: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+    },
+    inputDisabled: {
+      opacity: 0.5,
+    },
+    fetch: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 14,
+      justifyContent: 'center',
+      minHeight: 52,
+      paddingVertical: 16,
+    },
+    fetchDisabled: {
+      opacity: 0.4,
+    },
+    fetchLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    cancel: {
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    cancelLabel: {
+      color: theme.accent,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    error: {
+      color: theme.warning,
+      fontSize: 15,
+    },
+  });
+}

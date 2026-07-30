@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ItemImage } from '@/components/item-image';
 import { humanizeDaysAgo, daysSinceDate, daysSinceIso } from '@/relative-time';
 import type { Item } from '@/db/schema';
 import type { WornItem } from '@/db/queries';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §9.5 Stats rows. A leaderboard row and a never-worn row share a thumbnail,
@@ -14,7 +16,7 @@ import type { WornItem } from '@/db/queries';
  */
 
 /** Shared square thumbnail — the §4.1 `contentFit: 'cover'` tile at row scale. */
-function Thumbnail({ item }: { item: Item }) {
+function Thumbnail({ item, styles }: { item: Item; styles: ReturnType<typeof makeStyles> }) {
   return (
     <ItemImage
       item={item}
@@ -44,11 +46,13 @@ export function LeaderboardRow({
   rank?: number;
   today: Date;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const worn = `worn ${humanizeDaysAgo(daysSinceIso(item.lastWorn, today))}`;
   return (
     <View style={styles.row} testID={`stats-leader-row-${item.id}`}>
       {rank !== undefined ? <Text style={styles.rank}>{rank}</Text> : null}
-      <Thumbnail item={item} />
+      <Thumbnail item={item} styles={styles} />
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
           {item.name ?? item.category}
@@ -71,10 +75,12 @@ export function LeaderboardRow({
  * is the attention tone, not the neutral leaderboard tone.
  */
 export function NeverWornRow({ item, today }: { item: Item; today: Date }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const added = `added ${humanizeDaysAgo(daysSinceDate(item.createdAt, today))}`;
   return (
     <View style={styles.row} testID={`stats-never-row-${item.id}`}>
-      <Thumbnail item={item} />
+      <Thumbnail item={item} styles={styles} />
       <View style={styles.body}>
         <Text style={styles.name} numberOfLines={1}>
           {item.name ?? item.category}
@@ -92,61 +98,66 @@ export function NeverWornRow({ item, today }: { item: Item; today: Date }) {
 
 const THUMB = 52;
 
-const styles = StyleSheet.create({
-  row: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  rank: {
-    fontSize: 15,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '700',
-    opacity: 0.4,
-    width: 18,
-  },
-  thumb: {
-    backgroundColor: '#e9e6f0',
-    borderRadius: 10,
-    height: THUMB,
-    width: THUMB,
-  },
-  placeholderLabel: {
-    fontSize: 10,
-  },
-  body: {
-    flex: 1,
-    gap: 3,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  meta: {
-    fontSize: 13,
-    opacity: 0.55,
-  },
-  countBadge: {
-    alignItems: 'center',
-    backgroundColor: '#eceaf2',
-    borderRadius: 999,
-    justifyContent: 'center',
-    minWidth: 34,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  countLabel: {
-    color: '#3a2a6d',
-    fontSize: 15,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '700',
-  },
-  zeroBadge: {
-    backgroundColor: '#fbe4d6',
-  },
-  zeroLabel: {
-    color: '#b5460f',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    row: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+    },
+    rank: {
+      color: theme.textPrimary,
+      fontSize: 15,
+      fontVariant: ['tabular-nums'],
+      fontWeight: '700',
+      opacity: 0.4,
+      width: 18,
+    },
+    thumb: {
+      backgroundColor: theme.border,
+      borderRadius: 10,
+      height: THUMB,
+      width: THUMB,
+    },
+    placeholderLabel: {
+      fontSize: 10,
+    },
+    body: {
+      flex: 1,
+      gap: 3,
+    },
+    name: {
+      color: theme.textPrimary,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    meta: {
+      color: theme.textSecondary,
+      fontSize: 13,
+      opacity: 0.55,
+    },
+    countBadge: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      borderRadius: 999,
+      justifyContent: 'center',
+      minWidth: 34,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    countLabel: {
+      color: theme.accent,
+      fontSize: 15,
+      fontVariant: ['tabular-nums'],
+      fontWeight: '700',
+    },
+    zeroBadge: {
+      backgroundColor: theme.warningSurface,
+    },
+    zeroLabel: {
+      color: theme.onWarningSurface,
+    },
+  });
+}

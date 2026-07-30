@@ -2,6 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
 import { AddItemDraftProvider } from '@/components/add-item-draft';
+import { useTheme } from '@/theme';
 
 /**
  * The add-item wizard (§5): a guided, always-forward stack with a per-step Back.
@@ -12,6 +13,7 @@ import { AddItemDraftProvider } from '@/components/add-item-draft';
  */
 export default function AddItemLayout() {
   const router = useRouter();
+  const theme = useTheme();
 
   return (
     <AddItemDraftProvider>
@@ -28,7 +30,7 @@ export default function AddItemLayout() {
                 onPress={() => router.dismissAll()}
                 testID="add-item-cancel"
               >
-                <Text style={{ color: '#3a2a6d', fontSize: 17 }}>Cancel</Text>
+                <Text style={{ color: theme.accent, fontSize: 17 }}>Cancel</Text>
               </Pressable>
             ),
           }}

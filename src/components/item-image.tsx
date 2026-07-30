@@ -1,9 +1,10 @@
 import { Image, type ImageStyle } from 'expo-image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
 import type { Item } from '@/db/schema';
 import { itemImageUri } from '@/item-images';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * A stored item image that degrades to a category placeholder when the file is
@@ -25,6 +26,8 @@ export function ItemImage({
   placeholderTextStyle?: StyleProp<TextStyle>;
   testIDPrefix: string;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [missing, setMissing] = useState(false);
 
   if (missing) {
@@ -48,14 +51,17 @@ export function ItemImage({
   );
 }
 
-const styles = StyleSheet.create({
-  placeholder: {
-    alignItems: 'center',
-    backgroundColor: '#e9e6f0',
-    justifyContent: 'center',
-  },
-  placeholderLabel: {
-    opacity: 0.55,
-    textAlign: 'center',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    placeholder: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      justifyContent: 'center',
+    },
+    placeholderLabel: {
+      color: theme.textSecondary,
+      opacity: 0.55,
+      textAlign: 'center',
+    },
+  });
+}

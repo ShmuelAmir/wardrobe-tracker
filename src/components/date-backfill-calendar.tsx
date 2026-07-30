@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useTheme, type Theme } from '@/theme';
 import { toIsoDate } from '@/wear-log';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
@@ -35,6 +36,8 @@ export function DateBackfillCalendar({
   onPick: (iso: string) => void;
   onCancel: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
@@ -124,63 +127,68 @@ export function DateBackfillCalendar({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    flex: 1,
-  },
-  sheet: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 32,
-  },
-  monthRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  monthLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  arrow: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  arrowDisabled: {
-    opacity: 0.25,
-  },
-  arrowLabel: {
-    color: '#3a2a6d',
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  weekRow: {
-    flexDirection: 'row',
-  },
-  weekday: {
-    fontSize: 12,
-    opacity: 0.5,
-    textAlign: 'center',
-    width: `${100 / 7}%`,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  day: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    width: `${100 / 7}%`,
-  },
-  dayLabel: {
-    fontSize: 16,
-  },
-  dayLabelDisabled: {
-    opacity: 0.25,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    backdrop: {
+      backgroundColor: theme.scrim,
+      flex: 1,
+    },
+    sheet: {
+      backgroundColor: theme.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 20,
+      paddingBottom: 32,
+    },
+    monthRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    monthLabel: {
+      color: theme.textPrimary,
+      fontSize: 17,
+      fontWeight: '700',
+    },
+    arrow: {
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+    },
+    arrowDisabled: {
+      opacity: 0.25,
+    },
+    arrowLabel: {
+      color: theme.accent,
+      fontSize: 24,
+      fontWeight: '700',
+    },
+    weekRow: {
+      flexDirection: 'row',
+    },
+    weekday: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      opacity: 0.5,
+      textAlign: 'center',
+      width: `${100 / 7}%`,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    day: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      width: `${100 / 7}%`,
+    },
+    dayLabel: {
+      color: theme.textPrimary,
+      fontSize: 16,
+    },
+    dayLabelDisabled: {
+      opacity: 0.25,
+    },
+  });
+}

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { CATEGORIES, SEASONS, type Category, type Season } from '@/db/schema';
+import { useTheme, type Theme } from '@/theme';
 
 /** What Review commits — the derived-on-read stats are absent by design (§3.1). */
 export type ReviewSubmission = {
@@ -94,11 +95,13 @@ function Chip({
   selected,
   onPress,
   testID,
+  styles,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
   testID: string;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <Pressable
@@ -122,6 +125,8 @@ function Chip({
  * second form.
  */
 export function ReviewFields({ state }: { state: ReviewFormState }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <>
       <Text style={styles.label}>Category</Text>
@@ -133,6 +138,7 @@ export function ReviewFields({ state }: { state: ReviewFormState }) {
             selected={state.category === value}
             onPress={() => state.setCategory(value)}
             testID={`category-chip-${value}`}
+            styles={styles}
           />
         ))}
       </View>
@@ -140,6 +146,7 @@ export function ReviewFields({ state }: { state: ReviewFormState }) {
       <Text style={styles.label}>Name</Text>
       <TextInput
         placeholder="Optional"
+        placeholderTextColor={theme.textSecondary}
         value={state.name}
         onChangeText={state.setName}
         style={styles.input}
@@ -149,6 +156,7 @@ export function ReviewFields({ state }: { state: ReviewFormState }) {
       <Text style={styles.label}>Brand</Text>
       <TextInput
         placeholder="Optional"
+        placeholderTextColor={theme.textSecondary}
         value={state.brand}
         onChangeText={state.setBrand}
         style={styles.input}
@@ -164,6 +172,7 @@ export function ReviewFields({ state }: { state: ReviewFormState }) {
             selected={state.season.includes(value)}
             onPress={() => state.toggleSeason(value)}
             testID={`season-chip-${value}`}
+            styles={styles}
           />
         ))}
       </View>
@@ -192,6 +201,8 @@ export function ReviewForm({
   initialName?: string | null;
   initialBrand?: string | null;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const state = useReviewForm({ name: initialName, brand: initialBrand });
 
   function submit() {
@@ -217,59 +228,63 @@ export function ReviewForm({
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    gap: 12,
-    padding: 20,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    opacity: 0.6,
-    textTransform: 'uppercase',
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    backgroundColor: '#eceaf2',
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  chipSelected: {
-    backgroundColor: '#3a2a6d',
-  },
-  chipLabel: {
-    color: '#2a2440',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  chipLabelSelected: {
-    color: '#ffffff',
-  },
-  input: {
-    backgroundColor: '#f5f4f8',
-    borderRadius: 10,
-    fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  save: {
-    alignItems: 'center',
-    backgroundColor: '#3a2a6d',
-    borderRadius: 14,
-    marginTop: 12,
-    paddingVertical: 16,
-  },
-  saveDisabled: {
-    opacity: 0.4,
-  },
-  saveLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    content: {
+      gap: 12,
+      padding: 20,
+    },
+    label: {
+      color: theme.textSecondary,
+      fontSize: 13,
+      fontWeight: '600',
+      opacity: 0.6,
+      textTransform: 'uppercase',
+    },
+    chips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    chip: {
+      backgroundColor: theme.border,
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 9,
+    },
+    chipSelected: {
+      backgroundColor: theme.accent,
+    },
+    chipLabel: {
+      color: theme.textPrimary,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    chipLabelSelected: {
+      color: theme.onAccent,
+    },
+    input: {
+      backgroundColor: theme.fill,
+      borderRadius: 10,
+      color: theme.textPrimary,
+      fontSize: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    save: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 14,
+      marginTop: 12,
+      paddingVertical: 16,
+    },
+    saveDisabled: {
+      opacity: 0.4,
+    },
+    saveLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+}

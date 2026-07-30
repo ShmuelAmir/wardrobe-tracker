@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Category, Item } from '@/db/schema';
 import { frontLoadRail } from '@/outfit-selection';
+import { useTheme, type Theme } from '@/theme';
 
 import { SelectableItem } from './selectable-item';
 
@@ -26,6 +28,8 @@ export function CategoryRail({
   onToggle: (id: number) => void;
   onSeeAll: (category: Category) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const ordered = frontLoadRail(items, selection);
 
   return (
@@ -61,31 +65,34 @@ export function CategoryRail({
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    gap: 10,
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  seeAll: {
-    color: '#3a2a6d',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  rail: {
-    gap: 10,
-    paddingHorizontal: 20,
-  },
-  cell: {
-    height: CELL,
-    width: CELL,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    section: {
+      gap: 10,
+    },
+    header: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 17,
+      fontWeight: '700',
+    },
+    seeAll: {
+      color: theme.accent,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    rail: {
+      gap: 10,
+      paddingHorizontal: 20,
+    },
+    cell: {
+      height: CELL,
+      width: CELL,
+    },
+  });
+}

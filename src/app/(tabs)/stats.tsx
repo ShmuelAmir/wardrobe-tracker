@@ -10,6 +10,7 @@ import { StatsSubTabs, type SubTab } from '@/components/stats-subtabs';
 import { useStats, type StatsScope, type WardrobeSort, type WornItem } from '@/db/queries';
 import type { Item } from '@/db/schema';
 import { mostWornEmptyCopy } from '@/stats-copy';
+import { useTheme, type Theme } from '@/theme';
 import { wardrobeParams } from '@/wardrobe-view';
 
 /**
@@ -24,6 +25,8 @@ import { wardrobeParams } from '@/wardrobe-view';
  * sub-tab bar ride along as its header.
  */
 export default function StatsTab() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [scope, setScope] = useState<StatsScope>(null);
   const [subTab, setSubTab] = useState<SubTab>('least');
   const { data, loading } = useStats(scope);
@@ -112,6 +115,8 @@ function MostWornHead({
   today: Date;
   onSeeAll: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { k, mostWorn } = data;
 
   // At `k = 0` there is no ranking, so there is nothing to see all of either.
@@ -153,38 +158,42 @@ function MostWornHead({
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingBottom: 24,
-  },
-  notice: {
-    fontSize: 15,
-    lineHeight: 22,
-    opacity: 0.6,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
-    textAlign: 'center',
-  },
-  sectionHead: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  sectionHeadLinkOnly: {
-    justifyContent: 'flex-end',
-  },
-  headerLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    opacity: 0.5,
-    textTransform: 'uppercase',
-  },
-  listFooter: {
-    alignItems: 'flex-end',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    content: {
+      paddingBottom: 24,
+    },
+    notice: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      lineHeight: 22,
+      opacity: 0.6,
+      paddingHorizontal: 24,
+      paddingVertical: 28,
+      textAlign: 'center',
+    },
+    sectionHead: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: 12,
+    },
+    sectionHeadLinkOnly: {
+      justifyContent: 'flex-end',
+    },
+    headerLabel: {
+      color: theme.textPrimary,
+      fontSize: 13,
+      fontWeight: '700',
+      letterSpacing: 0.4,
+      opacity: 0.5,
+      textTransform: 'uppercase',
+    },
+    listFooter: {
+      alignItems: 'flex-end',
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+    },
+  });
+}

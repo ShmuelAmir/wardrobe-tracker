@@ -1,8 +1,9 @@
 import { Image, type ImageStyle } from 'expo-image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { itemImageUri } from '@/item-images';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * An outfit card's cover — the outfit's lowest-id item photo (§7.1/§7.2),
@@ -21,6 +22,8 @@ export function OutfitCoverImage({
   style?: StyleProp<ImageStyle>;
   testID?: string;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [missing, setMissing] = useState(false);
 
   if (imageFile === null || missing) {
@@ -43,8 +46,10 @@ export function OutfitCoverImage({
   );
 }
 
-const styles = StyleSheet.create({
-  placeholder: {
-    backgroundColor: '#e9e6f0',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    placeholder: {
+      backgroundColor: theme.border,
+    },
+  });
+}

@@ -40,4 +40,34 @@ export const primitives = {
   red300: '#ff8a80',
   red600: '#b3261e',
   red900: '#4a0e0a',
+
+  // Warm attention (warning) hues — distinct from the destructive reds above.
+  // These carry the non-destructive "look here" signals, which the design keeps
+  // a warm brown-orange so they never read as a delete. The never-worn `0` badge
+  // is a peach fill (`peach200`) with burnt-orange text (`burntOrange600`); a
+  // standalone web-import failure is a deeper brown (`brown700`) on the plain
+  // screen, where more contrast is needed without a fill behind it. `brown900`
+  // is the dark fill and `orange300` the lifted amber text/foreground, so the
+  // same signals survive on off-black.
+  peach200: '#fbe4d6',
+  brown900: '#3a2416',
+  brown700: '#7a2e1f',
+  burntOrange600: '#b5460f',
+  orange300: '#f7b267',
+
+  // The three podium medal tones (§9.4). Metallics that read on both light and
+  // dark, so — unlike every other role — their two themes resolve to the same
+  // hex.
+  gold: '#d9a441',
+  silver: '#9ca3af',
+  bronze: '#b06a3b',
+
+  // Pure black, reserved for elevation shadows (an occlusion, not a surface),
+  // which stay black in both themes.
+  black: '#000000',
+
+  // The modal scrim — a translucent black wash behind a bottom sheet. Like the
+  // shadow, it is an occlusion rather than a surface, so it stays the same in
+  // both themes; the one literal here that carries its own alpha.
+  scrimBlack: 'rgba(0,0,0,0.35)',
 } as const;

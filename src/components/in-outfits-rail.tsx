@@ -1,7 +1,9 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
 
 import { OutfitCoverImage } from '@/components/outfit-cover-image';
 import type { ItemOutfit } from '@/db/queries';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §8.1 "In outfits" rail — the outfits containing this item, each a cover that
@@ -18,6 +20,8 @@ export function InOutfitsRail({
   outfits: ItemOutfit[];
   onPressOutfit: (id: number) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   if (outfits.length === 0) {
     return (
       <Text style={styles.empty} testID="in-outfits-empty">
@@ -58,28 +62,31 @@ export function InOutfitsRail({
 
 const CARD_SIZE = 108;
 
-const styles = StyleSheet.create({
-  rail: {
-    gap: 12,
-    paddingHorizontal: 20,
-  },
-  empty: {
-    color: '#4a4560',
-    fontSize: 15,
-    lineHeight: 21,
-    paddingHorizontal: 20,
-  },
-  card: {
-    gap: 6,
-    width: CARD_SIZE,
-  },
-  cover: {
-    borderRadius: 12,
-    height: CARD_SIZE,
-    width: CARD_SIZE,
-  },
-  name: {
-    fontSize: 13,
-    opacity: 0.75,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    rail: {
+      gap: 12,
+      paddingHorizontal: 20,
+    },
+    empty: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      lineHeight: 21,
+      paddingHorizontal: 20,
+    },
+    card: {
+      gap: 6,
+      width: CARD_SIZE,
+    },
+    cover: {
+      borderRadius: 12,
+      height: CARD_SIZE,
+      width: CARD_SIZE,
+    },
+    name: {
+      color: theme.textPrimary,
+      fontSize: 13,
+      opacity: 0.75,
+    },
+  });
+}

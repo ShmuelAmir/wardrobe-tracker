@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { CATEGORIES, type Category, type Item } from '@/db/schema';
 import { itemImageUri } from '@/item-images';
+import { useTheme, type Theme } from '@/theme';
 
 import { CategoryRail } from './category-rail';
 import { DeleteRow } from './delete-row';
@@ -41,6 +43,8 @@ export function OutfitBuilder({
   onSave: () => void;
   onDelete?: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const byCategory = new Map<Category, Item[]>();
   for (const item of items) {
     const bucket = byCategory.get(item.category);
@@ -95,6 +99,7 @@ export function OutfitBuilder({
 
         <TextInput
           placeholder="Name this outfit (optional)"
+          placeholderTextColor={theme.textSecondary}
           value={name}
           onChangeText={onSetName}
           style={styles.input}
@@ -116,66 +121,70 @@ export function OutfitBuilder({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  rails: {
-    gap: 22,
-    paddingBottom: 24,
-    paddingTop: 12,
-  },
-  summary: {
-    backgroundColor: '#ffffff',
-    borderTopColor: '#eceaf2',
-    borderTopWidth: 1,
-    gap: 12,
-    padding: 16,
-  },
-  stackRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    minHeight: 40,
-  },
-  stack: {
-    flexDirection: 'row',
-  },
-  stackImage: {
-    backgroundColor: '#eceaf2',
-    borderColor: '#ffffff',
-    borderRadius: 8,
-    borderWidth: 2,
-    height: 40,
-    width: 40,
-  },
-  stackImageOverlap: {
-    marginLeft: -14,
-  },
-  count: {
-    fontSize: 15,
-    fontWeight: '600',
-    opacity: 0.7,
-  },
-  input: {
-    backgroundColor: '#f5f4f8',
-    borderRadius: 10,
-    fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  save: {
-    alignItems: 'center',
-    backgroundColor: '#3a2a6d',
-    borderRadius: 14,
-    paddingVertical: 16,
-  },
-  saveDisabled: {
-    opacity: 0.4,
-  },
-  saveLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+    rails: {
+      gap: 22,
+      paddingBottom: 24,
+      paddingTop: 12,
+    },
+    summary: {
+      backgroundColor: theme.surface,
+      borderTopColor: theme.border,
+      borderTopWidth: 1,
+      gap: 12,
+      padding: 16,
+    },
+    stackRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 12,
+      minHeight: 40,
+    },
+    stack: {
+      flexDirection: 'row',
+    },
+    stackImage: {
+      backgroundColor: theme.border,
+      borderColor: theme.surface,
+      borderRadius: 8,
+      borderWidth: 2,
+      height: 40,
+      width: 40,
+    },
+    stackImageOverlap: {
+      marginLeft: -14,
+    },
+    count: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      fontWeight: '600',
+      opacity: 0.7,
+    },
+    input: {
+      backgroundColor: theme.fill,
+      borderRadius: 10,
+      color: theme.textPrimary,
+      fontSize: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    save: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 14,
+      paddingVertical: 16,
+    },
+    saveDisabled: {
+      opacity: 0.4,
+    },
+    saveLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+}

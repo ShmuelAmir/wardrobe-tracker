@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §6.1.4 / §6.2 — the Save review sheet. Confirms **name + occasion** before the
@@ -25,6 +27,8 @@ export function OutfitReviewSheet({
   onCommit: (name: string, occasion: string) => void;
   onCancel: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [name, setName] = useState(initialName);
   const [occasion, setOccasion] = useState(initialOccasion);
 
@@ -37,6 +41,7 @@ export function OutfitReviewSheet({
         <Text style={styles.label}>Name</Text>
         <TextInput
           placeholder="Optional"
+          placeholderTextColor={theme.textSecondary}
           value={name}
           onChangeText={setName}
           style={styles.input}
@@ -66,6 +71,7 @@ export function OutfitReviewSheet({
         ) : null}
         <TextInput
           placeholder="Optional — e.g. Work, Shul"
+          placeholderTextColor={theme.textSecondary}
           value={occasion}
           onChangeText={setOccasion}
           style={styles.input}
@@ -85,69 +91,74 @@ export function OutfitReviewSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    flex: 1,
-  },
-  sheet: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    gap: 10,
-    padding: 20,
-    paddingBottom: 32,
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    opacity: 0.6,
-    textTransform: 'uppercase',
-  },
-  input: {
-    backgroundColor: '#f5f4f8',
-    borderRadius: 10,
-    fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    backgroundColor: '#eceaf2',
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  chipActive: {
-    backgroundColor: '#3a2a6d',
-  },
-  chipLabel: {
-    color: '#2a2440',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  chipLabelActive: {
-    color: '#ffffff',
-  },
-  commit: {
-    alignItems: 'center',
-    backgroundColor: '#3a2a6d',
-    borderRadius: 14,
-    marginTop: 8,
-    paddingVertical: 16,
-  },
-  commitLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    backdrop: {
+      backgroundColor: theme.scrim,
+      flex: 1,
+    },
+    sheet: {
+      backgroundColor: theme.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      gap: 10,
+      padding: 20,
+      paddingBottom: 32,
+    },
+    heading: {
+      color: theme.textPrimary,
+      fontSize: 20,
+      fontWeight: '700',
+      marginBottom: 4,
+    },
+    label: {
+      color: theme.textSecondary,
+      fontSize: 13,
+      fontWeight: '600',
+      opacity: 0.6,
+      textTransform: 'uppercase',
+    },
+    input: {
+      backgroundColor: theme.fill,
+      borderRadius: 10,
+      color: theme.textPrimary,
+      fontSize: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    chips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    chip: {
+      backgroundColor: theme.border,
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 9,
+    },
+    chipActive: {
+      backgroundColor: theme.accent,
+    },
+    chipLabel: {
+      color: theme.textPrimary,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    chipLabelActive: {
+      color: theme.onAccent,
+    },
+    commit: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 14,
+      marginTop: 8,
+      paddingVertical: 16,
+    },
+    commitLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+}

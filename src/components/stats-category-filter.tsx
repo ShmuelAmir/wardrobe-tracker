@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { StatsScope } from '@/db/queries';
 import { CATEGORIES, type Category } from '@/db/schema';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §9.4 — the global category filter: a seven-segment control (`All` + the six
@@ -40,6 +42,8 @@ export function StatsCategoryFilter({
   scope: StatsScope;
   onChange: (scope: StatsScope) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.track} testID="stats-category-filter">
       {SEGMENTS.map((segment) => {
@@ -68,37 +72,39 @@ export function StatsCategoryFilter({
   );
 }
 
-const styles = StyleSheet.create({
-  track: {
-    backgroundColor: '#eceaf2',
-    borderRadius: 10,
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    padding: 3,
-  },
-  segment: {
-    alignItems: 'center',
-    borderRadius: 8,
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-    paddingVertical: 8,
-  },
-  segmentSelected: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000000',
-    shadowOffset: { height: 1, width: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
-  },
-  label: {
-    color: '#5a5568',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  labelSelected: {
-    color: '#3a2a6d',
-    fontWeight: '700',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    track: {
+      backgroundColor: theme.border,
+      borderRadius: 10,
+      flexDirection: 'row',
+      marginHorizontal: 16,
+      marginVertical: 12,
+      padding: 3,
+    },
+    segment: {
+      alignItems: 'center',
+      borderRadius: 8,
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 2,
+      paddingVertical: 8,
+    },
+    segmentSelected: {
+      backgroundColor: theme.surface,
+      shadowColor: theme.shadow,
+      shadowOffset: { height: 1, width: 0 },
+      shadowOpacity: 0.12,
+      shadowRadius: 2,
+    },
+    label: {
+      color: theme.textSecondary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    labelSelected: {
+      color: theme.accent,
+      fontWeight: '700',
+    },
+  });
+}

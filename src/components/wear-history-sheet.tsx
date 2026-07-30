@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { formatIsoDay } from '@/date-format';
 import type { WearRow } from '@/db/queries';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §8.5 — the **durable un-log path**. Opened from the tappable wears cell, one
@@ -22,6 +24,8 @@ export function WearHistorySheet({
   onRemove: (eventId: number) => void;
   onClose: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose} visible>
       <Pressable style={styles.backdrop} onPress={onClose} testID="history-backdrop" />
@@ -55,46 +59,51 @@ export function WearHistorySheet({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    flex: 1,
-  },
-  sheet: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-    padding: 20,
-    paddingBottom: 32,
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  empty: {
-    fontSize: 15,
-    opacity: 0.6,
-    paddingVertical: 16,
-  },
-  list: {
-    flexGrow: 0,
-  },
-  row: {
-    alignItems: 'center',
-    borderBottomColor: '#eceaf2',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
-  date: {
-    fontSize: 16,
-  },
-  remove: {
-    color: '#b3261e',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    backdrop: {
+      backgroundColor: theme.scrim,
+      flex: 1,
+    },
+    sheet: {
+      backgroundColor: theme.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '70%',
+      padding: 20,
+      paddingBottom: 32,
+    },
+    heading: {
+      color: theme.textPrimary,
+      fontSize: 20,
+      fontWeight: '700',
+      marginBottom: 8,
+    },
+    empty: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      opacity: 0.6,
+      paddingVertical: 16,
+    },
+    list: {
+      flexGrow: 0,
+    },
+    row: {
+      alignItems: 'center',
+      borderBottomColor: theme.border,
+      borderBottomWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+    },
+    date: {
+      color: theme.textPrimary,
+      fontSize: 16,
+    },
+    remove: {
+      color: theme.danger,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+  });
+}
