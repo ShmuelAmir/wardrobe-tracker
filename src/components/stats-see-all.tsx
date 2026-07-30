@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
+
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §9.2 — "See all →", the one entry point into the Wardrobe's filtered state
@@ -16,6 +19,8 @@ export function SeeAllLink({
   accessibilityLabel: string;
   testID: string;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable
       accessibilityRole="button"
@@ -29,10 +34,12 @@ export function SeeAllLink({
   );
 }
 
-const styles = StyleSheet.create({
-  label: {
-    color: '#3a2a6d',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    label: {
+      color: theme.accent,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+  });
+}

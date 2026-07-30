@@ -18,6 +18,19 @@ import type { Theme } from './light';
  *    dangerous.
  * `onHero` stays light (a hair off pure white) because the hero block is dark in
  * both themes.
+ *
+ * The #57 roles resolve dark as their function demands, not by inversion:
+ *  - `fill` lifts to `ink700` — a recessed well still has to sit a step *above*
+ *    the `ink800` surface it lives on, the opposite of light where it sits below
+ *    `white`.
+ *  - `onAccentMuted` lands on `purple800`: dark, muted text on the lightened
+ *    `purple300` accent block (mirroring how `onAccent` flips to dark here).
+ *  - `warningSurface` becomes the deep warm fill `brown900`, and both its
+ *    on-surface text (`onWarningSurface`) and the standalone `warning` text lift
+ *    to the same amber `orange300` — on off-black the two contexts converge,
+ *    the warm analogue of how `danger` lifts to a brighter red.
+ *  - the podium metals are unchanged — they read on both themes.
+ *  - `shadow` and `scrim` stay constant; both are occlusions, not surfaces.
  */
 export const dark: Theme = {
   background: primitives.ink900,
@@ -27,8 +40,18 @@ export const dark: Theme = {
   textSecondary: primitives.ink300,
   accent: primitives.purple300,
   onAccent: primitives.purple900,
+  onAccentMuted: primitives.purple800,
   onHero: primitives.grey075,
+  fill: primitives.ink700,
   danger: primitives.red300,
   onDanger: primitives.red900,
+  warningSurface: primitives.brown900,
+  onWarningSurface: primitives.orange300,
+  warning: primitives.orange300,
+  podiumGold: primitives.gold,
+  podiumSilver: primitives.silver,
+  podiumBronze: primitives.bronze,
+  shadow: primitives.black,
+  scrim: primitives.scrimBlack,
   heroGradient: [primitives.ink900, primitives.purple900, primitives.purple700],
 };

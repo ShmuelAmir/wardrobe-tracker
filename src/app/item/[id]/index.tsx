@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { InOutfitsRail } from '@/components/in-outfits-rail';
@@ -10,6 +10,7 @@ import { useItemDetail, useItemOutfits, useItemStats } from '@/db/queries';
 import { SEASONS, type Season } from '@/db/schema';
 import { itemImageUri } from '@/item-images';
 import { sourceHostname } from '@/source-url';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * Item detail — the read-only page (§8.1). **An item is a place you go**: tapping
@@ -21,6 +22,8 @@ import { sourceHostname } from '@/source-url';
  * items have one.
  */
 export default function ItemDetailScreen() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const itemId = Number(id);
   const router = useRouter();
@@ -60,7 +63,7 @@ export default function ItemDetailScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content} testID="item-detail">
-        <ItemHero imageFile={item.imageFile} category={item.category} />
+        <ItemHero imageFile={item.imageFile} category={item.category} styles={styles} />
 
         <View style={styles.identity}>
           {item.name ? <Text style={styles.name}>{item.name}</Text> : null}
@@ -70,9 +73,9 @@ export default function ItemDetailScreen() {
         <ItemStatsStrip stats={stats} outfitsCount={outfits.length} />
 
         <View style={styles.fields}>
-          <Field label="Category" value={item.category} testID="item-field-category" />
-          <Field label="Season" value={formatSeason(item.season)} testID="item-field-season" />
-          <Field label="Added" value={formatDay(item.createdAt)} testID="item-field-added" />
+          <Field label="Category" value={item.category} testID="item-field-category" styles={styles} />
+          <Field label="Season" value={formatSeason(item.season)} testID="item-field-season" styles={styles} />
+          <Field label="Added" value={formatDay(item.createdAt)} testID="item-field-added" styles={styles} />
           {item.sourceUrl ? (
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>Source</Text>
@@ -101,7 +104,15 @@ export default function ItemDetailScreen() {
  * the grid uses it — expo-image's decode-time downscale is what lets the app
  * store no thumbnails (§10.8).
  */
-function ItemHero({ imageFile, category }: { imageFile: string; category: string }) {
+function ItemHero({
+  imageFile,
+  category,
+  styles,
+}: {
+  imageFile: string;
+  category: string;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   const [missing, setMissing] = useState(false);
 
   if (missing) {
@@ -123,7 +134,17 @@ function ItemHero({ imageFile, category }: { imageFile: string; category: string
   );
 }
 
-function Field({ label, value, testID }: { label: string; value: string; testID: string }) {
+function Field({
+  label,
+  value,
+  testID,
+  styles,
+}: {
+  label: string;
+  value: string;
+  testID: string;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -146,81 +167,90 @@ function formatSeason(season: Season[] | null): string {
     .join(', ');
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  content: {
-    gap: 18,
-    paddingBottom: 32,
-  },
-  hero: {
-    aspectRatio: 1,
-    width: '100%',
-  },
-  heroPlaceholder: {
-    alignItems: 'center',
-    backgroundColor: '#e9e6f0',
-    justifyContent: 'center',
-  },
-  heroPlaceholderLabel: {
-    fontSize: 16,
-    opacity: 0.55,
-  },
-  identity: {
-    gap: 4,
-    paddingHorizontal: 20,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  brand: {
-    fontSize: 16,
-    opacity: 0.6,
-  },
-  fields: {
-    gap: 14,
-    paddingHorizontal: 20,
-  },
-  field: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  fieldLabel: {
-    fontSize: 15,
-    opacity: 0.55,
-  },
-  fieldValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  link: {
-    color: '#3a2a6d',
-    fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  railHeading: {
-    fontSize: 18,
-    fontWeight: '700',
-    paddingHorizontal: 20,
-  },
-  edit: {
-    color: '#3a2a6d',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  missing: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  missingText: {
-    fontSize: 16,
-    opacity: 0.6,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+    content: {
+      gap: 18,
+      paddingBottom: 32,
+    },
+    hero: {
+      aspectRatio: 1,
+      width: '100%',
+    },
+    heroPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      justifyContent: 'center',
+    },
+    heroPlaceholderLabel: {
+      color: theme.textSecondary,
+      fontSize: 16,
+      opacity: 0.55,
+    },
+    identity: {
+      gap: 4,
+      paddingHorizontal: 20,
+    },
+    name: {
+      color: theme.textPrimary,
+      fontSize: 24,
+      fontWeight: '700',
+    },
+    brand: {
+      color: theme.textSecondary,
+      fontSize: 16,
+      opacity: 0.6,
+    },
+    fields: {
+      gap: 14,
+      paddingHorizontal: 20,
+    },
+    field: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 16,
+    },
+    fieldLabel: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      opacity: 0.55,
+    },
+    fieldValue: {
+      color: theme.textPrimary,
+      fontSize: 15,
+      fontWeight: '600',
+      textAlign: 'right',
+    },
+    link: {
+      color: theme.accent,
+      fontSize: 15,
+      fontWeight: '600',
+      textAlign: 'right',
+    },
+    railHeading: {
+      color: theme.textPrimary,
+      fontSize: 18,
+      fontWeight: '700',
+      paddingHorizontal: 20,
+    },
+    edit: {
+      color: theme.accent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    missing: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    missingText: {
+      color: theme.textSecondary,
+      fontSize: 16,
+      opacity: 0.6,
+    },
+  });
+}

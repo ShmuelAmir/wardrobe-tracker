@@ -2,6 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
 import { OutfitBuilderProvider } from '@/components/outfit-builder-draft';
+import { useTheme } from '@/theme';
 
 /**
  * The outfit builder (§6): the sectioned checklist plus its on-demand "See all"
@@ -11,6 +12,7 @@ import { OutfitBuilderProvider } from '@/components/outfit-builder-draft';
  */
 export default function OutfitBuilderLayout() {
   const router = useRouter();
+  const theme = useTheme();
 
   return (
     <OutfitBuilderProvider>
@@ -26,7 +28,7 @@ export default function OutfitBuilderLayout() {
                 onPress={() => router.dismissAll()}
                 testID="outfit-builder-cancel"
               >
-                <Text style={{ color: '#3a2a6d', fontSize: 17 }}>Cancel</Text>
+                <Text style={{ color: theme.accent, fontSize: 17 }}>Cancel</Text>
               </Pressable>
             ),
           }}

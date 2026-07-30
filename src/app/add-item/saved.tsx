@@ -1,7 +1,9 @@
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAddItemDraft } from '@/components/add-item-draft';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * Step 5 — Saved (§5.1). Confirms the write, then offers the two exits: **Add
@@ -10,6 +12,8 @@ import { useAddItemDraft } from '@/components/add-item-draft';
  * already live (the grid query is reactive, §2).
  */
 export default function SavedStep() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { reset } = useAddItemDraft();
 
@@ -50,48 +54,51 @@ export default function SavedStep() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  checkmark: {
-    color: '#3a2a6d',
-    fontSize: 56,
-    fontWeight: '700',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  button: {
-    alignItems: 'center',
-    borderRadius: 14,
-    flex: 1,
-    paddingVertical: 16,
-  },
-  primary: {
-    backgroundColor: '#3a2a6d',
-  },
-  secondary: {
-    backgroundColor: '#eceaf2',
-  },
-  primaryLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  secondaryLabel: {
-    color: '#2a2440',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      alignItems: 'center',
+      flex: 1,
+      gap: 12,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    checkmark: {
+      color: theme.accent,
+      fontSize: 56,
+      fontWeight: '700',
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 22,
+      fontWeight: '700',
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 24,
+    },
+    button: {
+      alignItems: 'center',
+      borderRadius: 14,
+      flex: 1,
+      paddingVertical: 16,
+    },
+    primary: {
+      backgroundColor: theme.accent,
+    },
+    secondary: {
+      backgroundColor: theme.border,
+    },
+    primaryLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    secondaryLabel: {
+      color: theme.textPrimary,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+}

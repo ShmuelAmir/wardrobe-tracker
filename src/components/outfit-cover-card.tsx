@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { OutfitCoverImage } from '@/components/outfit-cover-image';
 import { formatIsoDay } from '@/date-format';
 import type { OutfitCard } from '@/db/queries';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §7.2 — a row in the "All outfits" list: a large cover card that taps through
@@ -17,6 +19,8 @@ export function OutfitCoverCard({
   outfit: OutfitCard;
   onPress: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const title = outfit.name ?? 'Untitled outfit';
   const count = outfit.itemCount === 1 ? '1 item' : `${outfit.itemCount} items`;
   const worn = outfit.lastWorn ? `Worn ${formatIsoDay(outfit.lastWorn)}` : 'Never worn';
@@ -53,47 +57,52 @@ export function OutfitCoverCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    gap: 12,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-  },
-  cover: {
-    aspectRatio: 4 / 3,
-    borderRadius: 18,
-    width: '100%',
-  },
-  body: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 19,
-    fontWeight: '700',
-  },
-  meta: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  count: {
-    fontSize: 14,
-    opacity: 0.6,
-  },
-  occasion: {
-    backgroundColor: '#eceaf2',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  occasionLabel: {
-    color: '#3a2a6d',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  worn: {
-    fontSize: 14,
-    opacity: 0.6,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    card: {
+      gap: 12,
+      paddingBottom: 20,
+      paddingHorizontal: 20,
+    },
+    cover: {
+      aspectRatio: 4 / 3,
+      borderRadius: 18,
+      width: '100%',
+    },
+    body: {
+      gap: 6,
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 19,
+      fontWeight: '700',
+    },
+    meta: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    count: {
+      color: theme.textSecondary,
+      fontSize: 14,
+      opacity: 0.6,
+    },
+    occasion: {
+      backgroundColor: theme.border,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    occasionLabel: {
+      color: theme.accent,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    worn: {
+      color: theme.textSecondary,
+      fontSize: 14,
+      opacity: 0.6,
+    },
+  });
+}

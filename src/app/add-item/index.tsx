@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAddItemDraft } from '@/components/add-item-draft';
@@ -10,6 +10,7 @@ import {
   type CaptureResult,
   type DeniableSource,
 } from '@/photo-capture';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * Step 1 — pick a source (§5.1). All three are live and listed with **Import
@@ -24,6 +25,8 @@ import {
  * remains after it's dismissed.
  */
 export default function SourceStep() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { setCapture } = useAddItemDraft();
   const [denied, setDenied] = useState<Set<DeniableSource>>(new Set());
@@ -48,6 +51,7 @@ export default function SourceStep() {
         title="Import from web"
         subtitle="Paste a product link — best photo, brand and name"
         onPress={() => router.push('/add-item/paste-link')}
+        styles={styles}
       />
       {denied.has('camera') ? (
         <PermissionDeniedCard testID="source-camera-denied" source="Camera" />
@@ -57,6 +61,7 @@ export default function SourceStep() {
           title="Take a photo"
           subtitle="Shoot the item with your camera"
           onPress={() => capture('camera', captureFromCamera)}
+          styles={styles}
         />
       )}
       {denied.has('library') ? (
@@ -67,6 +72,7 @@ export default function SourceStep() {
           title="Choose from library"
           subtitle="Pick an existing photo"
           onPress={() => capture('library', captureFromLibrary)}
+          styles={styles}
         />
       )}
     </View>
@@ -79,12 +85,14 @@ function SourceTile({
   primary,
   onPress,
   testID,
+  styles,
 }: {
   title: string;
   subtitle: string;
   primary?: boolean;
   onPress: () => void;
   testID: string;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <Pressable
@@ -100,34 +108,36 @@ function SourceTile({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    gap: 14,
-    padding: 20,
-  },
-  tile: {
-    backgroundColor: '#f2f1f6',
-    borderRadius: 16,
-    gap: 4,
-    padding: 20,
-  },
-  tilePrimary: {
-    backgroundColor: '#3a2a6d',
-  },
-  tileTitle: {
-    color: '#1c1830',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  tileTitlePrimary: {
-    color: '#ffffff',
-  },
-  tileSubtitle: {
-    color: '#4a4560',
-    fontSize: 14,
-  },
-  tileSubtitlePrimary: {
-    color: '#e6e1f5',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      gap: 14,
+      padding: 20,
+    },
+    tile: {
+      backgroundColor: theme.fill,
+      borderRadius: 16,
+      gap: 4,
+      padding: 20,
+    },
+    tilePrimary: {
+      backgroundColor: theme.accent,
+    },
+    tileTitle: {
+      color: theme.textPrimary,
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    tileTitlePrimary: {
+      color: theme.onAccent,
+    },
+    tileSubtitle: {
+      color: theme.textSecondary,
+      fontSize: 14,
+    },
+    tileSubtitlePrimary: {
+      color: theme.onAccentMuted,
+    },
+  });
+}

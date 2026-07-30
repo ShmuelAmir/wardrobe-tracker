@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §7.5 — the two Outfits zero states are **different screens**, not one message
@@ -15,6 +18,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
  * can't work. The one action points back at the precondition.
  */
 export function OutfitsGatedState({ onGoToWardrobe }: { onGoToWardrobe: () => void }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.screen} testID="outfits-gated">
       <Text style={styles.title}>Your wardrobe comes first</Text>
@@ -39,6 +44,8 @@ export function OutfitsGatedState({ onGoToWardrobe }: { onGoToWardrobe: () => vo
  * create action present (the nav-bar `+` is live alongside it).
  */
 export function OutfitsEmptyState({ onNewOutfit }: { onNewOutfit: () => void }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.screen} testID="outfits-empty">
       <Text style={styles.title}>Build your first outfit</Text>
@@ -55,38 +62,42 @@ export function OutfitsEmptyState({ onNewOutfit }: { onNewOutfit: () => void }) 
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 14,
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  body: {
-    fontSize: 16,
-    lineHeight: 23,
-    opacity: 0.6,
-    textAlign: 'center',
-  },
-  cta: {
-    backgroundColor: '#3a2a6d',
-    borderRadius: 999,
-    marginTop: 8,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
-  ctaPressed: {
-    opacity: 0.7,
-  },
-  ctaLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      alignItems: 'center',
+      flex: 1,
+      gap: 14,
+      justifyContent: 'center',
+      paddingHorizontal: 40,
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 24,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    body: {
+      color: theme.textPrimary,
+      fontSize: 16,
+      lineHeight: 23,
+      opacity: 0.6,
+      textAlign: 'center',
+    },
+    cta: {
+      backgroundColor: theme.accent,
+      borderRadius: 999,
+      marginTop: 8,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+    },
+    ctaPressed: {
+      opacity: 0.7,
+    },
+    ctaLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+}

@@ -46,9 +46,38 @@ an *array* of stops per theme (the `WardrobeHero` gradient doesn't fit a
 single-color role). `onHero` was added by the pilot (#55) through this same
 review gate: the hero block is dark in *both* themes, so its foreground stays
 light in both, whereas `onAccent` flips (dark text, for legibility on the
-lightened dark-mode accent) — collapsing the two would make one illegible. No
-`success` and no shadow/elevation tokens yet — neither exists in the current
-palette.
+lightened dark-mode accent) — collapsing the two would make one illegible.
+
+The final batch (#57), migrating the remaining screens (Outfits, Stats,
+add-item, outfit-builder, item detail/edit), surfaced ten more roles through
+the gate — each a color the older screens carried as a literal that no existing
+role covered:
+
+- **`fill`** — the recessed, faintly-tinted background of an inert input or an
+  unselected tile. Neither `surface` (a raised card) nor `background` (the
+  screen) fit: it sits *on* a surface as a well, so in dark it lifts *above* the
+  surface (`ink700`) where in light it sits *below* it (`grey075`).
+- **`onAccentMuted`** — the dimmed foreground on an accent block (a subtitle
+  under an `onAccent` title). Flips with `onAccent`, so it can't be `onAccent`
+  at reduced opacity.
+- **`warningSurface` / `onWarningSurface` / `warning`** — the non-destructive
+  attention set, deliberately distinct from `danger`/`onDanger` so a nudge never
+  reads as a delete. `warningSurface` + `onWarningSurface` are the "never worn"
+  `0` badge (peach fill, burnt-orange text); `warning` is a *standalone* warm
+  text (a web-import failure) on the plain screen, a deeper brown because it has
+  no fill behind it. They stayed three roles rather than two so light-mode hex is
+  preserved exactly (the older screens used two different browns); in dark the
+  two text roles converge on one amber.
+- **`podiumGold` / `podiumSilver` / `podiumBronze`** — the §9.4 medal tones.
+  Decorative metallics, and the **one** place a role resolves to the *same* hex
+  in both themes (a medal is a medal).
+- **`shadow` / `scrim`** — the original ADR noted "no shadow/elevation tokens
+  yet"; two occlusion colors are now the first. `shadow` is the segmented
+  control's selected-segment shadow; `scrim` is the translucent wash behind a
+  bottom sheet (the one role carrying its own alpha). Both stay constant across
+  themes because an occlusion is not a surface. Still no broader elevation scale.
+
+Still no `success` token — nothing in the palette needs one.
 
 **Colors are theme-reactive; spacing, radii and typography are flat.** Colors
 flow through `useTheme()`. Spacing (a 4/8/12/16/24/32 scale), radii
@@ -107,9 +136,9 @@ unlike the flat single-purpose modules in `src/`. `<Text>` lives in
 - **Every colored component becomes a hook consumer.** Files move from a static
   bottom-of-file stylesheet to `makeStyles(theme)` + `useMemo`; pure-layout files
   are untouched. The change is mechanical but touches ~42 files over several PRs.
-- **A dark theme is one object to tune.** Because everything routes through the 9
-  roles, getting a dark hex wrong costs nothing structurally — only the
-  `dark.ts` map changes.
+- **A dark theme is one object to tune.** Because everything routes through the
+  role set (20 single-color roles + `heroGradient` after #57), getting a dark hex
+  wrong costs nothing structurally — only the `dark.ts` map changes.
 - **The role set is a review gate.** Introducing a raw hex or a new role is a
   reviewable decision, which keeps the palette from re-fragmenting.
 - **Navigation and content flip together** from one `colorScheme` read; there is

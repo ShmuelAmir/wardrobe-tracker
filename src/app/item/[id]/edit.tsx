@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DeleteRow } from '@/components/delete-row';
@@ -10,6 +10,7 @@ import type { Category, Item } from '@/db/schema';
 import { deleteItem, planItemDelete, readItemDeleteImpact } from '@/item-delete';
 import { itemImageUri } from '@/item-images';
 import { updateItem } from '@/item-save';
+import { useTheme, type Theme } from '@/theme';
 import {
   captureFromCamera,
   captureFromLibrary,
@@ -31,6 +32,8 @@ import type { CapturedImage } from '@/item-save';
  * their own states instead, the same guard the detail page uses.
  */
 export default function ItemEditScreen() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, loading } = useItemDetail(Number(id));
 
@@ -48,6 +51,8 @@ export default function ItemEditScreen() {
 }
 
 function ItemEditForm({ item }: { item: Item }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const state = useReviewForm({
     category: item.category,
@@ -167,7 +172,7 @@ function ItemEditForm({ item }: { item: Item }) {
       />
 
       <ScrollView contentContainerStyle={styles.content} testID="item-edit-form">
-        <ReplacePhoto uri={photoUri} category={item.category} onReplace={promptReplace} />
+        <ReplacePhoto uri={photoUri} category={item.category} onReplace={promptReplace} styles={styles} />
 
         <View style={styles.fields}>
           <ReviewFields state={state} />
@@ -194,10 +199,12 @@ function ReplacePhoto({
   uri,
   category,
   onReplace,
+  styles,
 }: {
   uri: string;
   category: Category;
   onReplace: () => void;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   const [missing, setMissing] = useState(false);
 
@@ -228,59 +235,63 @@ function ReplacePhoto({
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingBottom: 32,
-  },
-  photoBlock: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 16,
-  },
-  photo: {
-    aspectRatio: 1,
-    backgroundColor: '#f2f1f6',
-    borderRadius: 16,
-    width: '60%',
-  },
-  photoPlaceholder: {
-    alignItems: 'center',
-    backgroundColor: '#e9e6f0',
-    justifyContent: 'center',
-  },
-  photoPlaceholderLabel: {
-    fontSize: 16,
-    opacity: 0.55,
-  },
-  replace: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  replaceLabel: {
-    color: '#3a2a6d',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  fields: {
-    gap: 12,
-    paddingHorizontal: 20,
-  },
-  navAction: {
-    color: '#3a2a6d',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  navActionDisabled: {
-    opacity: 0.4,
-  },
-  missing: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  missingText: {
-    fontSize: 16,
-    opacity: 0.6,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    content: {
+      paddingBottom: 32,
+    },
+    photoBlock: {
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 16,
+    },
+    photo: {
+      aspectRatio: 1,
+      backgroundColor: theme.fill,
+      borderRadius: 16,
+      width: '60%',
+    },
+    photoPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      justifyContent: 'center',
+    },
+    photoPlaceholderLabel: {
+      color: theme.textSecondary,
+      fontSize: 16,
+      opacity: 0.55,
+    },
+    replace: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    replaceLabel: {
+      color: theme.accent,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    fields: {
+      gap: 12,
+      paddingHorizontal: 20,
+    },
+    navAction: {
+      color: theme.accent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    navActionDisabled: {
+      opacity: 0.4,
+    },
+    missing: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    missingText: {
+      color: theme.textSecondary,
+      fontSize: 16,
+      opacity: 0.6,
+    },
+  });
+}

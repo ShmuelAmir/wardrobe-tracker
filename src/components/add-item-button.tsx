@@ -1,6 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, StyleSheet } from 'react-native';
 
+import { useTheme } from '@/theme';
+
 /**
  * §7.3 — the contextual nav-bar `+`. Lives in the header rather than as a FAB so
  * it never competes with a tab's primary action; the owning tab decides what it
@@ -17,6 +19,7 @@ export function AddItemButton({
   accessibilityLabel?: string;
   testID?: string;
 }) {
+  const theme = useTheme();
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
@@ -26,7 +29,7 @@ export function AddItemButton({
       style={styles.button}
       testID={testID}
     >
-      <Ionicons name="add" size={28} color="#3a2a6d" />
+      <Ionicons name="add" size={28} color={theme.accent} />
     </Pressable>
   );
 }

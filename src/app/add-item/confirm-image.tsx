@@ -1,7 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { Image } from 'expo-image';
 import { Redirect, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import {
 
 import { useAddItemDraft } from '@/components/add-item-draft';
 import { PhotoFallback } from '@/components/photo-fallback';
+import { useTheme, type Theme } from '@/theme';
 import { downloadCandidate } from '@/web-download';
 
 /**
@@ -34,6 +35,8 @@ import { downloadCandidate } from '@/web-download';
  * name/brand, so the fallback carries them to Review unchanged.
  */
 export default function ConfirmImageStep() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { webImport, setCapture } = useAddItemDraft();
   const [selected, setSelected] = useState(0);
@@ -108,7 +111,7 @@ export default function ConfirmImageStep() {
             testID="confirm-image-use"
           >
             {downloading ? (
-              <ActivityIndicator color="#ffffff" testID="confirm-image-spinner" />
+              <ActivityIndicator color={theme.onAccent} testID="confirm-image-spinner" />
             ) : (
               <Text style={styles.ctaLabel}>Use this image</Text>
             )}
@@ -128,54 +131,56 @@ export default function ConfirmImageStep() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    gap: 16,
-    padding: 20,
-  },
-  preview: {
-    backgroundColor: '#f2f1f6',
-    borderRadius: 16,
-    flex: 1,
-  },
-  thumbs: {
-    gap: 10,
-    paddingVertical: 2,
-  },
-  thumb: {
-    backgroundColor: '#f2f1f6',
-    borderRadius: 10,
-    height: 64,
-    width: 64,
-  },
-  thumbSelected: {
-    borderColor: '#3a2a6d',
-    borderWidth: 3,
-  },
-  cta: {
-    alignItems: 'center',
-    backgroundColor: '#3a2a6d',
-    borderRadius: 14,
-    justifyContent: 'center',
-    minHeight: 52,
-    paddingVertical: 16,
-  },
-  ctaDisabled: {
-    opacity: 0.5,
-  },
-  ctaLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  none: {
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  noneLabel: {
-    color: '#3a2a6d',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      gap: 16,
+      padding: 20,
+    },
+    preview: {
+      backgroundColor: theme.fill,
+      borderRadius: 16,
+      flex: 1,
+    },
+    thumbs: {
+      gap: 10,
+      paddingVertical: 2,
+    },
+    thumb: {
+      backgroundColor: theme.fill,
+      borderRadius: 10,
+      height: 64,
+      width: 64,
+    },
+    thumbSelected: {
+      borderColor: theme.accent,
+      borderWidth: 3,
+    },
+    cta: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 14,
+      justifyContent: 'center',
+      minHeight: 52,
+      paddingVertical: 16,
+    },
+    ctaDisabled: {
+      opacity: 0.5,
+    },
+    ctaLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    none: {
+      alignItems: 'center',
+      paddingVertical: 6,
+    },
+    noneLabel: {
+      color: theme.accent,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+  });
+}

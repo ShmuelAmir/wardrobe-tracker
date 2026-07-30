@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DateBackfillCalendar } from '@/components/date-backfill-calendar';
@@ -11,6 +11,7 @@ import { WearToast } from '@/components/wear-toast';
 import { formatDay } from '@/date-format';
 import { useOutfitDetail, useOutfitStats, useWearHistory } from '@/db/queries';
 import { zeroItemOutfitLabel } from '@/delete-copy';
+import { useTheme, type Theme } from '@/theme';
 import { isoToday, logWear, removeWear } from '@/wear-log';
 
 /**
@@ -22,6 +23,8 @@ import { isoToday, logWear, removeWear } from '@/wear-log';
  * long-past mistake). Edit re-enters §6's builder pre-selected.
  */
 export default function OutfitDetailScreen() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const outfitId = Number(id);
   const router = useRouter();
@@ -141,68 +144,75 @@ export default function OutfitDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  header: {
-    gap: 14,
-    paddingBottom: 14,
-    paddingTop: 16,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    paddingHorizontal: 20,
-  },
-  meta: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingHorizontal: 20,
-  },
-  count: {
-    fontSize: 15,
-    opacity: 0.6,
-  },
-  created: {
-    fontSize: 15,
-    opacity: 0.6,
-  },
-  occasion: {
-    backgroundColor: '#eceaf2',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  occasionLabel: {
-    color: '#3a2a6d',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  zeroItems: {
-    backgroundColor: '#f5f4f8',
-    borderRadius: 12,
-    fontSize: 14,
-    lineHeight: 20,
-    marginHorizontal: 20,
-    opacity: 0.7,
-    padding: 14,
-  },
-  edit: {
-    color: '#3a2a6d',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  missing: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  missingText: {
-    fontSize: 16,
-    opacity: 0.6,
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+    header: {
+      gap: 14,
+      paddingBottom: 14,
+      paddingTop: 16,
+    },
+    title: {
+      color: theme.textPrimary,
+      fontSize: 26,
+      fontWeight: '700',
+      paddingHorizontal: 20,
+    },
+    meta: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      paddingHorizontal: 20,
+    },
+    count: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      opacity: 0.6,
+    },
+    created: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      opacity: 0.6,
+    },
+    occasion: {
+      backgroundColor: theme.border,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+    },
+    occasionLabel: {
+      color: theme.accent,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    zeroItems: {
+      backgroundColor: theme.fill,
+      borderRadius: 12,
+      color: theme.textSecondary,
+      fontSize: 14,
+      lineHeight: 20,
+      marginHorizontal: 20,
+      opacity: 0.7,
+      padding: 14,
+    },
+    edit: {
+      color: theme.accent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    missing: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+      padding: 24,
+    },
+    missingText: {
+      color: theme.textSecondary,
+      fontSize: 16,
+      opacity: 0.6,
+    },
+  });
+}

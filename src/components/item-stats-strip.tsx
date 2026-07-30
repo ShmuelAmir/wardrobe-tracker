@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { daysSince } from '@/date-format';
 import type { ItemStats } from '@/db/queries';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §8.1 stats strip — three derived cells: **wear count / days since last worn /
@@ -19,6 +21,8 @@ export function ItemStatsStrip({
   stats: ItemStats;
   outfitsCount: number;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { wearCount, lastWorn } = stats;
   const days = lastWorn === null ? null : daysSince(lastWorn, new Date());
 
@@ -48,28 +52,32 @@ export function ItemStatsStrip({
   );
 }
 
-const styles = StyleSheet.create({
-  strip: {
-    backgroundColor: '#f5f4f8',
-    borderRadius: 14,
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    paddingVertical: 14,
-  },
-  cell: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 4,
-    paddingHorizontal: 6,
-  },
-  value: {
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  label: {
-    fontSize: 12,
-    opacity: 0.55,
-    textAlign: 'center',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    strip: {
+      backgroundColor: theme.fill,
+      borderRadius: 14,
+      flexDirection: 'row',
+      marginHorizontal: 20,
+      paddingVertical: 14,
+    },
+    cell: {
+      alignItems: 'center',
+      flex: 1,
+      gap: 4,
+      paddingHorizontal: 6,
+    },
+    value: {
+      color: theme.textPrimary,
+      fontSize: 15,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    label: {
+      color: theme.textSecondary,
+      fontSize: 12,
+      opacity: 0.55,
+      textAlign: 'center',
+    },
+  });
+}

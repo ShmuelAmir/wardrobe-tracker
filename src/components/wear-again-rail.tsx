@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { OutfitCoverImage } from '@/components/outfit-cover-image';
 import type { OutfitCard } from '@/db/queries';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * §7.1 — the "Wear again" rail: a horizontal strip of the 5 most recently worn
@@ -27,6 +29,8 @@ export function WearAgainRail({
   onWoreIt: (outfitId: number) => void;
   onOpen: (outfitId: number) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.section} testID="wear-again-rail">
       <Text style={styles.heading}>Wear again</Text>
@@ -42,6 +46,7 @@ export function WearAgainRail({
             confirmed={confirmedOutfitId === outfit.id}
             onWoreIt={() => onWoreIt(outfit.id)}
             onOpen={() => onOpen(outfit.id)}
+            styles={styles}
           />
         )}
       />
@@ -54,11 +59,13 @@ function WearAgainCard({
   confirmed,
   onWoreIt,
   onOpen,
+  styles,
 }: {
   outfit: OutfitCard;
   confirmed: boolean;
   onWoreIt: () => void;
   onOpen: () => void;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   const title = outfit.name ?? 'Untitled outfit';
 
@@ -94,53 +101,57 @@ function WearAgainCard({
 
 const CARD_WIDTH = 132;
 
-const styles = StyleSheet.create({
-  section: {
-    gap: 10,
-    paddingTop: 16,
-  },
-  heading: {
-    fontSize: 20,
-    fontWeight: '700',
-    paddingHorizontal: 20,
-  },
-  rail: {
-    gap: 12,
-    paddingHorizontal: 20,
-  },
-  card: {
-    gap: 8,
-    width: CARD_WIDTH,
-  },
-  cover: {
-    aspectRatio: 1,
-    borderRadius: 14,
-    width: '100%',
-  },
-  name: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  woreIt: {
-    alignItems: 'center',
-    backgroundColor: '#3a2a6d',
-    borderRadius: 10,
-    paddingVertical: 10,
-  },
-  woreItLabel: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  confirmed: {
-    alignItems: 'center',
-    backgroundColor: '#eceaf2',
-    borderRadius: 10,
-    paddingVertical: 10,
-  },
-  confirmedLabel: {
-    color: '#3a2a6d',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    section: {
+      gap: 10,
+      paddingTop: 16,
+    },
+    heading: {
+      color: theme.textPrimary,
+      fontSize: 20,
+      fontWeight: '700',
+      paddingHorizontal: 20,
+    },
+    rail: {
+      gap: 12,
+      paddingHorizontal: 20,
+    },
+    card: {
+      gap: 8,
+      width: CARD_WIDTH,
+    },
+    cover: {
+      aspectRatio: 1,
+      borderRadius: 14,
+      width: '100%',
+    },
+    name: {
+      color: theme.textPrimary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    woreIt: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 10,
+      paddingVertical: 10,
+    },
+    woreItLabel: {
+      color: theme.onAccent,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    confirmed: {
+      alignItems: 'center',
+      backgroundColor: theme.border,
+      borderRadius: 10,
+      paddingVertical: 10,
+    },
+    confirmedLabel: {
+      color: theme.accent,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+  });
+}

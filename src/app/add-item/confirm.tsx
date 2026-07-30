@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
 import { Redirect, useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAddItemDraft } from '@/components/add-item-draft';
+import { useTheme, type Theme } from '@/theme';
 
 /**
  * Confirm the photo (§5.2) — the library path's stand-in for the web path's
@@ -11,6 +13,8 @@ import { useAddItemDraft } from '@/components/add-item-draft';
  * to the source step rather than render an empty frame.
  */
 export default function ConfirmStep() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { capture } = useAddItemDraft();
 
@@ -36,26 +40,28 @@ export default function ConfirmStep() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    gap: 16,
-    padding: 20,
-  },
-  preview: {
-    backgroundColor: '#f2f1f6',
-    borderRadius: 16,
-    flex: 1,
-  },
-  cta: {
-    alignItems: 'center',
-    backgroundColor: '#3a2a6d',
-    borderRadius: 14,
-    paddingVertical: 16,
-  },
-  ctaLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
+function makeStyles(theme: Theme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      gap: 16,
+      padding: 20,
+    },
+    preview: {
+      backgroundColor: theme.fill,
+      borderRadius: 16,
+      flex: 1,
+    },
+    cta: {
+      alignItems: 'center',
+      backgroundColor: theme.accent,
+      borderRadius: 14,
+      paddingVertical: 16,
+    },
+    ctaLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+  });
+}
