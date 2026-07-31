@@ -150,3 +150,39 @@ unlike the flat single-purpose modules in `src/`. `<Text>` lives in
   the `colorScheme` source; Dynamic Type makes the type tokens scale-aware).
 - **SPEC.md is untouched** — theming is implementation, not product/domain
   behavior. This ADR is the record; no CONTEXT.md glossary entry was added.
+
+## Amendment (2026-07-31) — design-parity retrofit
+
+The [design-parity retrofit](https://github.com/ShmuelAmir/wardrobe-tracker/issues/71) (map
+[#64](https://github.com/ShmuelAmir/wardrobe-tracker/issues/64)) re-pitches the
+palette from the original purple spine onto the prototypes' **indigo** system
+(`accent #4c4bd0`, a flat `ground/surface/ink` slate ramp, a persistent dark nav
+chrome). The two-layer architecture, the closed-role-set gate, the `makeStyles`
+pattern and system-driven dark mode are all **unchanged** — this is a remap plus a
+role-set evolution, exactly the kind of change the token layer was built to absorb.
+The full role→primitive table and the build-ready deltas live in the
+[design-parity spec](https://github.com/ShmuelAmir/wardrobe-tracker/issues/71); the role-set changes of record are:
+
+- **Six roles added**, each through the same review gate: `textTertiary` (the
+  third text step, `ink-3`), `accentSoft` (the tinted accent well), `dangerSurface`
+  (the destructive fill), and `chromeBg` / `chromeInk` / `chromeLine` (the
+  persistent dark nav — dark in *both* themes, like the retired `onHero` block was).
+- **`onHero` retired.** The hero is redrawn to an `accentSoft → surface` gradient
+  with content over `textPrimary`/`textSecondary`/`onAccent`, so the "dark in both
+  themes" foreground role that justified `onHero` no longer has a surface to sit on.
+- **`podiumGold` / `podiumSilver` / `podiumBronze` retired.** The Variant B stats
+  podium drops the medal tint (rank now reads from height + position), removing the
+  roles' only consumer. Per the no-dead-primitive rule they leave the role set, and
+  the `gold`/`silver`/`bronze` primitives are deleted with them — so the §9.4
+  medal-tone note above is now historical.
+- **The purple primitive ramp is deleted** (`purple900…purple100`). Every role it
+  backed (`onHero`, `heroGradient`, `onAccentMuted`) now resolves to indigo/slate,
+  so the whole ramp is dead and removed. `heroGradient` is redrawn to
+  `[accentSoft, surface]`.
+- **Two carried contrast flags** for the build's on-device tuning pass:
+  `onAccentMuted` (no prototype source, ~3.96:1 at its one consumer) and any
+  standalone `warning` text on a plain surface.
+
+The invariant the guard enforces is unchanged and was the sizing constraint on this
+amendment: every hex in `primitives.ts`, every primitive referenced by ≥1 role.
+Implementation is a separate effort; this amendment records the accepted design.
