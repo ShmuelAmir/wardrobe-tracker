@@ -114,6 +114,24 @@ describe('Wardrobe with items', () => {
     expect(screen.getByTestId('item-image-1').props.contentFit).toBe('cover');
   });
 
+  // #74 — the Wardrobe grid is the *labelled* variant: each tile carries the
+  // item's name beneath it. (The shared grid on outfit Detail stays unlabelled.)
+  it('labels each tile with the item name (the Wardrobe-scoped variant)', async () => {
+    returns([anItem({ id: 1, name: 'Grey tee' })]);
+
+    await render(<WardrobeTab />);
+
+    expect(screen.getByTestId('item-label-1')).toHaveTextContent('Grey tee');
+  });
+
+  it('falls back to the category when a tile has no name', async () => {
+    returns([anItem({ id: 1, name: null, category: 'Footwear' })]);
+
+    await render(<WardrobeTab />);
+
+    expect(screen.getByTestId('item-label-1')).toHaveTextContent('Footwear');
+  });
+
   it('shows nothing rather than flashing the hero while the first read is in flight', async () => {
     returns([], { loading: true });
 

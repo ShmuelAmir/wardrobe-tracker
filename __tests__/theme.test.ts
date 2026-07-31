@@ -9,7 +9,7 @@ import { getTheme, navigationTheme, type Theme } from '@/theme';
  * pinning it here would be brittle.
  */
 
-// The closed role set (26 single-color roles + `heroGradient`). A role added to
+// The closed role set (25 single-color roles + `heroGradient`). A role added to
 // the theme has to be added here too — that is the point of the completeness
 // guard below.
 const ROLES: (keyof Theme)[] = [
@@ -23,7 +23,6 @@ const ROLES: (keyof Theme)[] = [
   'onAccent',
   'onAccentMuted',
   'accentSoft',
-  'onHero',
   'fill',
   'danger',
   'onDanger',
@@ -57,6 +56,16 @@ describe('getTheme returns the complete closed role set', () => {
     for (const scheme of ['light', 'dark'] as const) {
       expect(Array.isArray(getTheme(scheme).heroGradient)).toBe(true);
       expect(getTheme(scheme).heroGradient.length).toBeGreaterThan(1);
+    }
+  });
+
+  // #74 redraws the hero onto the indigo system: the gradient is the tinted
+  // accent well fading into the surface, in both themes. Asserted by role (not
+  // hex) so it stays a statement about *what* the stops are, not their value.
+  it('draws heroGradient from accentSoft into surface in both themes', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const theme = getTheme(scheme);
+      expect(theme.heroGradient).toEqual([theme.accentSoft, theme.surface]);
     }
   });
 });

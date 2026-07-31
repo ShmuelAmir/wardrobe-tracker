@@ -8,15 +8,12 @@ import { primitives } from './primitives';
  * component.
  *
  * `heroGradient` is the one non-single-color role: the `WardrobeHero` gradient
- * is an ordered array of stops, so it resolves to `string[]` per theme.
- *
- * `onHero` is the light foreground that sits on the hero's brand block (its
- * title, body and CTA pill). It is a *distinct* role from `onAccent`: the hero
- * gradient is dark in **both** themes, so its foreground stays light in both,
- * whereas `onAccent` flips (dark text, for legibility on the lightened dark-mode
- * accent). Collapsing the two would make one of them illegible. (Retired by #66
- * when the hero is redrawn onto the indigo system; kept here because
- * `wardrobe-hero.tsx` still consumes it.)
+ * is an ordered array of stops, so it resolves to `string[]` per theme. #74
+ * redrew it onto the indigo system — `[accentSoft, surface]`, the tinted accent
+ * well fading into the screen surface — and retired the old `onHero` foreground
+ * role with it: the hero is no longer a dark brand block in both themes, so its
+ * title/body/CTA now read off `textPrimary`/`textSecondary`/`onAccent` like any
+ * other surface content.
  *
  * The roles below `onDanger` were added by ticket #57 as it migrated the last
  * screens (following the pilot's `onHero` precedent):
@@ -61,7 +58,6 @@ export type Theme = {
   onAccent: string;
   onAccentMuted: string;
   accentSoft: string;
-  onHero: string;
   fill: string;
   danger: string;
   onDanger: string;
@@ -84,8 +80,9 @@ export type Theme = {
 
 /**
  * The light role map — the app's look after the design-parity remap (#71),
- * expressed as roles. Every retained role now resolves to an indigo/slate/chrome
- * primitive; `heroGradient` alone still rides the retained purple ramp until #66.
+ * expressed as roles. Every role now resolves to an indigo/slate/chrome
+ * primitive — with #74 redrawing `heroGradient` onto the indigo system, the last
+ * purple primitive is gone.
  */
 export const light: Theme = {
   background: primitives.slate050,
@@ -98,7 +95,6 @@ export const light: Theme = {
   onAccent: primitives.white,
   onAccentMuted: primitives.indigo100,
   accentSoft: primitives.indigo050,
-  onHero: primitives.white,
   fill: primitives.slate100,
   danger: primitives.red600,
   onDanger: primitives.white,
@@ -114,5 +110,5 @@ export const light: Theme = {
   chromeLine: primitives.slate760,
   shadow: primitives.black,
   scrim: primitives.scrimBlack,
-  heroGradient: [primitives.purple900, primitives.purple700, primitives.purple500],
+  heroGradient: [primitives.indigo050, primitives.white],
 };

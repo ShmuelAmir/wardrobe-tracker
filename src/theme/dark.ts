@@ -7,13 +7,12 @@ import type { Theme } from './light';
  * indigo survives on dark, softened text, a still-visible `border`), not a
  * mechanical inversion.
  *
- * `heroGradient` is the role the pilot (#55) hand-tuned when the Wardrobe tab
- * first rendered dark, and the retrofit keeps it on the retained purple ramp
- * until #66: it deepens to a night-purple (`slate975 → purple900 → purple700`)
- * rather than the light theme's brighter `purple500` tail, so the first-run
- * screen reads as a dark brand block and the light `onHero` foreground keeps
- * strong contrast on every stop. `onHero` stays light (`slate025`, a hair off
- * pure white) because the hero block is dark in both themes.
+ * `heroGradient` was the role the pilot (#55) hand-tuned as a dark brand block;
+ * #74 redrew it onto the indigo system in both themes — `[accentSoft, surface]`,
+ * here the deep `indigo900` accent well fading into the `slate850` surface — so
+ * the first-run screen is now a soft tinted panel that tracks the theme rather
+ * than a fixed dark block, and its content reads off the ordinary
+ * `textPrimary`/`textSecondary`/`onAccent` roles (the old `onHero` is retired).
  *
  * The retained roles resolve dark as their function demands, not by inversion:
  *  - `fill` lifts to `slate800` — a recessed well still has to sit a step *above*
@@ -45,7 +44,6 @@ export const dark: Theme = {
   onAccent: primitives.slate975,
   onAccentMuted: primitives.indigo800,
   accentSoft: primitives.indigo900,
-  onHero: primitives.slate025,
   fill: primitives.slate800,
   danger: primitives.red350,
   onDanger: primitives.red900,
@@ -61,5 +59,5 @@ export const dark: Theme = {
   chromeLine: primitives.slate770,
   shadow: primitives.black,
   scrim: primitives.scrimBlack,
-  heroGradient: [primitives.slate975, primitives.purple900, primitives.purple700],
+  heroGradient: [primitives.indigo900, primitives.slate850],
 };

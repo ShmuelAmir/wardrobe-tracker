@@ -11,10 +11,13 @@ import { radii, spacing, useTheme, type Theme } from '@/theme';
  * copy names the product-link path first: §5 makes it the highest-quality
  * source, so the zero state is where to say so.
  *
- * The hero is a dark brand block in both themes, so its foreground reads off
- * `onHero` (light in both) rather than `onAccent` (which flips). The CTA label
- * uses the darkest gradient stop, so the pill's dark-on-light text tracks the
- * gradient it sits over.
+ * The design-parity retrofit (#74, Variant C) redrew the hero from a dark brand
+ * block into a soft tinted panel: an `accentSoft → surface` gradient that tracks
+ * the theme, with content **bottom-left** aligned over a large glyph. Because the
+ * panel is now an ordinary light/dark surface (not a fixed-dark block), its
+ * foreground reads off the everyday `textPrimary`/`textSecondary` roles and the
+ * CTA is a **solid accent** pill (`accent` fill, `onAccent` label) — the old
+ * `onHero` role it used to need is retired with this redraw.
  */
 export function WardrobeHero({ onAddItem }: { onAddItem: () => void }) {
   const theme = useTheme();
@@ -23,9 +26,8 @@ export function WardrobeHero({ onAddItem }: { onAddItem: () => void }) {
   return (
     <LinearGradient colors={theme.heroGradient} style={styles.fill} testID="wardrobe-hero">
       <View style={styles.content}>
-        <Text variant="title" style={styles.title}>
-          Your wardrobe starts here
-        </Text>
+        <Text style={styles.glyph}>👕</Text>
+        <Text style={styles.title}>Your wardrobe starts here</Text>
         <Text style={styles.body} testID="wardrobe-hero-body">
           Paste a product link and we’ll pull in the photo, brand and name for you — or shoot it
           yourself with the camera.
@@ -49,26 +51,31 @@ function makeStyles(theme: Theme) {
     fill: {
       flex: 1,
     },
+    // Bottom-aligned, left-aligned content — the Variant C hero composition.
     content: {
       flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.lg,
+      alignItems: 'flex-start',
+      justifyContent: 'flex-end',
+      gap: spacing.md,
+      paddingBottom: spacing.xxl,
       paddingHorizontal: spacing.xxl,
     },
+    glyph: {
+      fontSize: 52,
+      marginBottom: spacing.sm,
+    },
     title: {
-      color: theme.onHero,
-      textAlign: 'center',
+      color: theme.textPrimary,
+      fontSize: 27,
+      fontWeight: '700',
     },
     body: {
-      color: theme.onHero,
-      opacity: 0.8,
-      textAlign: 'center',
+      color: theme.textSecondary,
     },
     cta: {
-      backgroundColor: theme.onHero,
+      backgroundColor: theme.accent,
       borderRadius: radii.pill,
-      marginTop: spacing.lg,
+      marginTop: spacing.md,
       paddingHorizontal: spacing.xxl,
       paddingVertical: spacing.lg,
     },
@@ -76,7 +83,7 @@ function makeStyles(theme: Theme) {
       opacity: 0.7,
     },
     ctaLabel: {
-      color: theme.heroGradient[0],
+      color: theme.onAccent,
       fontSize: 17,
       fontWeight: '600',
     },
