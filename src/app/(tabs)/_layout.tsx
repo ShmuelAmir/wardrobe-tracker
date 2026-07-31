@@ -7,7 +7,16 @@ export default function TabsLayout() {
   const router = useRouter();
 
   return (
-    <Tabs screenOptions={{ headerShown: true }}>
+    // §7 / #74 — a bigger, left-aligned native header title across all three
+    // tabs. Bottom-tabs can't do iOS's collapsing large-title (that's a
+    // native-stack feature), so this is a statically enlarged left title.
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        headerTitleAlign: 'left',
+        headerTitleStyle: { fontSize: 22, fontWeight: '700' },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{

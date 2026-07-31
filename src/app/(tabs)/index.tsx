@@ -74,7 +74,12 @@ export default function WardrobeTab() {
   }
 
   return (
-    <ItemGrid items={items} header={chips} onPressItem={(id) => router.push(`/item/${id}`)} />
+    <ItemGrid
+      items={items}
+      header={chips}
+      onPressItem={(id) => router.push(`/item/${id}`)}
+      labelled
+    />
   );
 }
 

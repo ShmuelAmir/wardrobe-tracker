@@ -54,14 +54,6 @@ export const primitives = {
   indigo800: '#3a3a70',
   indigo900: '#23233c',
 
-  // The purple spine — retained *only* to back `heroGradient` (and its `onHero`
-  // foreground reads `white`/`slate025`) until #66 redraws the hero onto the
-  // indigo system. Deleted with that ticket, not here, so the no-dead-primitive
-  // rule holds at every step.
-  purple500: '#6b4fa8',
-  purple700: '#3a2a6d',
-  purple900: '#1b1033',
-
   // Warm destructive reds (kept warm). `red600` is the light `danger`; `red350`
   // the coral it lifts to on dark, where `red600` goes muddy on off-black.
   // `red050`/`red975` back the destructive fill; `red900` the dark `onDanger`.
