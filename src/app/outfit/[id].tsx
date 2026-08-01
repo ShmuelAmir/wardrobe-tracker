@@ -8,7 +8,7 @@ import { OutfitStatsStrip } from '@/components/outfit-stats-strip';
 import { WearHistorySheet } from '@/components/wear-history-sheet';
 import { WearLogger } from '@/components/wear-logger';
 import { WearToast } from '@/components/wear-toast';
-import { formatDay } from '@/date-format';
+import { formatMonthYear } from '@/date-format';
 import { useOutfitDetail, useOutfitStats, useWearHistory } from '@/db/queries';
 import { zeroItemOutfitLabel } from '@/delete-copy';
 import { useTheme, type Theme } from '@/theme';
@@ -59,9 +59,8 @@ export default function OutfitDetailScreen() {
     <View style={styles.header} testID="outfit-detail">
       <Text style={styles.title}>{title}</Text>
       <View style={styles.meta}>
-        <Text style={styles.count}>{count}</Text>
-        <Text style={styles.created} testID="outfit-detail-created">
-          Added {formatDay(outfit.createdAt)}
+        <Text style={styles.metaLine} testID="outfit-detail-created">
+          {count} · added {formatMonthYear(outfit.createdAt)}
         </Text>
         {outfit.occasion ? (
           <View style={styles.occasion} testID="outfit-detail-occasion">
@@ -145,7 +144,7 @@ function makeStyles(theme: Theme) {
     },
     title: {
       color: theme.textPrimary,
-      fontSize: 26,
+      fontSize: 24,
       fontWeight: '700',
       paddingHorizontal: 20,
     },
@@ -156,18 +155,13 @@ function makeStyles(theme: Theme) {
       gap: 10,
       paddingHorizontal: 20,
     },
-    count: {
-      color: theme.textSecondary,
-      fontSize: 15,
-      opacity: 0.6,
-    },
-    created: {
+    metaLine: {
       color: theme.textSecondary,
       fontSize: 15,
       opacity: 0.6,
     },
     occasion: {
-      backgroundColor: theme.border,
+      backgroundColor: theme.accentSoft,
       borderRadius: 999,
       paddingHorizontal: 12,
       paddingVertical: 5,

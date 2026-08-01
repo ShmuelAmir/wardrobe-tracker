@@ -1,4 +1,4 @@
-import { daysSince } from '@/date-format';
+import { daysSince, formatMonthYear, isoMonth, isoYear } from '@/date-format';
 import { sourceHostname } from '@/source-url';
 
 /**
@@ -18,6 +18,26 @@ describe('daysSince', () => {
 
   it('spans months without a timezone drift', () => {
     expect(daysSince('2026-06-30', new Date(2026, 6, 1))).toBe(1);
+  });
+});
+
+/**
+ * The relative-strip glyphs (#67): the outfit header's coarsened "added {Mon
+ * YYYY}" (from a `Date`) and the strip's "first worn" month/year (from an ISO
+ * day, field-parsed like `formatIsoDay` to dodge the UTC-midnight shift).
+ */
+describe('month-year glyphs', () => {
+  it('formats a Date as "Mon YYYY"', () => {
+    expect(formatMonthYear(new Date(2026, 6, 23))).toBe('Jul 2026');
+  });
+
+  it('reads the month glyph from an ISO day without a timezone drift', () => {
+    expect(isoMonth('2026-01-10')).toBe('Jan');
+    expect(isoMonth('2026-12-31')).toBe('Dec');
+  });
+
+  it('reads the four-digit year from an ISO day', () => {
+    expect(isoYear('2026-01-10')).toBe('2026');
   });
 });
 

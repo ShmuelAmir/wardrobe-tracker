@@ -210,27 +210,34 @@ function ReplacePhoto({
 
   return (
     <View style={styles.photoBlock}>
-      {missing ? (
-        <View style={[styles.photo, styles.photoPlaceholder]} testID="item-edit-photo-placeholder">
-          <Text style={styles.photoPlaceholderLabel}>{category}</Text>
-        </View>
-      ) : (
-        <Image
-          testID="item-edit-photo"
-          source={uri}
-          contentFit="cover"
-          style={styles.photo}
-          onError={() => setMissing(true)}
-        />
-      )}
-      <Pressable
-        accessibilityRole="button"
-        onPress={onReplace}
-        style={styles.replace}
-        testID="item-edit-replace"
-      >
-        <Text style={styles.replaceLabel}>Replace photo</Text>
-      </Pressable>
+      <View style={styles.photoFrame}>
+        {missing ? (
+          <View style={[styles.photo, styles.photoPlaceholder]} testID="item-edit-photo-placeholder">
+            <Text style={styles.photoPlaceholderLabel}>{category}</Text>
+          </View>
+        ) : (
+          <Image
+            testID="item-edit-photo"
+            source={uri}
+            contentFit="cover"
+            style={styles.photo}
+            onError={() => setMissing(true)}
+          />
+        )}
+        {/*
+         * §5.5 — the replace affordance overlays the hero as a bottom-right pill
+         * (matching the read page's inset hero, so the photo doesn't jump on
+         * entering Edit) rather than sitting below it as a separate button.
+         */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={onReplace}
+          style={styles.replace}
+          testID="item-edit-replace"
+        >
+          <Text style={styles.replaceLabel}>Replace photo</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -241,19 +248,22 @@ function makeStyles(theme: Theme) {
       paddingBottom: 32,
     },
     photoBlock: {
-      alignItems: 'center',
-      gap: 12,
       paddingVertical: 16,
     },
-    photo: {
+    photoFrame: {
       aspectRatio: 1,
-      backgroundColor: theme.fill,
       borderRadius: 16,
-      width: '60%',
+      marginHorizontal: 20,
+      overflow: 'hidden',
+    },
+    photo: {
+      backgroundColor: theme.fill,
+      height: '100%',
+      width: '100%',
     },
     photoPlaceholder: {
       alignItems: 'center',
-      backgroundColor: theme.border,
+      backgroundColor: theme.fill,
       justifyContent: 'center',
     },
     photoPlaceholderLabel: {
@@ -262,12 +272,17 @@ function makeStyles(theme: Theme) {
       opacity: 0.55,
     },
     replace: {
-      paddingHorizontal: 16,
+      backgroundColor: theme.textPrimary,
+      borderRadius: 999,
+      bottom: 12,
+      paddingHorizontal: 14,
       paddingVertical: 8,
+      position: 'absolute',
+      right: 12,
     },
     replaceLabel: {
-      color: theme.accent,
-      fontSize: 16,
+      color: theme.surface,
+      fontSize: 14,
       fontWeight: '600',
     },
     fields: {

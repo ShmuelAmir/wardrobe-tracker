@@ -209,7 +209,12 @@ export function useItemStats(itemId: number): ItemStats {
  * lists. An item in no outfit yields `[]` — the rail's empty case, which the
  * screen renders as the copy that *explains* a zero wear count.
  */
-export type ItemOutfit = { id: number; name: string | null; coverImage: string | null };
+export type ItemOutfit = {
+  id: number;
+  name: string | null;
+  coverImage: string | null;
+  wearCount: number;
+};
 
 export function itemOutfitsQuery(database: typeof db, itemId: number) {
   return database
@@ -223,6 +228,13 @@ export function itemOutfitsQuery(database: typeof db, itemId: number) {
         where outfit_item.outfit_id = outfit.id
         order by item.id
         limit 1
+      )`,
+      // The outfit's own §8.1 "N wears" subline: a count over its wear events,
+      // derived like every other stat rather than stored (§3 rule 7).
+      wearCount: sql<number>`(
+        select count(*)
+        from wear_event
+        where wear_event.outfit_id = outfit.id
       )`,
     })
     .from(outfitItem)

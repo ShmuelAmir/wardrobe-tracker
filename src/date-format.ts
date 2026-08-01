@@ -18,6 +18,26 @@ export function formatDay(date: Date): string {
   return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
+/** "Jul 2026" from a `Date` — the outfit header's coarsened "added {Mon YYYY}" meta. */
+export function formatMonthYear(date: Date): string {
+  return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/**
+ * The short month name of a `YYYY-MM-DD` day — the outfit strip's "first worn"
+ * glyph. Parsed field by field, like `formatIsoDay`, to dodge the UTC-midnight
+ * timezone shift.
+ */
+export function isoMonth(iso: string): string {
+  const month = Number(iso.split('-')[1]);
+  return MONTHS[month - 1];
+}
+
+/** The four-digit year of a `YYYY-MM-DD` day — the outfit strip's "first worn {YYYY}". */
+export function isoYear(iso: string): string {
+  return iso.split('-')[0];
+}
+
 /**
  * "Jul 23, 2026" from a `YYYY-MM-DD` string — wear days. Parsed **field by
  * field** rather than through `new Date(iso)`, which would read the string as
