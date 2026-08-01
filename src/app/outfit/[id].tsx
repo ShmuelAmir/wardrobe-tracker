@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DateBackfillCalendar } from '@/components/date-backfill-calendar';
@@ -12,7 +12,8 @@ import { formatDay } from '@/date-format';
 import { useOutfitDetail, useOutfitStats, useWearHistory } from '@/db/queries';
 import { zeroItemOutfitLabel } from '@/delete-copy';
 import { useTheme, type Theme } from '@/theme';
-import { isoToday, logWear, removeWear } from '@/wear-log';
+import { useWearLog } from '@/use-wear-log';
+import { isoToday, removeWear } from '@/wear-log';
 
 /**
  * Outfit Detail & wear logging (§8.5) — the outfit's own page, and the first
@@ -32,23 +33,11 @@ export default function OutfitDetailScreen() {
   const stats = useOutfitStats(outfitId);
   const wears = useWearHistory(outfitId);
 
-  // The just-written event id is what Undo deletes — "that last tap", not "the
-  // latest wear". It clears when the toast expires.
-  const [toast, setToast] = useState<{ eventId: number } | null>(null);
+  // The wear-log-with-Undo controller — the same hook the Outfits rail drives,
+  // so "log a wear then Undo that tap" is one code path on both surfaces (§2).
+  const { logged, log, undo, dismiss } = useWearLog();
   const [pickingDay, setPickingDay] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-
-  const dismissToast = useCallback(() => setToast(null), []);
-
-  function log(wornOn: string) {
-    const eventId = logWear(outfitId, wornOn);
-    setToast({ eventId });
-  }
-
-  function undo() {
-    if (toast) removeWear(toast.eventId);
-    setToast(null);
-  }
 
   if (loading) return <View testID="outfit-detail-loading" />;
 
@@ -82,7 +71,7 @@ export default function OutfitDetailScreen() {
       </View>
 
       <OutfitStatsStrip stats={stats} onPressWears={() => setShowHistory(true)} />
-      <WearLogger onToday={() => log(isoToday())} onOtherDay={() => setPickingDay(true)} />
+      <WearLogger onToday={() => log(outfitId, isoToday())} onOtherDay={() => setPickingDay(true)} />
 
       {/*
        * §8.4 — a garment-less outfit is a **legal, labelled state**, not a bug:
@@ -118,8 +107,8 @@ export default function OutfitDetailScreen() {
       />
       <ItemGrid items={items} header={header} />
 
-      {toast ? (
-        <WearToast message="Logged a wear." onUndo={undo} onExpire={dismissToast} />
+      {logged ? (
+        <WearToast message="Logged a wear." onUndo={undo} onExpire={dismiss} />
       ) : null}
 
       {pickingDay ? (
@@ -127,7 +116,7 @@ export default function OutfitDetailScreen() {
           today={new Date()}
           onPick={(iso) => {
             setPickingDay(false);
-            log(iso);
+            log(outfitId, iso);
           }}
           onCancel={() => setPickingDay(false)}
         />

@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,10 +8,12 @@ import type { OutfitCard } from '@/db/queries';
 import { useTheme, type Theme } from '@/theme';
 
 /**
- * §7.2 — a row in the "All outfits" list: a large cover card that taps through
- * to the outfit's Detail (§8.5). It carries the last-worn line the list is
- * sorted by, so the ordering the user sees is legible on each card ("Never worn"
- * for the aspirational bucket that sinks to the bottom).
+ * §7.2 — a row in the "All outfits" list, tapping through to the outfit's Detail
+ * (§8.5). The Variant C card (#75) is a compact, bordered, rounded container: a
+ * cover thumbnail, a single-row body (name + one folded meta line), and a
+ * trailing chevron. The meta folds wear stats and recency into one line
+ * ("{n} wears · last {when}", or "Never worn" for the aspirational bucket that
+ * sinks to the bottom); the occasion lives on Detail now, not on the card.
  */
 export function OutfitCoverCard({
   outfit,
@@ -22,8 +25,12 @@ export function OutfitCoverCard({
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const title = outfit.name ?? 'Untitled outfit';
-  const count = outfit.itemCount === 1 ? '1 item' : `${outfit.itemCount} items`;
-  const worn = outfit.lastWorn ? `Worn ${formatIsoDay(outfit.lastWorn)}` : 'Never worn';
+  const meta =
+    outfit.lastWorn === null
+      ? 'Never worn'
+      : `${outfit.timesWorn} ${outfit.timesWorn === 1 ? 'wear' : 'wears'} · last ${formatIsoDay(
+          outfit.lastWorn,
+        )}`;
 
   return (
     <Pressable
@@ -41,68 +48,47 @@ export function OutfitCoverCard({
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
-        <View style={styles.meta}>
-          <Text style={styles.count}>{count}</Text>
-          {outfit.occasion ? (
-            <View style={styles.occasion}>
-              <Text style={styles.occasionLabel}>{outfit.occasion}</Text>
-            </View>
-          ) : null}
-        </View>
-        <Text style={styles.worn} testID={`outfit-card-worn-${outfit.id}`}>
-          {worn}
+        <Text style={styles.meta} numberOfLines={1} testID={`outfit-card-worn-${outfit.id}`}>
+          {meta}
         </Text>
       </View>
+      <Ionicons name="chevron-forward" size={20} color={theme.textTertiary} />
     </Pressable>
   );
 }
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
+    // Bordered, rounded, single-row container.
     card: {
+      alignItems: 'center',
+      backgroundColor: theme.surface,
+      borderColor: theme.border,
+      borderRadius: 14,
+      borderWidth: 1,
+      flexDirection: 'row',
       gap: 12,
-      paddingBottom: 20,
-      paddingHorizontal: 20,
+      marginHorizontal: 20,
+      marginBottom: 12,
+      padding: 10,
     },
     cover: {
-      aspectRatio: 4 / 3,
-      borderRadius: 18,
-      width: '100%',
+      aspectRatio: 1,
+      borderRadius: 10,
+      width: 56,
     },
     body: {
-      gap: 6,
+      flex: 1,
+      gap: 3,
     },
     title: {
       color: theme.textPrimary,
-      fontSize: 19,
+      fontSize: 16,
       fontWeight: '700',
     },
     meta: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-    },
-    count: {
       color: theme.textSecondary,
-      fontSize: 14,
-      opacity: 0.6,
-    },
-    occasion: {
-      backgroundColor: theme.border,
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 3,
-    },
-    occasionLabel: {
-      color: theme.accent,
       fontSize: 13,
-      fontWeight: '600',
-    },
-    worn: {
-      color: theme.textSecondary,
-      fontSize: 14,
-      opacity: 0.6,
     },
   });
 }

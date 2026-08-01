@@ -22,18 +22,20 @@ export function OutfitsGatedState({ onGoToWardrobe }: { onGoToWardrobe: () => vo
   const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.screen} testID="outfits-gated">
+      <Text style={styles.glyph}>🧥</Text>
       <Text style={styles.title}>Your wardrobe comes first</Text>
       <Text style={styles.body}>
         An outfit is a set of items worn together — so there’s nothing to build until your wardrobe
         has something in it.
       </Text>
+      {/* Ghost button: this is a precondition, a pointer back — not the create invitation. */}
       <Pressable
         accessibilityRole="button"
         onPress={onGoToWardrobe}
-        style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+        style={({ pressed }) => [styles.ctaGhost, pressed && styles.ctaPressed]}
         testID="outfits-go-to-wardrobe"
       >
-        <Text style={styles.ctaLabel}>Go to Wardrobe</Text>
+        <Text style={styles.ctaGhostLabel}>Go to Wardrobe</Text>
       </Pressable>
     </View>
   );
@@ -48,15 +50,17 @@ export function OutfitsEmptyState({ onNewOutfit }: { onNewOutfit: () => void }) 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.screen} testID="outfits-empty">
+      <Text style={styles.glyph}>🧺</Text>
       <Text style={styles.title}>Build your first outfit</Text>
       <Text style={styles.body}>Pick the items you wear together and save them as an outfit.</Text>
+      {/* Solid button: this is the create invitation, the primary action. */}
       <Pressable
         accessibilityRole="button"
         onPress={onNewOutfit}
-        style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+        style={({ pressed }) => [styles.ctaSolid, pressed && styles.ctaPressed]}
         testID="outfits-new-outfit"
       >
-        <Text style={styles.ctaLabel}>New outfit</Text>
+        <Text style={styles.ctaSolidLabel}>New outfit</Text>
       </Pressable>
     </View>
   );
@@ -67,13 +71,16 @@ function makeStyles(theme: Theme) {
     screen: {
       alignItems: 'center',
       flex: 1,
-      gap: 14,
+      gap: 12,
       justifyContent: 'center',
       paddingHorizontal: 40,
     },
+    glyph: {
+      fontSize: 52,
+    },
     title: {
       color: theme.textPrimary,
-      fontSize: 24,
+      fontSize: 19,
       fontWeight: '700',
       textAlign: 'center',
     },
@@ -84,17 +91,31 @@ function makeStyles(theme: Theme) {
       opacity: 0.6,
       textAlign: 'center',
     },
-    cta: {
+    ctaPressed: {
+      opacity: 0.7,
+    },
+    // The ghost/solid split carries "precondition vs. invitation": the gated
+    // screen points back (ghost), the empty screen creates (solid accent).
+    ctaGhost: {
+      backgroundColor: theme.accentSoft,
+      borderRadius: 999,
+      marginTop: 8,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+    },
+    ctaGhostLabel: {
+      color: theme.accent,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    ctaSolid: {
       backgroundColor: theme.accent,
       borderRadius: 999,
       marginTop: 8,
       paddingHorizontal: 32,
       paddingVertical: 16,
     },
-    ctaPressed: {
-      opacity: 0.7,
-    },
-    ctaLabel: {
+    ctaSolidLabel: {
       color: theme.onAccent,
       fontSize: 17,
       fontWeight: '600',

@@ -208,4 +208,25 @@ describe('All outfits list', () => {
 
     expect(screen.getByTestId('outfit-card-worn-2')).toHaveTextContent('Never worn');
   });
+
+  // #75 — the card meta folds wear count and recency into one line.
+  it('folds the card meta to "{n} wears · last {when}"', async () => {
+    withCards([aCard({ id: 1, lastWorn: '2026-07-23', timesWorn: 3 })]);
+
+    await render(<OutfitsTab />);
+
+    expect(screen.getByTestId('outfit-card-worn-1')).toHaveTextContent(/3 wears · last/);
+  });
+
+  it('headers the list with a small-caps "All outfits" and the count', async () => {
+    withCards([
+      aCard({ id: 1, lastWorn: '2026-07-23', timesWorn: 1 }),
+      aCard({ id: 2, lastWorn: null, timesWorn: 0 }),
+    ]);
+
+    await render(<OutfitsTab />);
+
+    expect(screen.getByText('All outfits')).toBeOnTheScreen();
+    expect(screen.getByText('2')).toBeOnTheScreen();
+  });
 });
