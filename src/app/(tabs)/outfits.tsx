@@ -1,14 +1,16 @@
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useLayoutEffect } from 'react';
 import { FlatList, View } from 'react-native';
 
 import { AddItemButton } from '@/components/add-item-button';
 import { OutfitCoverCard } from '@/components/outfit-cover-card';
 import { OutfitsEmptyState, OutfitsGatedState } from '@/components/outfits-zero-states';
+import { SectionHeading } from '@/components/section-heading';
 import { WearAgainRail } from '@/components/wear-again-rail';
 import { WearToast } from '@/components/wear-toast';
 import { useOutfitCards, useItems, WEAR_AGAIN_RAIL_SIZE } from '@/db/queries';
-import { isoToday, logWear, removeWear } from '@/wear-log';
+import { useWearLog } from '@/use-wear-log';
+import { isoToday } from '@/wear-log';
 
 /**
  * The Outfits tab (§7) — the tab you **act from**, not an archive you add to,
@@ -29,10 +31,10 @@ export default function OutfitsTab() {
   const router = useRouter();
   const hasItems = items.length > 0;
 
-  // The just-written event id is what Undo deletes; the outfit id is which rail
-  // card shows `✓ Worn today` while the toast is up. Both clear when it expires.
-  const [logged, setLogged] = useState<{ eventId: number; outfitId: number } | null>(null);
-  const dismissToast = useCallback(() => setLogged(null), []);
+  // The wear-log-with-Undo controller — the same hook outfit Detail drives, so
+  // the rail's toast Undo is literally the same code path (§2). `logged.outfitId`
+  // is the card mid-log; `logged.eventId` is what Undo deletes.
+  const { logged, logToday, undo, dismiss } = useWearLog();
 
   useLayoutEffect(() => {
     if (itemsLoading) return;
@@ -48,16 +50,6 @@ export default function OutfitsTab() {
         : undefined,
     });
   }, [navigation, hasItems, itemsLoading, router]);
-
-  function woreIt(outfitId: number) {
-    const eventId = logWear(outfitId, isoToday());
-    setLogged({ eventId, outfitId });
-  }
-
-  function undo() {
-    if (logged) removeWear(logged.eventId);
-    setLogged(null);
-  }
 
   // `[]` is "not read yet" as often as "nothing here"; the loading flags keep
   // the zero states from flashing on a cold start (same trap as `useItems`).
@@ -82,14 +74,18 @@ export default function OutfitsTab() {
         data={cards}
         keyExtractor={(card) => String(card.id)}
         ListHeaderComponent={
-          railOutfits.length > 0 ? (
-            <WearAgainRail
-              outfits={railOutfits}
-              confirmedOutfitId={logged?.outfitId ?? null}
-              onWoreIt={woreIt}
-              onOpen={(id) => router.push(`/outfit/${id}`)}
-            />
-          ) : null
+          <View style={{ gap: 12 }}>
+            {railOutfits.length > 0 ? (
+              <WearAgainRail
+                outfits={railOutfits}
+                today={isoToday()}
+                confirmedOutfitId={logged?.outfitId ?? null}
+                onWoreIt={logToday}
+                onOpen={(id) => router.push(`/outfit/${id}`)}
+              />
+            ) : null}
+            <SectionHeading title="All outfits" count={cards.length} />
+          </View>
         }
         renderItem={({ item: card }) => (
           <OutfitCoverCard outfit={card} onPress={() => router.push(`/outfit/${card.id}`)} />
@@ -97,7 +93,7 @@ export default function OutfitsTab() {
       />
 
       {logged ? (
-        <WearToast message="Logged a wear." onUndo={undo} onExpire={dismissToast} />
+        <WearToast message="Logged a wear." onUndo={undo} onExpire={dismiss} />
       ) : null}
     </View>
   );
