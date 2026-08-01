@@ -54,6 +54,9 @@ export function InOutfitsRail({
           <Text style={styles.name} numberOfLines={1}>
             {item.name ?? 'Untitled outfit'}
           </Text>
+          <Text style={styles.wears} testID={`in-outfit-wears-${item.id}`}>
+            {item.wearCount === 1 ? '1 wear' : `${item.wearCount} wears`}
+          </Text>
         </Pressable>
       )}
     />
@@ -75,18 +78,23 @@ function makeStyles(theme: Theme) {
       paddingHorizontal: 20,
     },
     card: {
-      gap: 6,
+      gap: 4,
       width: CARD_SIZE,
     },
     cover: {
       borderRadius: 12,
       height: CARD_SIZE,
+      marginBottom: 2,
       width: CARD_SIZE,
     },
     name: {
       color: theme.textPrimary,
       fontSize: 13,
       opacity: 0.75,
+    },
+    wears: {
+      color: theme.textTertiary,
+      fontSize: 12,
     },
   });
 }

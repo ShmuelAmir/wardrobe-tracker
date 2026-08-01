@@ -91,8 +91,19 @@ describe('itemOutfitsQuery — the "In outfits" rail', () => {
     seedOutfit(20, [3], 'Weekend');
 
     expect(outfits(3)).toEqual([
-      { id: 20, name: 'Weekend', coverImage: '3.jpg' },
-      { id: 10, name: 'Weekday', coverImage: '3.jpg' },
+      { id: 20, name: 'Weekend', coverImage: '3.jpg', wearCount: 0 },
+      { id: 10, name: 'Weekday', coverImage: '3.jpg', wearCount: 0 },
+    ]);
+  });
+
+  it('carries each outfit’s own wear count for the "N wears" subline', () => {
+    seedItems(3);
+    seedOutfit(10, [3], 'Weekday');
+    logWear(10, '2026-07-20');
+    logWear(10, '2026-07-23');
+
+    expect(outfits(3)).toEqual([
+      { id: 10, name: 'Weekday', coverImage: '3.jpg', wearCount: 2 },
     ]);
   });
 

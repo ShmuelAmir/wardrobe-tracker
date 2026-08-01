@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { formatIsoDay } from '@/date-format';
+import { daysSince, isoMonth, isoYear } from '@/date-format';
 import type { OutfitStats } from '@/db/queries';
 import { useTheme, type Theme } from '@/theme';
 
@@ -10,7 +10,10 @@ import { useTheme, type Theme } from '@/theme';
  * worn**, no stored counters. The wears cell is the one affordance here: it's
  * tappable (`12 · wears ›`) and opens the durable un-log path — the history
  * sheet — for the "I logged Tuesday by mistake" case a long-expired toast can
- * never reach. Last/first worn read "—" until there's a wear to date.
+ * never reach. Last/first worn speak in **relative** language per #67 — last as
+ * `Nd` / "since last", first as a month glyph / "first worn {YYYY}" — and read
+ * "—" until there's a wear to date. The absolute dates still live one tap away,
+ * in the history sheet.
  */
 export function OutfitStatsStrip({
   stats,
@@ -22,6 +25,7 @@ export function OutfitStatsStrip({
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const { timesWorn, firstWorn, lastWorn } = stats;
+  const daysSinceLast = lastWorn === null ? null : daysSince(lastWorn, new Date());
 
   return (
     <View style={styles.strip} testID="outfit-stats-strip">
@@ -37,13 +41,15 @@ export function OutfitStatsStrip({
       </Pressable>
 
       <View style={styles.cell} testID="stats-last-worn">
-        <Text style={styles.value}>{lastWorn ? formatIsoDay(lastWorn) : '—'}</Text>
-        <Text style={styles.label}>last worn</Text>
+        <Text style={styles.value}>{daysSinceLast === null ? '—' : `${daysSinceLast}d`}</Text>
+        <Text style={styles.label}>since last</Text>
       </View>
 
       <View style={styles.cell} testID="stats-first-worn">
-        <Text style={styles.value}>{firstWorn ? formatIsoDay(firstWorn) : '—'}</Text>
-        <Text style={styles.label}>first worn</Text>
+        <Text style={styles.value}>{firstWorn ? isoMonth(firstWorn) : '—'}</Text>
+        <Text style={styles.label}>
+          {firstWorn ? `first worn ${isoYear(firstWorn)}` : 'first worn'}
+        </Text>
       </View>
     </View>
   );

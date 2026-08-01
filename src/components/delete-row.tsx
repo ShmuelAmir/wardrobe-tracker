@@ -10,8 +10,9 @@ import { useTheme, type Theme } from '@/theme';
  * and never on a read path. One component so the two can't drift apart in weight
  * or colour — the affordance's *sameness* is what teaches where delete lives.
  *
- * Its colour is the `danger` role, so a delete reads as dangerous — and tuned —
- * in both themes.
+ * It is a filled `dangerSurface` block with centered `danger` text, so a delete
+ * reads as dangerous — and tuned — in both themes, and the two Edit surfaces get
+ * the identical weighted affordance.
  */
 export function DeleteRow({
   label,
@@ -36,6 +37,9 @@ function makeStyles(theme: Theme) {
   return StyleSheet.create({
     row: {
       alignItems: 'center',
+      backgroundColor: theme.dangerSurface,
+      borderRadius: 12,
+      marginHorizontal: 20,
       marginTop: 22,
       paddingVertical: 16,
     },

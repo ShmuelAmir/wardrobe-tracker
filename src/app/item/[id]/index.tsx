@@ -74,10 +74,22 @@ export default function ItemDetailScreen() {
 
         <View style={styles.fields}>
           <Field label="Category" value={item.category} testID="item-field-category" styles={styles} />
-          <Field label="Season" value={formatSeason(item.season)} testID="item-field-season" styles={styles} />
-          <Field label="Added" value={formatDay(item.createdAt)} testID="item-field-added" styles={styles} />
+          <Field
+            label="Season"
+            value={formatSeason(item.season)}
+            testID="item-field-season"
+            divided
+            styles={styles}
+          />
+          <Field
+            label="Added"
+            value={formatDay(item.createdAt)}
+            testID="item-field-added"
+            divided
+            styles={styles}
+          />
           {item.sourceUrl ? (
-            <View style={styles.field}>
+            <View style={[styles.field, styles.fieldDivided]}>
               <Text style={styles.fieldLabel}>Source</Text>
               <Pressable
                 accessibilityRole="link"
@@ -91,7 +103,10 @@ export default function ItemDetailScreen() {
           ) : null}
         </View>
 
-        <Text style={styles.railHeading}>In outfits</Text>
+        <View style={styles.railHeader}>
+          <Text style={styles.railHeading}>In outfits</Text>
+          <Text style={styles.railCount}>{outfits.length}</Text>
+        </View>
         <InOutfitsRail outfits={outfits} onPressOutfit={(outfitId) => router.push(`/outfit/${outfitId}`)} />
       </ScrollView>
     </View>
@@ -138,15 +153,17 @@ function Field({
   label,
   value,
   testID,
+  divided,
   styles,
 }: {
   label: string;
   value: string;
   testID: string;
+  divided?: boolean;
   styles: ReturnType<typeof makeStyles>;
 }) {
   return (
-    <View style={styles.field}>
+    <View style={[styles.field, divided && styles.fieldDivided]}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <Text style={styles.fieldValue} testID={testID}>
         {value}
@@ -178,11 +195,12 @@ function makeStyles(theme: Theme) {
     },
     hero: {
       aspectRatio: 1,
-      width: '100%',
+      borderRadius: 16,
+      marginHorizontal: 20,
     },
     heroPlaceholder: {
       alignItems: 'center',
-      backgroundColor: theme.border,
+      backgroundColor: theme.fill,
       justifyContent: 'center',
     },
     heroPlaceholderLabel: {
@@ -201,25 +219,35 @@ function makeStyles(theme: Theme) {
     },
     brand: {
       color: theme.textSecondary,
-      fontSize: 16,
+      fontSize: 14,
       opacity: 0.6,
     },
     fields: {
-      gap: 14,
-      paddingHorizontal: 20,
+      backgroundColor: theme.fill,
+      borderRadius: 12,
+      marginHorizontal: 20,
+      overflow: 'hidden',
     },
     field: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       gap: 16,
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+    },
+    fieldDivided: {
+      borderTopColor: theme.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
     },
     fieldLabel: {
       color: theme.textSecondary,
       fontSize: 15,
       opacity: 0.55,
+      width: 96,
     },
     fieldValue: {
       color: theme.textPrimary,
+      flex: 1,
       fontSize: 15,
       fontWeight: '600',
       textAlign: 'right',
@@ -230,11 +258,23 @@ function makeStyles(theme: Theme) {
       fontWeight: '600',
       textAlign: 'right',
     },
-    railHeading: {
-      color: theme.textPrimary,
-      fontSize: 18,
-      fontWeight: '700',
+    railHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
       paddingHorizontal: 20,
+    },
+    railHeading: {
+      color: theme.textSecondary,
+      fontSize: 13,
+      fontWeight: '700',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    railCount: {
+      color: theme.textTertiary,
+      fontSize: 13,
+      fontWeight: '600',
     },
     edit: {
       color: theme.accent,

@@ -106,14 +106,14 @@ describe('item detail — stats strip', () => {
   it('derives wear count, days since last worn and outfits count', async () => {
     mockUseItemStats.mockReturnValue({ wearCount: 5, lastWorn: isoDaysAgo(4) });
     mockUseItemOutfits.mockReturnValue([
-      { id: 10, name: 'A', coverImage: '3.jpg' },
-      { id: 20, name: 'B', coverImage: '3.jpg' },
+      { id: 10, name: 'A', coverImage: '3.jpg', wearCount: 0 },
+      { id: 20, name: 'B', coverImage: '3.jpg', wearCount: 0 },
     ]);
 
     await render(<ItemDetailScreen />);
 
     expect(screen.getByTestId('item-stat-wears')).toHaveTextContent('5');
-    expect(screen.getByTestId('item-stat-days')).toHaveTextContent('4');
+    expect(screen.getByTestId('item-stat-days')).toHaveTextContent('4d');
     expect(screen.getByTestId('item-stat-outfits')).toHaveTextContent('2');
   });
 
@@ -187,10 +187,15 @@ describe('item detail — nav bar & in-outfits rail', () => {
   });
 
   it('lists containing outfits and taps through to outfit detail', async () => {
-    mockUseItemOutfits.mockReturnValue([{ id: 20, name: 'Weekend', coverImage: '3.jpg' }]);
+    mockUseItemOutfits.mockReturnValue([
+      { id: 20, name: 'Weekend', coverImage: '3.jpg', wearCount: 3 },
+    ]);
 
     const user = userEvent.setup();
     await render(<ItemDetailScreen />);
+
+    // Each cover carries an "N wears" subline off the outfit's own wear count.
+    expect(screen.getByTestId('in-outfit-wears-20')).toHaveTextContent('3 wears');
 
     await user.press(screen.getByTestId('in-outfit-20'));
 

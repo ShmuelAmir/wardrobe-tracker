@@ -58,6 +58,15 @@ jest.mock('expo-router', () => ({
 
 const noStats: OutfitStats = { timesWorn: 0, firstWorn: null, lastWorn: null };
 
+/** An ISO `YYYY-MM-DD` string `days` before today, for a deterministic days-since. */
+function isoDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseOutfitStats.mockReturnValue(noStats);
@@ -78,30 +87,36 @@ describe('outfit detail — header & stats', () => {
     await render(<OutfitDetailScreen />);
 
     expect(screen.getByText('Smart evening')).toBeOnTheScreen();
-    expect(screen.getByText('2 items')).toBeOnTheScreen();
-    expect(screen.getByTestId('outfit-detail-created')).toHaveTextContent('Added Jul 23, 2026');
+    // Meta is one coarsened line: item count · month-year the outfit was added.
+    expect(screen.getByTestId('outfit-detail-created')).toHaveTextContent(
+      '2 items · added Jul 2026',
+    );
     expect(screen.getByTestId('outfit-detail-occasion')).toHaveTextContent('Work');
     // No season anywhere on the outfit page (§6.3).
     expect(screen.queryByText(/season/i)).toBeNull();
   });
 
-  it('derives times worn / last worn / first worn into the strip', async () => {
+  it('derives times worn / since last / first worn into the strip in relative language', async () => {
     mockUseOutfitDetail.mockReturnValue({
       detail: { outfit: anOutfit(), items: [anItem(1)] },
       loading: false,
     });
+    // Last worn "5 days ago" so the relative `Nd` cell is deterministic.
     mockUseOutfitStats.mockReturnValue({
       timesWorn: 12,
       firstWorn: '2026-01-10',
-      lastWorn: '2026-07-20',
+      lastWorn: isoDaysAgo(5),
     });
 
     await render(<OutfitDetailScreen />);
 
     expect(screen.getByText('12')).toBeOnTheScreen();
     expect(screen.getByText('wears ›')).toBeOnTheScreen();
-    expect(screen.getByText('Jul 20, 2026')).toBeOnTheScreen();
-    expect(screen.getByText('Jan 10, 2026')).toBeOnTheScreen();
+    // Since-last is a relative day count; first-worn is a month glyph + year.
+    expect(screen.getByText('5d')).toBeOnTheScreen();
+    expect(screen.getByText('since last')).toBeOnTheScreen();
+    expect(screen.getByText('Jan')).toBeOnTheScreen();
+    expect(screen.getByText('first worn 2026')).toBeOnTheScreen();
   });
 
   it('shows nothing while the read is in flight', async () => {

@@ -9,10 +9,12 @@ import { useTheme, type Theme } from '@/theme';
  * §8.1 stats strip — three derived cells: **wear count / days since last worn /
  * outfits count**, no stored counters (§3). Unlike the outfit strip none of
  * these is tappable: this is the read path, which stays safe to browse (no wear
- * logging, no un-log sheet here). Days-since reads "—" until there's a wear to
- * date, which is the same "never worn" a zero wear count states — the two cells
- * agree by construction. The day math itself is proven directly against
- * `daysSince` (`item-detail-helpers.test.ts`).
+ * logging, no un-log sheet here). The since-last cell speaks in **relative**
+ * language per #67 — `Nd` / "since last worn" — and reads "—" / "never worn"
+ * until there's a wear to date, which is the same "never worn" a zero wear count
+ * states, so the two cells agree by construction. The absolute last-worn date
+ * still lives one tap away, on the outfit's history sheet. The day math itself is
+ * proven directly against `daysSince` (`item-detail-helpers.test.ts`).
  */
 export function ItemStatsStrip({
   stats,
@@ -37,9 +39,9 @@ export function ItemStatsStrip({
 
       <View style={styles.cell}>
         <Text style={styles.value} testID="item-stat-days">
-          {days === null ? '—' : days}
+          {days === null ? '—' : `${days}d`}
         </Text>
-        <Text style={styles.label}>days since worn</Text>
+        <Text style={styles.label}>{days === null ? 'never worn' : 'since last worn'}</Text>
       </View>
 
       <View style={styles.cell}>
