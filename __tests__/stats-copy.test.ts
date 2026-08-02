@@ -1,4 +1,4 @@
-import { mostWornEmptyCopy } from '@/stats-copy';
+import { mostWornEmptyCopy, neverWornEmptyCopy } from '@/stats-copy';
 
 describe('mostWornEmptyCopy — §9.5 head empty states', () => {
   it('gives the honest fresh-install line when nothing is worn', () => {
@@ -16,5 +16,23 @@ describe('mostWornEmptyCopy — §9.5 head empty states', () => {
     expect(mostWornEmptyCopy(1, 'Footwear')).toBe(
       'Only one item in Footwear has been worn — a leaderboard needs at least two.',
     );
+  });
+});
+
+describe('neverWornEmptyCopy — the never-tab empty card (§9.4)', () => {
+  it('congratulates an entirely-worn wardrobe', () => {
+    expect(neverWornEmptyCopy(null)).toEqual({
+      title: 'Everything’s been worn',
+      body: 'Nothing in your wardrobe is sitting unused.',
+    });
+  });
+
+  // Under a filter the claim is only about that category — saying "your
+  // wardrobe" would overstate it while five unworn coats sit one tab away.
+  it('narrows the claim to the filtered category', () => {
+    expect(neverWornEmptyCopy('Footwear')).toEqual({
+      title: 'Everything’s been worn',
+      body: 'Nothing in Footwear is sitting unused.',
+    });
   });
 });

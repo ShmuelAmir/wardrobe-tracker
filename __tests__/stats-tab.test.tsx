@@ -189,7 +189,77 @@ describe('"See all →" hands the leaderboard to the Wardrobe tab (§9.2)', () =
   });
 });
 
+/**
+ * Variant B (#77): the podium reads rank from height and 2–1–3 position, so the
+ * medal emojis are gone and the count is a plain "N wears" — the row badge's
+ * unit word, not a bare metric.
+ */
+describe('podium — Variant B framing (§9.4)', () => {
+  const worn = [1, 2, 3].map((id) => aWorn(id, 10 - id));
+
+  beforeEach(() => {
+    returns(statsData({ wornCount: 6, k: 3, mostWorn: worn }));
+  });
+
+  it('carries no medal emoji', async () => {
+    await render(<StatsTab />);
+    expect(screen.queryByText(/[🥇🥈🥉]/)).toBeNull();
+  });
+
+  it('labels #1 with the Favorite crown and counts in wears', async () => {
+    await render(<StatsTab />);
+    expect(screen.getByTestId('stats-podium-favorite')).toHaveTextContent('Favorite');
+    expect(screen.getByTestId('stats-podium-1')).toHaveTextContent(/9 wears/);
+  });
+});
+
+describe('rows — one unified badge everywhere (§9.5)', () => {
+  it('spells the unit out on the leaderboard badge, singular at one wear', async () => {
+    const worn = [aWorn(1, 5), aWorn(2, 1)];
+    returns(statsData({ wornCount: 4, k: 2, mostWorn: worn, leastWorn: [aWorn(3, 1)] }));
+
+    await render(<StatsTab />);
+    expect(screen.getByTestId('stats-wear-badge-1')).toHaveTextContent('5 wears');
+    expect(screen.getByTestId('stats-wear-badge-2')).toHaveTextContent('1 wear');
+  });
+
+  // Never-worn keeps the bare attention-toned `0`: it is the one badge whose job
+  // is to look wrong, not to be read as a sentence.
+  it('keeps the never-worn zero bare', async () => {
+    returns(statsData({ neverWorn: [anItem(1)] }));
+
+    await render(<StatsTab />);
+    expect(screen.getByTestId('stats-zero-badge-1')).toHaveTextContent('0');
+  });
+});
+
 describe('sub-tabs — one list at a time (§9.4)', () => {
+  // Variant B's label rule: a `(0)` is noise on a tab that is disabled (Least at
+  // `k = 0`) or empty — the count only earns its parentheses when there is one.
+  it('drops the count from a tab that has nothing to count', async () => {
+    returns(statsData({ k: 0, neverWorn: [anItem(1), anItem(2)] }));
+
+    await render(<StatsTab />);
+    expect(screen.getByTestId('stats-subtab-least')).toHaveTextContent('Least worn');
+    expect(screen.getByTestId('stats-subtab-least')).not.toHaveTextContent('(0)');
+    expect(screen.getByTestId('stats-subtab-never')).toHaveTextContent('Never worn (2)');
+  });
+
+  it('congratulates instead of showing an empty never-worn list', async () => {
+    const user = userEvent.setup();
+    const worn = [aWorn(1, 5), aWorn(2, 4), aWorn(3, 1), aWorn(4, 1)];
+    returns(
+      statsData({ wornCount: 4, k: 2, mostWorn: worn.slice(0, 2), leastWorn: worn.slice(2) }),
+    );
+
+    await render(<StatsTab />);
+    await user.press(screen.getByTestId('stats-subtab-never'));
+
+    expect(screen.getByTestId('stats-never-worn-empty')).toHaveTextContent(/Everything’s been worn/);
+  });
+});
+
+describe('sub-tabs — selection (§9.4)', () => {
   it('defaults to Least worn and toggles to Never worn on tap', async () => {
     const user = userEvent.setup();
     const worn = [aWorn(1, 5), aWorn(2, 4), aWorn(3, 1), aWorn(4, 1)];

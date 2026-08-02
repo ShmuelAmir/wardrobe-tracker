@@ -17,3 +17,21 @@ export function mostWornEmptyCopy(wornCount: number, scope: StatsScope): string 
   const subject = scope ? `one item in ${scope}` : 'one item';
   return `Only ${subject} has been worn — a leaderboard needs at least two.`;
 }
+
+/**
+ * §9.4 never-worn empty state — the one genuinely *good* empty state in the app:
+ * an empty Never tab means the whole scope has been worn, so it reads as praise,
+ * not absence. Title + body because it renders in the dashed card, whose bold
+ * line carries the verdict and whose body carries the scope.
+ *
+ * The body narrows to the active category: under a filter, "your wardrobe" would
+ * claim something the screen isn't showing — five unworn coats can sit one filter
+ * away from an empty Footwear tab.
+ */
+export function neverWornEmptyCopy(scope: StatsScope): { title: string; body: string } {
+  const subject = scope ? scope : 'your wardrobe';
+  return {
+    title: 'Everything’s been worn',
+    body: `Nothing in ${subject} is sitting unused.`,
+  };
+}

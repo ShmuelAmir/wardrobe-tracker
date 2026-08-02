@@ -68,9 +68,6 @@ role covered:
   no fill behind it. They stayed three roles rather than two so light-mode hex is
   preserved exactly (the older screens used two different browns); in dark the
   two text roles converge on one amber.
-- **`podiumGold` / `podiumSilver` / `podiumBronze`** — the §9.4 medal tones.
-  Decorative metallics, and the **one** place a role resolves to the *same* hex
-  in both themes (a medal is a medal).
 - **`shadow` / `scrim`** — the original ADR noted "no shadow/elevation tokens
   yet"; two occlusion colors are now the first. `shadow` is the segmented
   control's selected-segment shadow; `scrim` is the translucent wash behind a
@@ -172,9 +169,11 @@ The full role→primitive table and the build-ready deltas live in the
   themes" foreground role that justified `onHero` no longer has a surface to sit on.
 - **`podiumGold` / `podiumSilver` / `podiumBronze` retired.** The Variant B stats
   podium drops the medal tint (rank now reads from height + position), removing the
-  roles' only consumer. Per the no-dead-primitive rule they leave the role set, and
-  the `gold`/`silver`/`bronze` primitives are deleted with them — so the §9.4
-  medal-tone note above is now historical.
+  roles' only consumer. Per the no-dead-primitive rule they left the role set, and
+  the `gold`/`silver`/`bronze` primitives were deleted with them — with that, the
+  role set no longer has a member resolving to the same hex in both themes for
+  decorative reasons; the only cross-theme constants left are the `chrome*` nav
+  and the two occlusions, each constant because of what it *is*.
 - **The purple primitive ramp is deleted** (`purple900…purple100`). Every role it
   backed (`onHero`, `heroGradient`, `onAccentMuted`) now resolves to indigo/slate,
   so the whole ramp is dead and removed. `heroGradient` is redrawn to

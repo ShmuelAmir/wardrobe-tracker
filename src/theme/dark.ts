@@ -28,7 +28,6 @@ import type { Theme } from './light';
  *    to the same amber `amber400` — on off-black the two contexts converge.
  *  - `textTertiary` lands on `slate500`, a step below the `slate350` secondary.
  *  - `accentSoft` deepens to `indigo900`, an accent-tinted well on off-black.
- *  - the podium metals are unchanged — they read on both themes.
  *  - the `chrome*` nav roles are dark in both themes; only `chromeBg`/`chromeLine`
  *    deepen a touch (`chromeBlack950`/`slate770`), `chromeInk` stays constant.
  *  - `shadow` and `scrim` stay constant; both are occlusions, not surfaces.
@@ -51,9 +50,6 @@ export const dark: Theme = {
   warningSurface: primitives.amber950,
   onWarningSurface: primitives.amber400,
   warning: primitives.amber400,
-  podiumGold: primitives.gold,
-  podiumSilver: primitives.silver,
-  podiumBronze: primitives.bronze,
   chromeBg: primitives.chromeBlack950,
   chromeInk: primitives.slate025,
   chromeLine: primitives.slate770,

@@ -71,13 +71,6 @@ export const primitives = {
   amber700: '#a86a12',
   amber950: '#33280f',
 
-  // The three podium medal tones (§9.4). Metallics that read on both light and
-  // dark, so — unlike every other role — their two themes resolve to the same
-  // hex. Retained until #68 retires the podium; deleted with that ticket.
-  gold: '#d9a441',
-  silver: '#9ca3af',
-  bronze: '#b06a3b',
-
   // Pure black, reserved for elevation shadows (an occlusion, not a surface),
   // which stay black in both themes.
   black: '#000000',

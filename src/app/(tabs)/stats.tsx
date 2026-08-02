@@ -3,13 +3,14 @@ import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { StatsCategoryFilter } from '@/components/stats-category-filter';
+import { StatsEmptyCard } from '@/components/stats-empty-card';
 import { StatsPodium } from '@/components/stats-podium';
 import { LeaderboardRow, NeverWornRow } from '@/components/stats-row';
 import { SeeAllLink } from '@/components/stats-see-all';
 import { StatsSubTabs, type SubTab } from '@/components/stats-subtabs';
 import { useStats, type StatsScope, type WardrobeSort, type WornItem } from '@/db/queries';
 import type { Item } from '@/db/schema';
-import { mostWornEmptyCopy } from '@/stats-copy';
+import { mostWornEmptyCopy, neverWornEmptyCopy } from '@/stats-copy';
 import { useTheme, type Theme } from '@/theme';
 import { wardrobeParams } from '@/wardrobe-view';
 
@@ -72,17 +73,31 @@ export default function StatsTab() {
       data={rows}
       keyExtractor={(row) => String(row.id)}
       ListHeaderComponent={header}
-      // The least-worn list's own "See all →" sits at its end — the point where
-      // the `k` cap ran out is exactly where "more rows" belongs. Never-worn has
-      // none: it is already the full set (§9.3).
+      // An empty Never tab is the one good empty state in the app — everything in
+      // scope has been worn — so it congratulates rather than showing a blank.
+      // (Least can't be empty here: `k = 0` forces the Never tab.)
+      ListEmptyComponent={
+        activeTab === 'never' ? (
+          <StatsEmptyCard {...neverWornEmptyCopy(scope)} testID="stats-never-worn-empty" />
+        ) : null
+      }
+      // The caption names the sort the list is in, since neither list has a
+      // header row to say so. Alongside it — on the least list only — sits its
+      // "See all →": the point where the `k` cap ran out is exactly where "more
+      // rows" belongs. Never-worn gets no link: it is already the full set (§9.3).
       ListFooterComponent={
-        activeTab === 'least' ? (
+        rows.length > 0 ? (
           <View style={styles.listFooter}>
-            <SeeAllLink
-              onPress={() => seeAll('least')}
-              accessibilityLabel="See all least-worn items in the Wardrobe"
-              testID="stats-see-all-least"
-            />
+            <Text style={styles.listCaption}>
+              {activeTab === 'least' ? 'Ranked from least used' : 'Oldest additions first'}
+            </Text>
+            {activeTab === 'least' ? (
+              <SeeAllLink
+                onPress={() => seeAll('least')}
+                accessibilityLabel="See all least-worn items in the Wardrobe"
+                testID="stats-see-all-least"
+              />
+            ) : null}
           </View>
         ) : null
       }
@@ -120,11 +135,14 @@ function MostWornHead({
   const { k, mostWorn } = data;
 
   // At `k = 0` there is no ranking, so there is nothing to see all of either.
+  // The card's title is the head's own label — the slot the ranking will fill.
   if (k === 0) {
     return (
-      <Text style={styles.notice} testID="stats-most-worn-empty">
-        {mostWornEmptyCopy(data.wornCount, scope)}
-      </Text>
+      <StatsEmptyCard
+        title="Most worn"
+        body={mostWornEmptyCopy(data.wornCount, scope)}
+        testID="stats-most-worn-empty"
+      />
     );
   }
 
@@ -163,15 +181,6 @@ function makeStyles(theme: Theme) {
     content: {
       paddingBottom: 24,
     },
-    notice: {
-      color: theme.textSecondary,
-      fontSize: 15,
-      lineHeight: 22,
-      opacity: 0.6,
-      paddingHorizontal: 24,
-      paddingVertical: 28,
-      textAlign: 'center',
-    },
     sectionHead: {
       alignItems: 'center',
       flexDirection: 'row',
@@ -191,9 +200,15 @@ function makeStyles(theme: Theme) {
       textTransform: 'uppercase',
     },
     listFooter: {
-      alignItems: 'flex-end',
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
       paddingHorizontal: 20,
       paddingVertical: 14,
+    },
+    listCaption: {
+      color: theme.textTertiary,
+      fontSize: 13,
     },
   });
 }

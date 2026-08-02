@@ -11,6 +11,10 @@ export type SubTab = 'least' | 'never';
  * **The Least tab is disabled when `k = 0`** — the screen forces `never` there,
  * so a fresh install can't land on an empty Least tab with the whole wardrobe
  * hidden behind the unselected one (a real bug caught in the prototype).
+ *
+ * Rendered as a **segmented control** sharing the category filter's chrome
+ * (#77): both controls choose which slice of the same screen you're looking at,
+ * so they should look like the same kind of switch, stacked.
  */
 export function StatsSubTabs({
   active,
@@ -30,7 +34,7 @@ export function StatsSubTabs({
     <View style={styles.bar} testID="stats-subtabs">
       <Tab
         tab="least"
-        label={`Least worn (${leastCount})`}
+        label={countedLabel('Least worn', leastCount)}
         active={active === 'least'}
         disabled={leastDisabled}
         onSelect={onSelect}
@@ -38,7 +42,7 @@ export function StatsSubTabs({
       />
       <Tab
         tab="never"
-        label={`Never worn (${neverCount})`}
+        label={countedLabel('Never worn', neverCount)}
         active={active === 'never'}
         disabled={false}
         onSelect={onSelect}
@@ -46,6 +50,15 @@ export function StatsSubTabs({
       />
     </View>
   );
+}
+
+/**
+ * A `(0)` is noise: on the Least tab at `k = 0` it labels a segment the user
+ * can't even press, and on either tab it counts nothing. The parentheses are
+ * earned only by a count there is something to count.
+ */
+function countedLabel(label: string, count: number): string {
+  return count === 0 ? label : `${label} (${count})`;
 }
 
 function Tab({
@@ -70,12 +83,11 @@ function Tab({
       testID={`stats-subtab-${tab}`}
       disabled={disabled}
       onPress={() => onSelect(tab)}
-      style={styles.tab}
+      style={[styles.tab, active && styles.tabActive]}
     >
       <Text style={[styles.label, active && styles.labelActive, disabled && styles.labelDisabled]}>
         {label}
       </Text>
-      <View style={[styles.underline, active && styles.underlineActive]} />
     </Pressable>
   );
 }
@@ -83,39 +95,38 @@ function Tab({
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     bar: {
-      borderBottomColor: theme.border,
-      borderBottomWidth: StyleSheet.hairlineWidth,
+      backgroundColor: theme.fill,
+      borderRadius: 10,
       flexDirection: 'row',
-      marginTop: 8,
+      marginHorizontal: 16,
+      marginVertical: 12,
+      padding: 2,
     },
     tab: {
       alignItems: 'center',
+      borderRadius: 8,
       flex: 1,
-      gap: 8,
-      paddingTop: 12,
+      justifyContent: 'center',
+      paddingVertical: 8,
+    },
+    tabActive: {
+      backgroundColor: theme.surface,
+      shadowColor: theme.shadow,
+      shadowOffset: { height: 1, width: 0 },
+      shadowOpacity: 0.12,
+      shadowRadius: 2,
     },
     label: {
-      color: theme.textPrimary,
-      fontSize: 15,
+      color: theme.textSecondary,
+      fontSize: 14,
       fontWeight: '600',
-      opacity: 0.5,
     },
     labelActive: {
-      color: theme.accent,
-      opacity: 1,
+      color: theme.textPrimary,
+      fontWeight: '700',
     },
     labelDisabled: {
-      opacity: 0.3,
-    },
-    underline: {
-      backgroundColor: 'transparent',
-      borderTopLeftRadius: 2,
-      borderTopRightRadius: 2,
-      height: 2,
-      width: '60%',
-    },
-    underlineActive: {
-      backgroundColor: theme.accent,
+      opacity: 0.4,
     },
   });
 }

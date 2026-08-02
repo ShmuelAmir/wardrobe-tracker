@@ -16,8 +16,8 @@ remap instead of a rewrite.
 
 The roles are a closed set (`Theme` in `src/theme/light.ts`). Adding a color to
 the app is **not** typing a new hex — it is justifying a **new role** in review,
-the way `onHero`, `fill`, `warningSurface` and the podium tones each earned their
-place. If a color you need doesn't map to an existing role, that is a review
+the way `fill`, `warningSurface`, `accentSoft` and `textTertiary` each earned
+their place. If a color you need doesn't map to an existing role, that is a review
 conversation, not a literal.
 
 ## Reviewing a change that touches styling

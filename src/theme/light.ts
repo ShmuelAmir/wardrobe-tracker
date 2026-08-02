@@ -27,10 +27,6 @@ import { primitives } from './primitives';
  *  - `warning` — standalone warm attention text on `background` (a web-import
  *    failure), kept a separate role from `onWarningSurface` so its on-background
  *    contrast can be deepened independently.
- *  - `podiumGold` / `podiumSilver` / `podiumBronze` — the §9.4 medal tones.
- *    Decorative metallics, the one place a role resolves to the *same* hex in
- *    both themes. (Retired by #68; kept here because `stats-podium.tsx` still
- *    consumes them.)
  *  - `shadow` / `scrim` — the elevation shadow and the modal-sheet scrim. Both
  *    are occlusions, not surfaces, so both stay constant across themes.
  *
@@ -65,9 +61,6 @@ export type Theme = {
   warningSurface: string;
   onWarningSurface: string;
   warning: string;
-  podiumGold: string;
-  podiumSilver: string;
-  podiumBronze: string;
   chromeBg: string;
   chromeInk: string;
   chromeLine: string;
@@ -102,9 +95,6 @@ export const light: Theme = {
   warningSurface: primitives.amber050,
   onWarningSurface: primitives.amber700,
   warning: primitives.amber700,
-  podiumGold: primitives.gold,
-  podiumSilver: primitives.silver,
-  podiumBronze: primitives.bronze,
   chromeBg: primitives.chromeBlack900,
   chromeInk: primitives.slate025,
   chromeLine: primitives.slate760,

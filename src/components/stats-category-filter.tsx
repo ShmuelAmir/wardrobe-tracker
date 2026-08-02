@@ -75,7 +75,7 @@ export function StatsCategoryFilter({
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     track: {
-      backgroundColor: theme.border,
+      backgroundColor: theme.fill,
       borderRadius: 10,
       flexDirection: 'row',
       marginHorizontal: 16,
@@ -102,8 +102,11 @@ function makeStyles(theme: Theme) {
       fontSize: 13,
       fontWeight: '600',
     },
+    // The selected segment already carries the accent's job — a raised `surface`
+    // tile against the recessed track. Its label is just the ink of the thing
+    // you picked, so it reads `textPrimary`, not accent-on-accent emphasis.
     labelSelected: {
-      color: theme.accent,
+      color: theme.textPrimary,
       fontWeight: '700',
     },
   });

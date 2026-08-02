@@ -13,6 +13,12 @@ import { useTheme, type Theme } from '@/theme';
  * badge: the leaderboard shows the wear count, never-worn shows a `0` in the
  * **attention tone** — the two badges are the whole visual argument for why the
  * row is where it is.
+ *
+ * **One row style everywhere** (#77): the ranks trailing the podium and the
+ * sub-tab lists render identically, so scrolling from the head into a list is one
+ * continuous table rather than two. The leaderboard badge spells its unit out
+ * ("5 wears") because it is read as a fact; never-worn's `0` stays bare, because
+ * it is read as a problem.
  */
 
 /** Shared square thumbnail — the §4.1 `contentFit: 'cover'` tile at row scale. */
@@ -62,7 +68,9 @@ export function LeaderboardRow({
         </Text>
       </View>
       <View style={styles.countBadge} testID={`stats-wear-badge-${item.id}`}>
-        <Text style={styles.countLabel}>{item.wearCount}</Text>
+        <Text style={styles.countLabel}>
+          {item.wearCount} {item.wearCount === 1 ? 'wear' : 'wears'}
+        </Text>
       </View>
     </View>
   );
@@ -96,16 +104,20 @@ export function NeverWornRow({ item, today }: { item: Item; today: Date }) {
   );
 }
 
-const THUMB = 52;
+const THUMB = 44;
 
 function makeStyles(theme: Theme) {
   return StyleSheet.create({
     row: {
       alignItems: 'center',
+      // The 1px `border` rule under every row — what makes a run of rows read as
+      // one list instead of floating cards.
+      borderBottomColor: theme.border,
+      borderBottomWidth: 1,
       flexDirection: 'row',
       gap: 12,
       paddingHorizontal: 20,
-      paddingVertical: 8,
+      paddingVertical: 10,
     },
     rank: {
       color: theme.textPrimary,
@@ -116,7 +128,7 @@ function makeStyles(theme: Theme) {
       width: 18,
     },
     thumb: {
-      backgroundColor: theme.border,
+      backgroundColor: theme.fill,
       borderRadius: 10,
       height: THUMB,
       width: THUMB,
@@ -140,7 +152,7 @@ function makeStyles(theme: Theme) {
     },
     countBadge: {
       alignItems: 'center',
-      backgroundColor: theme.border,
+      backgroundColor: theme.fill,
       borderRadius: 999,
       justifyContent: 'center',
       minWidth: 34,
@@ -148,10 +160,10 @@ function makeStyles(theme: Theme) {
       paddingVertical: 5,
     },
     countLabel: {
-      color: theme.accent,
-      fontSize: 15,
+      color: theme.textSecondary,
+      fontSize: 13,
       fontVariant: ['tabular-nums'],
-      fontWeight: '700',
+      fontWeight: '600',
     },
     zeroBadge: {
       backgroundColor: theme.warningSurface,

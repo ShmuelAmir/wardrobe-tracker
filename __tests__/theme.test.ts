@@ -9,9 +9,10 @@ import { getTheme, navigationTheme, type Theme } from '@/theme';
  * pinning it here would be brittle.
  */
 
-// The closed role set (25 single-color roles + `heroGradient`). A role added to
+// The closed role set (22 single-color roles + `heroGradient`). A role added to
 // the theme has to be added here too — that is the point of the completeness
-// guard below.
+// guard below. The three podium medal tones left the set with #77: the Variant B
+// podium reads rank from height and position, so nothing tints a medal any more.
 const ROLES: (keyof Theme)[] = [
   'background',
   'surface',
@@ -30,9 +31,6 @@ const ROLES: (keyof Theme)[] = [
   'warningSurface',
   'onWarningSurface',
   'warning',
-  'podiumGold',
-  'podiumSilver',
-  'podiumBronze',
   'chromeBg',
   'chromeInk',
   'chromeLine',
