@@ -1,9 +1,6 @@
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
+import { SegmentedControl, type Segment } from '@/components/segmented-control';
 import type { StatsScope } from '@/db/queries';
 import { CATEGORIES, type Category } from '@/db/schema';
-import { useTheme, type Theme } from '@/theme';
 
 /**
  * §9.4 — the global category filter: a seven-segment control (`All` + the six
@@ -23,15 +20,13 @@ const ABBREVIATION: Partial<Record<Category, string>> = {
   Accessory: 'Acc.',
 };
 
-type Segment = { scope: StatsScope; key: string; label: string; full: string };
-
-const SEGMENTS: Segment[] = [
-  { scope: null, key: 'All', label: 'All', full: 'All items' },
+const SEGMENTS: Segment<StatsScope>[] = [
+  { key: 'All', value: null, label: 'All', accessibilityLabel: 'All items' },
   ...CATEGORIES.map((category) => ({
-    scope: category,
     key: category,
+    value: category,
     label: ABBREVIATION[category] ?? category,
-    full: category,
+    accessibilityLabel: category,
   })),
 ];
 
@@ -42,69 +37,15 @@ export function StatsCategoryFilter({
   scope: StatsScope;
   onChange: (scope: StatsScope) => void;
 }) {
-  const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
-    <View style={styles.track} testID="stats-category-filter">
-      {SEGMENTS.map((segment) => {
-        const selected = segment.scope === scope;
-        return (
-          <Pressable
-            key={segment.key}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            accessibilityLabel={segment.full}
-            testID={`stats-filter-${segment.key}`}
-            onPress={() => onChange(segment.scope)}
-            style={[styles.segment, selected && styles.segmentSelected]}
-          >
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              style={[styles.label, selected && styles.labelSelected]}
-            >
-              {segment.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <SegmentedControl
+      segments={SEGMENTS}
+      value={scope}
+      onChange={onChange}
+      accessibilityRole="button"
+      testID="stats-category-filter"
+      testIDPrefix="stats-filter-"
+      shrinkLabels
+    />
   );
-}
-
-function makeStyles(theme: Theme) {
-  return StyleSheet.create({
-    track: {
-      backgroundColor: theme.border,
-      borderRadius: 10,
-      flexDirection: 'row',
-      marginHorizontal: 16,
-      marginVertical: 12,
-      padding: 3,
-    },
-    segment: {
-      alignItems: 'center',
-      borderRadius: 8,
-      flex: 1,
-      justifyContent: 'center',
-      paddingHorizontal: 2,
-      paddingVertical: 8,
-    },
-    segmentSelected: {
-      backgroundColor: theme.surface,
-      shadowColor: theme.shadow,
-      shadowOffset: { height: 1, width: 0 },
-      shadowOpacity: 0.12,
-      shadowRadius: 2,
-    },
-    label: {
-      color: theme.textSecondary,
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    labelSelected: {
-      color: theme.accent,
-      fontWeight: '700',
-    },
-  });
 }

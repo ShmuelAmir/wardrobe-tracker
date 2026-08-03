@@ -1,7 +1,4 @@
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
-import { useTheme, type Theme } from '@/theme';
+import { SegmentedControl, type Segment } from '@/components/segmented-control';
 
 /** The two §9.4 sub-tabs — one list at a time, counts in the labels. */
 export type SubTab = 'least' | 'never';
@@ -11,6 +8,10 @@ export type SubTab = 'least' | 'never';
  * **The Least tab is disabled when `k = 0`** — the screen forces `never` there,
  * so a fresh install can't land on an empty Least tab with the whole wardrobe
  * hidden behind the unselected one (a real bug caught in the prototype).
+ *
+ * Rendered as a **segmented control**, the same chrome as the category filter
+ * stacked above it (#77): both controls choose which slice of the same screen
+ * you're looking at, so they should look like the same kind of switch.
  */
 export function StatsSubTabs({
   active,
@@ -23,99 +24,32 @@ export function StatsSubTabs({
   neverCount: number;
   onSelect: (tab: SubTab) => void;
 }) {
-  const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const leastDisabled = leastCount === 0;
+  const segments: Segment<SubTab>[] = [
+    {
+      key: 'least',
+      value: 'least',
+      label: countedLabel('Least worn', leastCount),
+      disabled: leastCount === 0,
+    },
+    { key: 'never', value: 'never', label: countedLabel('Never worn', neverCount) },
+  ];
   return (
-    <View style={styles.bar} testID="stats-subtabs">
-      <Tab
-        tab="least"
-        label={`Least worn (${leastCount})`}
-        active={active === 'least'}
-        disabled={leastDisabled}
-        onSelect={onSelect}
-        styles={styles}
-      />
-      <Tab
-        tab="never"
-        label={`Never worn (${neverCount})`}
-        active={active === 'never'}
-        disabled={false}
-        onSelect={onSelect}
-        styles={styles}
-      />
-    </View>
-  );
-}
-
-function Tab({
-  tab,
-  label,
-  active,
-  disabled,
-  onSelect,
-  styles,
-}: {
-  tab: SubTab;
-  label: string;
-  active: boolean;
-  disabled: boolean;
-  onSelect: (tab: SubTab) => void;
-  styles: ReturnType<typeof makeStyles>;
-}) {
-  return (
-    <Pressable
+    <SegmentedControl
+      segments={segments}
+      value={active}
+      onChange={onSelect}
       accessibilityRole="tab"
-      accessibilityState={{ selected: active, disabled }}
-      testID={`stats-subtab-${tab}`}
-      disabled={disabled}
-      onPress={() => onSelect(tab)}
-      style={styles.tab}
-    >
-      <Text style={[styles.label, active && styles.labelActive, disabled && styles.labelDisabled]}>
-        {label}
-      </Text>
-      <View style={[styles.underline, active && styles.underlineActive]} />
-    </Pressable>
+      testID="stats-subtabs"
+      testIDPrefix="stats-subtab-"
+    />
   );
 }
 
-function makeStyles(theme: Theme) {
-  return StyleSheet.create({
-    bar: {
-      borderBottomColor: theme.border,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      flexDirection: 'row',
-      marginTop: 8,
-    },
-    tab: {
-      alignItems: 'center',
-      flex: 1,
-      gap: 8,
-      paddingTop: 12,
-    },
-    label: {
-      color: theme.textPrimary,
-      fontSize: 15,
-      fontWeight: '600',
-      opacity: 0.5,
-    },
-    labelActive: {
-      color: theme.accent,
-      opacity: 1,
-    },
-    labelDisabled: {
-      opacity: 0.3,
-    },
-    underline: {
-      backgroundColor: 'transparent',
-      borderTopLeftRadius: 2,
-      borderTopRightRadius: 2,
-      height: 2,
-      width: '60%',
-    },
-    underlineActive: {
-      backgroundColor: theme.accent,
-    },
-  });
+/**
+ * A `(0)` is noise: on the Least tab at `k = 0` it labels a segment the user
+ * can't even press, and on either tab it counts nothing. The parentheses are
+ * earned only by a count there is something to count.
+ */
+function countedLabel(label: string, count: number): string {
+  return count === 0 ? label : `${label} (${count})`;
 }
