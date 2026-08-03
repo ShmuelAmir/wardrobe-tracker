@@ -3,6 +3,7 @@ import { render, screen, userEvent, waitFor } from '@testing-library/react-nativ
 import ConfirmImageStep from '@/app/add-item/confirm-image';
 import PasteLinkStep from '@/app/add-item/paste-link';
 import ReviewStep from '@/app/add-item/review';
+import { getTheme } from '@/theme';
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
@@ -149,6 +150,11 @@ describe('paste-link step — failure states', () => {
     );
     expect(screen.getByTestId('paste-link-fetch')).toHaveTextContent('Retry');
     expect(screen.getByTestId('paste-link-url').props.editable).toBe(true);
+    // A failed fetch is an error, not a caution: it reads in `danger`, not the
+    // warm attention `warning` it used to wear (#78).
+    expect(screen.getByTestId('paste-link-error')).toHaveStyle({
+      color: getTheme('light').danger,
+    });
     // Retryable never reaches Review, so no metadata is carried and nowhere is navigated.
     expect(mockSetWebImport).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();

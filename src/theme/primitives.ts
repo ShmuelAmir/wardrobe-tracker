@@ -46,12 +46,15 @@ export const primitives = {
   // back the soft accent well; `indigo100`/`800` the muted on-accent text.
   // `indigo100` is deepened from #65's proposed `#c7c6f2` (which measured
   // ~3.96:1 under the 14px add-item subtitle) to clear WCAG AA on the `accent`
-  // block (§1.5).
+  // block (§1.5); it now measures ~4.7:1 on `indigo600`. `indigo800` is the dark
+  // half of that same pair and got the mirror-image deepen in #78 — at `#3a3a70`
+  // it measured ~3.6:1 on the lightened `indigo300` accent, so it darkens until
+  // the subtitle clears AA on both sides. `__tests__/contrast.test.ts` holds both.
   indigo050: '#ecebfb',
   indigo100: '#d9d8f7',
   indigo300: '#8f8ef5',
   indigo600: '#4c4bd0',
-  indigo800: '#3a3a70',
+  indigo800: '#2b2b55',
   indigo900: '#23233c',
 
   // Warm destructive reds (kept warm). `red600` is the light `danger`; `red350`

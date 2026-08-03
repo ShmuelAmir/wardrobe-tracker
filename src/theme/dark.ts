@@ -20,12 +20,15 @@ import type { Theme } from './light';
  *    below `white`.
  *  - `onAccentMuted` lands on `indigo800`: dark, muted text on the lightened
  *    `indigo300` accent block (mirroring how `onAccent` flips to dark here).
+ *    #78 deepened that primitive so the pair clears AA on this side too.
  *  - `danger` lifts to the warmer, brighter `red350` — the light `red600` turns
  *    muddy on off-black, where a delete affordance must still read as dangerous.
  *  - `dangerSurface` becomes the deep warm `red975`.
  *  - `warningSurface` becomes the deep warm fill `amber950`, and both its
  *    on-surface text (`onWarningSurface`) and the standalone `warning` text lift
- *    to the same amber `amber400` — on off-black the two contexts converge.
+ *    to the same amber `amber400` — on off-black the two contexts converge. Note
+ *    `warning` has had no consumer since #78 moved the one it had to `danger`;
+ *    see the light map for what a future claimant owes.
  *  - `textTertiary` lands on `slate500`, a step below the `slate350` secondary.
  *  - `accentSoft` deepens to `indigo900`, an accent-tinted well on off-black.
  *  - the `chrome*` nav roles are dark in both themes; only `chromeBg`/`chromeLine`
