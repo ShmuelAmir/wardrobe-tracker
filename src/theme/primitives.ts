@@ -69,9 +69,16 @@ export const primitives = {
   // Warm attention amber — distinct from the destructive reds so a nudge never
   // reads as a delete. `amber700` is the light warning text; `amber400` the
   // lifted amber for dark; `amber050`/`amber950` the light/dark attention fill.
+  // `amber700` carries both light warm-text roles at once, and at the prototype's
+  // `#a86a12` it cleared AA for neither. #85 deepens it just far enough to clear
+  // the tighter of the two — the `amber050` badge fill, lighter than `background`
+  // — which is what keeps one primitive doing both jobs instead of splitting the
+  // pair onto two ambers. `amber400` needs no such deepen; on off-black it clears
+  // comfortably. Measurements live in ADR-0013's #85 amendment; the bar itself is
+  // held by `__tests__/contrast.test.ts`.
   amber050: '#fbf1de',
   amber400: '#e0a94d',
-  amber700: '#a86a12',
+  amber700: '#9a6010',
   amber950: '#33280f',
 
   // Pure black, reserved for elevation shadows (an occlusion, not a surface),
