@@ -11,13 +11,9 @@ import { radii, spacing, useTheme, type Theme } from '@/theme';
  * copy names the product-link path first: §5 makes it the highest-quality
  * source, so the zero state is where to say so.
  *
- * The design-parity retrofit (#74, Variant C) redrew the hero from a dark brand
- * block into a soft tinted panel: an `accentSoft → surface` gradient that tracks
- * the theme, with content **bottom-left** aligned over a large glyph. Because the
- * panel is now an ordinary light/dark surface (not a fixed-dark block), its
- * foreground reads off the everyday `textPrimary`/`textSecondary` roles and the
- * CTA is a **solid accent** pill (`accent` fill, `onAccent` label) — the old
- * `onHero` role it used to need is retired with this redraw.
+ * The panel is an ordinary themed surface (an `accentSoft → surface` gradient),
+ * not a fixed-dark block, so its foreground reads off the everyday
+ * `textPrimary`/`textSecondary` roles rather than a hero-specific one.
  */
 export function WardrobeHero({ onAddItem }: { onAddItem: () => void }) {
   const theme = useTheme();
@@ -51,7 +47,7 @@ function makeStyles(theme: Theme) {
     fill: {
       flex: 1,
     },
-    // Bottom-aligned, left-aligned content — the Variant C hero composition.
+    // Bottom-aligned, left-aligned content over the glyph.
     content: {
       flex: 1,
       alignItems: 'flex-start',

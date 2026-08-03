@@ -10,8 +10,8 @@ export type SubTab = 'least' | 'never';
  * hidden behind the unselected one (a real bug caught in the prototype).
  *
  * Rendered as a **segmented control**, the same chrome as the category filter
- * stacked above it (#77): both controls choose which slice of the same screen
- * you're looking at, so they should look like the same kind of switch.
+ * stacked above it: both controls choose which slice of the same screen you're
+ * looking at, so they should look like the same kind of switch.
  */
 export function StatsSubTabs({
   active,

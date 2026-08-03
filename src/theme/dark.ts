@@ -7,28 +7,24 @@ import type { Theme } from './light';
  * indigo survives on dark, softened text, a still-visible `border`), not a
  * mechanical inversion.
  *
- * `heroGradient` was the role the pilot (#55) hand-tuned as a dark brand block;
- * #74 redrew it onto the indigo system in both themes — `[accentSoft, surface]`,
- * here the deep `indigo900` accent well fading into the `slate850` surface — so
- * the first-run screen is now a soft tinted panel that tracks the theme rather
- * than a fixed dark block, and its content reads off the ordinary
- * `textPrimary`/`textSecondary`/`onAccent` roles (the old `onHero` is retired).
+ * `heroGradient` is `[accentSoft, surface]` here too — the deep `indigo900`
+ * accent well fading into the `slate850` surface — so the first-run screen is a
+ * soft tinted panel that tracks the theme rather than a fixed dark block, and
+ * its content reads off the ordinary `textPrimary`/`textSecondary`/`onAccent`.
  *
- * The retained roles resolve dark as their function demands, not by inversion:
+ * The roles that resolve dark as their function demands, not by inversion:
  *  - `fill` lifts to `slate800` — a recessed well still has to sit a step *above*
  *    the `slate850` surface it lives on, the opposite of light where it sits
  *    below `white`.
  *  - `onAccentMuted` lands on `indigo800`: dark, muted text on the lightened
  *    `indigo300` accent block (mirroring how `onAccent` flips to dark here).
- *    #78 deepened that primitive so the pair clears AA on this side too.
  *  - `danger` lifts to the warmer, brighter `red350` — the light `red600` turns
  *    muddy on off-black, where a delete affordance must still read as dangerous.
  *  - `dangerSurface` becomes the deep warm `red975`.
  *  - `warningSurface` becomes the deep warm fill `amber950`, and both its
  *    on-surface text (`onWarningSurface`) and the standalone `warning` text lift
- *    to the same amber `amber400` — on off-black the two contexts converge. Note
- *    `warning` has had no consumer since #78 moved the one it had to `danger`;
- *    see the light map for what a future claimant owes.
+ *    to the same amber `amber400` — on off-black the two contexts converge.
+ *    `warning` is unclaimed; see the light map for what a future claimant owes.
  *  - `textTertiary` lands on `slate500`, a step below the `slate350` secondary.
  *  - `accentSoft` deepens to `indigo900`, an accent-tinted well on off-black.
  *  - the `chrome*` nav roles are dark in both themes; only `chromeBg`/`chromeLine`

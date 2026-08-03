@@ -9,11 +9,9 @@ import { useTheme, type Theme } from '@/theme';
 
 /**
  * §7.2 — a row in the "All outfits" list, tapping through to the outfit's Detail
- * (§8.5). The Variant C card (#75) is a compact, bordered, rounded container: a
- * cover thumbnail, a single-row body (name + one folded meta line), and a
- * trailing chevron. The meta folds wear stats and recency into one line
- * ("{n} wears · last {when}", or "Never worn" for the aspirational bucket that
- * sinks to the bottom); the occasion lives on Detail now, not on the card.
+ * (§8.5). The meta folds wear stats and recency into **one** line ("{n} wears ·
+ * last {when}", or "Never worn" for the aspirational bucket that sinks to the
+ * bottom); the occasion belongs on Detail, not on the card.
  */
 export function OutfitCoverCard({
   outfit,

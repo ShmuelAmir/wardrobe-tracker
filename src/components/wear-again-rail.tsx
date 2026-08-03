@@ -19,13 +19,11 @@ import { useTheme, type Theme } from '@/theme';
  * in the parent: it passes only worn outfits and doesn't mount the rail at all
  * when there are none, so there's no empty scaffold here to guard.
  *
- * The Variant C card (#75) is a bordered, rounded, clipped container with the
- * cover art on top and the "Wore it" action a full-width **ghost bar** fused to
- * the bottom edge. Its confirmed state is **persistent, not transient** (§2):
- * a card reads "logged today" whenever the outfit was worn today — either the
- * data says so (`lastWorn === today`) or it was just tapped (`confirmedOutfitId`)
- * — and the two compose, so the muted status survives after the Undo toast
- * expires and only clears if the wear is actually undone.
+ * A card's confirmed state is **persistent, not transient** (§2): it reads
+ * "logged today" whenever the outfit was worn today — either the data says so
+ * (`lastWorn === today`) or it was just tapped (`confirmedOutfitId`) — and the
+ * two compose, so the muted status survives after the Undo toast expires and
+ * only clears if the wear is actually undone.
  */
 export function WearAgainRail({
   outfits,

@@ -22,7 +22,7 @@ describe('daysSince', () => {
 });
 
 /**
- * The relative-strip glyphs (#67): the outfit header's coarsened "added {Mon
+ * The relative-strip glyphs: the outfit header's coarsened "added {Mon
  * YYYY}" (from a `Date`) and the strip's "first worn" month/year (from an ISO
  * day, field-parsed like `formatIsoDay` to dodge the UTC-midnight shift).
  */

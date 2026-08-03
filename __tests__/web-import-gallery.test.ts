@@ -4,11 +4,10 @@ import { join } from 'path';
 import { parsePage } from '@/web-import';
 
 /**
- * #41 — the gallery fix, pinned against three real retail pages saved verbatim
- * under `fixtures/`. #23 shipped a parser that dedup'd only byte-identical URLs
- * and looked for images only in `<meta>`/`<img>`, so the confirm step showed the
- * hero **twice** and never surfaced the gallery. These tests assert the fixed
- * behaviour on the exact HTML that exposed the bug:
+ * The gallery parse, pinned against three real retail pages saved verbatim under
+ * `fixtures/`. A parser that dedupes only byte-identical URLs, or that looks for
+ * images only in `<meta>`/`<img>`, shows the hero **twice** and never surfaces
+ * the gallery — these are the exact pages that expose that:
  *
  *  - Demandware (Hackett, factory54): harvest the gallery out of the escaped
  *    JSON blob, filter to the colour the URL names, drop the favicon `og:image`,

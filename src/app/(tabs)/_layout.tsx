@@ -7,7 +7,7 @@ export default function TabsLayout() {
   const router = useRouter();
 
   return (
-    // §7 / #74 — a bigger, left-aligned native header title across all three
+    // §7 — a bigger, left-aligned native header title across all three
     // tabs. Bottom-tabs can't do iOS's collapsing large-title (that's a
     // native-stack feature), so this is a statically enlarged left title.
     <Tabs

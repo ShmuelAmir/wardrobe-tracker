@@ -114,8 +114,8 @@ describe('Wardrobe with items', () => {
     expect(screen.getByTestId('item-image-1').props.contentFit).toBe('cover');
   });
 
-  // #74 — the Wardrobe grid is the *labelled* variant: each tile carries the
-  // item's name beneath it. (The shared grid on outfit Detail stays unlabelled.)
+  // The shared grid on outfit Detail stays unlabelled — this variant is
+  // Wardrobe-scoped.
   it('labels each tile with the item name (the Wardrobe-scoped variant)', async () => {
     returns([anItem({ id: 1, name: 'Grey tee' })]);
 

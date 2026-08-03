@@ -7,45 +7,36 @@ import { primitives } from './primitives';
  * justifying a new role here in review — not slipping a literal into a
  * component.
  *
- * `heroGradient` is the one non-single-color role: the `WardrobeHero` gradient
- * is an ordered array of stops, so it resolves to `string[]` per theme. #74
- * redrew it onto the indigo system — `[accentSoft, surface]`, the tinted accent
- * well fading into the screen surface — and retired the old `onHero` foreground
- * role with it: the hero is no longer a dark brand block in both themes, so its
- * title/body/CTA now read off `textPrimary`/`textSecondary`/`onAccent` like any
- * other surface content.
- *
- * The roles below `onDanger` were added by ticket #57 as it migrated the last
- * screens (following the pilot's `onHero` precedent):
+ * The roles that are easy to confuse with a neighbour:
  *  - `fill` — the muted, slightly-tinted background of an inert input field or
  *    an unselected tile. Distinct from `surface` (a card) and `background` (the
  *    screen): it sits *on* a surface as a recessed well.
+ *  - `accentSoft` — the tinted accent *well*, an accent-hued background a chip
+ *    or hero panel sits on. Distinct from `fill` (a neutral well) and `accent`
+ *    (the saturated block).
+ *  - `textTertiary` — the third text step, below `textSecondary`: metadata and
+ *    de-emphasised counts.
  *  - `onAccentMuted` — the dimmed foreground on an accent block (a subtitle
  *    under an `onAccent` title). Flips with `onAccent`.
+ *  - `dangerSurface` — the destructive *fill* behind a delete row, as opposed to
+ *    the `danger`/`onDanger` foreground pair.
  *  - `warningSurface` / `onWarningSurface` — the non-destructive attention pair:
  *    a warm fill and the warm text that sits on it (the "never worn" badge).
- *  - `warning` — standalone warm attention text on `background`, kept a separate
- *    role from `onWarningSurface` so its on-background contrast can be deepened
- *    independently. Its one consumer (the web-import failure message) moved to
- *    `danger` in #78 — a failed fetch is an error, not a caution — so the role
- *    is currently unclaimed. Note before claiming it: light `warning` measures
- *    ~4.1:1 on `background`, **below AA**, so a new consumer has to deepen the
+ *  - `warning` — standalone warm attention text on `background`, a separate role
+ *    from `onWarningSurface` so its on-background contrast can be deepened
+ *    independently. **Currently unclaimed, and below AA**: light `warning`
+ *    measures ~4.1:1 on `background`, so a new consumer has to deepen the
  *    primitive first and add the pair to `__tests__/contrast.test.ts`.
+ *  - `chromeBg` / `chromeInk` / `chromeLine` — the persistent dark nav chrome.
+ *    Dark in **both** themes, so they are foundation, not a per-theme flip.
  *  - `shadow` / `scrim` — the elevation shadow and the modal-sheet scrim. Both
  *    are occlusions, not surfaces, so both stay constant across themes.
  *
- * The design-parity retrofit (#71, from map #64) adds six roles, each justified
- * by heavy prototype usage per #65:
- *  - `textTertiary` — the third text step (prototype `ink-3`), below
- *    `textSecondary`: metadata and de-emphasised counts.
- *  - `accentSoft` — the tinted accent *well*, an accent-hued background a chip or
- *    hero panel sits on. Distinct from `fill` (a neutral well) and `accent` (the
- *    saturated block).
- *  - `dangerSurface` — the destructive *fill* behind a delete row. The app had
- *    `danger`/`onDanger` but no danger surface.
- *  - `chromeBg` / `chromeInk` / `chromeLine` — the persistent dark nav chrome.
- *    Dark in **both** themes (like the hero block was), so they are foundation,
- *    not a per-theme flip.
+ * `heroGradient` is the one non-single-color role: the `WardrobeHero` gradient
+ * is an ordered array of stops, so it resolves to `string[]` per theme. It is
+ * `[accentSoft, surface]` — a tinted accent well fading into the screen surface,
+ * not a brand block — so the hero's title/body/CTA read off
+ * `textPrimary`/`textSecondary`/`onAccent` like any other surface content.
  */
 export type Theme = {
   background: string;
@@ -75,12 +66,7 @@ export type Theme = {
   heroGradient: readonly [string, string, ...string[]];
 };
 
-/**
- * The light role map — the app's look after the design-parity remap (#71),
- * expressed as roles. Every role now resolves to an indigo/slate/chrome
- * primitive — with #74 redrawing `heroGradient` onto the indigo system, the last
- * purple primitive is gone.
- */
+/** The light role map. Every role resolves to an indigo/slate/chrome primitive. */
 export const light: Theme = {
   background: primitives.slate050,
   surface: primitives.white,

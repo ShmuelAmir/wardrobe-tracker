@@ -11,8 +11,7 @@ import { getTheme, navigationTheme, type Theme } from '@/theme';
 
 // The closed role set (22 single-color roles + `heroGradient`). A role added to
 // the theme has to be added here too — that is the point of the completeness
-// guard below. The three podium medal tones left the set with #77: the Variant B
-// podium reads rank from height and position, so nothing tints a medal any more.
+// guard below.
 const ROLES: (keyof Theme)[] = [
   'background',
   'surface',
@@ -57,9 +56,8 @@ describe('getTheme returns the complete closed role set', () => {
     }
   });
 
-  // #74 redraws the hero onto the indigo system: the gradient is the tinted
-  // accent well fading into the surface, in both themes. Asserted by role (not
-  // hex) so it stays a statement about *what* the stops are, not their value.
+  // Asserted by role, not hex, so it stays a statement about *what* the stops
+  // are rather than their value.
   it('draws heroGradient from accentSoft into surface in both themes', () => {
     for (const scheme of ['light', 'dark'] as const) {
       const theme = getTheme(scheme);

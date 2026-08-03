@@ -8,7 +8,7 @@ import { itemImageUri } from '@/item-images';
 import { radii, spacing, useTheme, type Theme } from '@/theme';
 
 const COLUMNS = 3;
-// The flush detail-grid gap vs. the roomier, rounded Wardrobe idiom (#74).
+// The flush detail-grid gap vs. the roomier, rounded Wardrobe idiom.
 const FLUSH_GAP = 2;
 const LABELLED_GAP = 10;
 
@@ -26,10 +26,10 @@ const LABELLED_GAP = 10;
  * Wardrobe grid passes it; the outfit-detail grid omits it, so those tiles stay
  * inert (an item is a place you go *from the Wardrobe*, §8.1).
  *
- * `labelled` is the **prop-scoped Wardrobe variant** (#74): rounded, 10px-gapped
- * tiles each captioned with the item's name. It is set only at the Wardrobe call
- * site; outfit Detail leaves it off and keeps the flush, unlabelled grid, so this
- * one component serves both without a shared restyle (that's #67's call).
+ * `labelled` is the **prop-scoped Wardrobe variant**: rounded, 10px-gapped tiles
+ * each captioned with the item's name. It is set only at the Wardrobe call site;
+ * outfit Detail leaves it off and keeps the flush, unlabelled grid, so this one
+ * component serves both without a shared restyle.
  */
 export function ItemGrid({
   items,

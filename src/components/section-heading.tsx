@@ -5,8 +5,8 @@ import { useTheme, type Theme } from '@/theme';
 
 /**
  * §7 — the small-caps section heading shared by the Outfits tab's two sections
- * ("Wear again", "All outfits") in Variant C (#75). One place for the uppercased,
- * letter-spaced idiom so the two headers can't drift. It carries an optional
+ * ("Wear again", "All outfits"). One place for the uppercased, letter-spaced
+ * idiom so the two headers can't drift. It carries an optional
  * `subLabel` (the rail's "tap to log for today") and an optional trailing `count`
  * (the all-outfits total) — a heading needs at most one of the two.
  */

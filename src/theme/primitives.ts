@@ -5,11 +5,9 @@
  * resolves to a primitive here. Keeping this module private is what lets a role
  * mean different hex in light vs. dark without a component knowing.
  *
- * The design-parity retrofit (#71, map #64) re-pitches this palette from the
- * original purple spine onto the prototypes' **indigo** system: a flat cool
- * "slate" ramp for surfaces and text, an indigo accent (`#4c4bd0`), a persistent
- * dark nav chrome, warm reds and a warm amber. The role→primitive table lives in
- * #65; the light values are lifted verbatim from the prototype tokens.
+ * The palette is an **indigo** system: a flat cool "slate" ramp for surfaces and
+ * text, an indigo accent (`#4c4bd0`), a persistent dark nav chrome, warm reds
+ * and a warm amber.
  */
 export const primitives = {
   // The cool-neutral "slate" ramp — surfaces and the text ramp. The suffix
@@ -44,12 +42,10 @@ export const primitives = {
   // The indigo accent and its neighbours — the new brand hue. `indigo600` is the
   // light `accent`; `indigo300` the tint it lifts to on dark. `indigo050`/`900`
   // back the soft accent well; `indigo100`/`800` the muted on-accent text.
-  // `indigo100` is deepened from #65's proposed `#c7c6f2` (which measured
-  // ~3.96:1 under the 14px add-item subtitle) to clear WCAG AA on the `accent`
-  // block (§1.5); it now measures ~4.7:1 on `indigo600`. `indigo800` is the dark
-  // half of that same pair and got the mirror-image deepen in #78 — at `#3a3a70`
-  // it measured ~3.6:1 on the lightened `indigo300` accent, so it darkens until
-  // the subtitle clears AA on both sides. `__tests__/contrast.test.ts` holds both.
+  // The muted-on-accent pair is tuned to WCAG AA (§1.5), not to the ramp:
+  // `indigo100` measures ~4.7:1 on `indigo600`, `indigo800` clears AA on the
+  // lightened `indigo300`. Lightening either one breaks the add-item subtitle;
+  // `__tests__/contrast.test.ts` holds both.
   indigo050: '#ecebfb',
   indigo100: '#d9d8f7',
   indigo300: '#8f8ef5',

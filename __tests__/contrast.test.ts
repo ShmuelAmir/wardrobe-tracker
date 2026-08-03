@@ -2,7 +2,7 @@ import { getTheme, type Theme } from '@/theme';
 
 /**
  * WCAG AA contrast guards for the foreground/background role *pairs* the app
- * actually paints (#78, §1.5). Sibling of `theme.test.ts`: that file guards the
+ * actually paints (§1.5). Sibling of `theme.test.ts`: that file guards the
  * shape of the role set, this one guards that a pair a component puts together
  * is legible once resolved.
  *
@@ -44,12 +44,11 @@ type ColorRole = Exclude<keyof Theme, 'heroGradient'>;
 
 // Each entry: the pair a real component paints, named by role, with where.
 const PAIRS: { where: string; fg: ColorRole; bg: ColorRole }[] = [
-  // add-item `index.tsx` primary tile — the sole consumer of `onAccentMuted`,
-  // the role minted with no prototype source (#65) and verified here (#78).
+  // add-item `index.tsx` primary tile — the sole consumer of `onAccentMuted`.
   { where: 'add-item primary-tile subtitle', fg: 'onAccentMuted', bg: 'accent' },
   { where: 'add-item primary-tile title', fg: 'onAccent', bg: 'accent' },
-  // add-item `paste-link.tsx` retryable-error text, retargeted off `warning`
-  // (which measured ~4.1:1 light) onto `danger` in #78.
+  // add-item `paste-link.tsx` retryable-error text. On `danger`, not `warning`:
+  // a failed fetch is an error, and light `warning` measures ~4.1:1 here anyway.
   { where: 'paste-link error text', fg: 'danger', bg: 'background' },
   { where: 'destructive row label', fg: 'danger', bg: 'surface' },
 ];

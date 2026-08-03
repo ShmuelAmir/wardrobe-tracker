@@ -10,7 +10,7 @@ import { useTheme, type Theme } from '@/theme';
  * outfits count**, no stored counters (§3). Unlike the outfit strip none of
  * these is tappable: this is the read path, which stays safe to browse (no wear
  * logging, no un-log sheet here). The since-last cell speaks in **relative**
- * language per #67 — `Nd` / "since last worn" — and reads "—" / "never worn"
+ * language — `Nd` / "since last worn" — and reads "—" / "never worn"
  * until there's a wear to date, which is the same "never worn" a zero wear count
  * states, so the two cells agree by construction. The absolute last-worn date
  * still lives one tap away, on the outfit's history sheet. The day math itself is

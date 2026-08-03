@@ -151,7 +151,7 @@ describe('paste-link step — failure states', () => {
     expect(screen.getByTestId('paste-link-fetch')).toHaveTextContent('Retry');
     expect(screen.getByTestId('paste-link-url').props.editable).toBe(true);
     // A failed fetch is an error, not a caution: it reads in `danger`, not the
-    // warm attention `warning` it used to wear (#78).
+    // warm attention `warning`.
     expect(screen.getByTestId('paste-link-error')).toHaveStyle({
       color: getTheme('light').danger,
     });

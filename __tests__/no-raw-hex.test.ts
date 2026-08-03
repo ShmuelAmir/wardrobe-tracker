@@ -2,10 +2,10 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 
 /**
- * The contract guard for the design system (ADR-0013, #58): with every screen on
- * semantic roles, a raw color literal in app code is a regression — it re-opens
- * the fragmentation the token layer closed. `primitives.ts` is the *one* module
- * allowed to name hex; everything else reads a role off `useTheme()`.
+ * The contract guard for the design system (ADR-0013): a raw color literal in
+ * app code is a regression — it re-opens the fragmentation the token layer
+ * closed. `primitives.ts` is the *one* module allowed to name hex; everything
+ * else reads a role off `useTheme()`.
  *
  * This test sweeps `src/` for a color literal outside that file and fails if it
  * finds one, so a stray `'#3a2a6d'` can't slip back in through review. It is the

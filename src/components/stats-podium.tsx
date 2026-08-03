@@ -16,11 +16,11 @@ import { useTheme, type Theme } from '@/theme';
  * The owning screen passes exactly `mostWorn.slice(0, 3)`; ordering it 2–1–3 is
  * this component's job.
  *
- * **Rank is carried by shape, not by decoration** (#77/§3.3): each place is a
- * framed tile holding the real photo, and #1 differs by being taller, tinted
- * (`accentSoft` fill behind an `accent` hairline) and larger-imaged. That is why
- * the 🥇🥈🥉 emojis and the three medal-tone roles are gone — height plus the
- * 2–1–3 position already say which is which, twice over.
+ * **Rank is carried by shape, not by decoration** (§3.3): each place is a framed
+ * tile holding the real photo, and #1 differs by being taller, tinted
+ * (`accentSoft` fill behind an `accent` hairline) and larger-imaged. Height plus
+ * the 2–1–3 position say which is which twice over, so rank needs no medal
+ * glyphs or per-place color — don't add them back.
  */
 export function StatsPodium({ top }: { top: WornItem[] }) {
   const theme = useTheme();

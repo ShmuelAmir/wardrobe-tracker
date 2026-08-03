@@ -15,8 +15,8 @@ import { useTheme, type Theme } from '@/theme';
  * **attention tone** — the two badges are the whole visual argument for why the
  * row is where it is.
  *
- * **One row style everywhere** (#77): the ranks trailing the podium and the
- * sub-tab lists render identically, so scrolling from the head into a list is one
+ * **One row style everywhere**: the ranks trailing the podium and the sub-tab
+ * lists render identically, so scrolling from the head into a list is one
  * continuous table rather than two. The leaderboard badge spells its unit out
  * ("5 wears") because it is read as a fact; never-worn's `0` stays bare, because
  * it is read as a problem.

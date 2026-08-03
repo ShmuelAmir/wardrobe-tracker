@@ -10,7 +10,7 @@ import { useTheme, type Theme } from '@/theme';
  * worn**, no stored counters. The wears cell is the one affordance here: it's
  * tappable (`12 · wears ›`) and opens the durable un-log path — the history
  * sheet — for the "I logged Tuesday by mistake" case a long-expired toast can
- * never reach. Last/first worn speak in **relative** language per #67 — last as
+ * never reach. Last/first worn speak in **relative** language — last as
  * `Nd` / "since last", first as a month glyph / "first worn {YYYY}" — and read
  * "—" until there's a wear to date. The absolute dates still live one tap away,
  * in the history sheet.

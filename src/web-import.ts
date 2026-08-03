@@ -2,14 +2,15 @@
  * §5.3 — the web-import parse. RN's `fetch` enforces no CORS (native apps have
  * none), so brand pages are fetched directly — **no proxy, no backend**.
  *
- * The candidate list is built in three passes (#41):
+ * The candidate list is built in three passes:
  *
  *   1. **Priority extraction** — `og:image` → `twitter:image` → JSON-LD →
  *      largest `<img>`. This still orders the generic/fallback case.
  *   2. **Harvest** — real retail galleries hide in a JSON blob (often with
- *      `/`-escaped slashes) or a `srcset`, not in `<meta>`/`<img src>`, so
- *      #23's parser saw only the 1–2 hero copies and the confirm step showed the
- *      hero **twice**. We additionally scan the (un-escaped) HTML for image URLs.
+ *      `/`-escaped slashes) or a `srcset`, not in `<meta>`/`<img src>`. Reading
+ *      only those two yields the 1–2 hero copies and nothing else, so the confirm
+ *      step shows the hero **twice**; we additionally scan the (un-escaped) HTML
+ *      for image URLs.
  *   3. **Filter → scope → collapse → order** — drop junk (favicons, logos,
  *      sprites); on a recognised platform keep only the colour the URL names and
  *      float the clean-background packshot to `[0]`; collapse size/format
@@ -206,7 +207,7 @@ export function parsePage(html: string, resolvedUrl: string): WebImportResult {
 }
 
 /**
- * The full candidate pipeline (#41): priority extraction + harvest, absolutized
+ * The full candidate pipeline: priority extraction + harvest, absolutized
  * and de-junked, then narrowed by the page's platform, collapsed to one URL per
  * distinct photo, and finally ordered so the clean-background packshot leads.
  */
@@ -223,7 +224,7 @@ function galleryCandidates(html: string, resolvedUrl: string): string[] {
 }
 
 /**
- * The extra pass #23 lacked: image URLs living in a JSON blob or `srcset` rather
+ * The harvest pass: image URLs living in a JSON blob or `srcset` rather
  * than a `<meta>`/`<img src>`. Retail SPAs commonly serialise the gallery as
  * JSON with `/`-escaped slashes (`https://…`), so we un-escape first,
  * then scrape every absolute image URL plus Demandware's root-relative statics.

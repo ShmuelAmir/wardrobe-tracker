@@ -190,11 +190,10 @@ describe('"See all →" hands the leaderboard to the Wardrobe tab (§9.2)', () =
 });
 
 /**
- * Variant B (#77): the podium reads rank from height and 2–1–3 position, so the
- * medal emojis are gone and the count is a plain "N wears" — the row badge's
- * unit word, not a bare metric.
+ * The podium reads rank from height and 2–1–3 position — no medal emojis — and
+ * the count is a plain "N wears": the row badge's unit word, not a bare metric.
  */
-describe('podium — Variant B framing (§9.4)', () => {
+describe('podium — framing (§9.4)', () => {
   const worn = [1, 2, 3].map((id) => aWorn(id, 10 - id));
 
   beforeEach(() => {
@@ -234,8 +233,8 @@ describe('rows — one unified badge everywhere (§9.5)', () => {
 });
 
 describe('sub-tabs — one list at a time (§9.4)', () => {
-  // Variant B's label rule: a `(0)` is noise on a tab that is disabled (Least at
-  // `k = 0`) or empty — the count only earns its parentheses when there is one.
+  // A `(0)` is noise on a tab that is disabled (Least at `k = 0`) or empty — the
+  // count only earns its parentheses when there is one.
   it('drops the count from a tab that has nothing to count', async () => {
     returns(statsData({ k: 0, neverWorn: [anItem(1), anItem(2)] }));
 
