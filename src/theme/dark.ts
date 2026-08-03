@@ -26,9 +26,10 @@ import type { Theme } from './light';
  *  - `dangerSurface` becomes the deep warm `red975`.
  *  - `warningSurface` becomes the deep warm fill `amber950`, and both its
  *    on-surface text (`onWarningSurface`) and the standalone `warning` text lift
- *    to the same amber `amber400` — on off-black the two contexts converge. Note
+ *    to the same amber `amber400` — on off-black the two contexts converge, and
+ *    both already clear AA there, so the #85 amber deepen was light-only. Note
  *    `warning` has had no consumer since #78 moved the one it had to `danger`;
- *    see the light map for what a future claimant owes.
+ *    the role was deliberately kept (see the light map).
  *  - `textTertiary` lands on `slate500`, a step below the `slate350` secondary.
  *  - `accentSoft` deepens to `indigo900`, an accent-tinted well on off-black.
  *  - the `chrome*` nav roles are dark in both themes; only `chromeBg`/`chromeLine`

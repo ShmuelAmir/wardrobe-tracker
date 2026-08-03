@@ -28,9 +28,11 @@ import { primitives } from './primitives';
  *    role from `onWarningSurface` so its on-background contrast can be deepened
  *    independently. Its one consumer (the web-import failure message) moved to
  *    `danger` in #78 — a failed fetch is an error, not a caution — so the role
- *    is currently unclaimed. Note before claiming it: light `warning` measures
- *    ~4.1:1 on `background`, **below AA**, so a new consumer has to deepen the
- *    primitive first and add the pair to `__tests__/contrast.test.ts`.
+ *    is currently **unclaimed**. #85 kept it rather than retiring it: the roles
+ *    are a designed vocabulary, and the distinction between a nudge and a delete
+ *    outlives any one consumer. It is claimable as-is — #85 deepened the shared
+ *    `amber700` until it clears AA here, and `__tests__/contrast.test.ts` holds
+ *    it there even with nothing painting it.
  *  - `shadow` / `scrim` — the elevation shadow and the modal-sheet scrim. Both
  *    are occlusions, not surfaces, so both stay constant across themes.
  *

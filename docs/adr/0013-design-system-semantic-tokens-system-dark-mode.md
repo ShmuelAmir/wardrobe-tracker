@@ -209,4 +209,34 @@ future primitive nudge that breaks legibility fails a test rather than shipping.
 Not fixed here, and out of this ticket's scope: light `onWarningSurface` on
 `warningSurface` (the "never worn" `0` badge) measures ~4.0:1 at 13px, below AA.
 It is a different pair on a different screen; deepening `amber700` would fix it
-and the unclaimed `warning` role in one move.
+and the unclaimed `warning` role in one move. (Done in #85, below.)
+
+## Amendment (2026-08-03) — the warm ambers deepen; `warning` is kept
+
+The pair left open above is closed (#85). Light `amber700` was carrying **both**
+warm-text roles and clearing neither: ~3.96:1 as `onWarningSurface` on the
+`amber050` badge fill, ~4.14:1 as standalone `warning` on `background`. It
+deepens `#a86a12` → `#9a6010`, a shade past the tightest of the three light
+backgrounds and clearing all of them (4.62 on the badge fill, 4.83 on
+`background`, 5.18 on `surface`). Not a minimal bound — a hex or two shallower
+still passes — but chosen for a little margin over 4.5 rather than a hairline.
+
+Two things this settles beyond the numbers:
+
+- **One primitive keeps doing both jobs.** Splitting the two roles onto separate
+  ambers was the alternative; it wasn't needed, because a single deepen clears
+  the tighter of the two constraints (the badge fill, a lighter background than
+  `background` itself). The three roles stay three roles — the split exists so
+  contrasts *can* diverge, not because they must.
+- **`warning` is kept despite having no consumer.** #78 left it unclaimed and the
+  no-dead-primitive instinct argued for retiring it. We keep it: the role set is
+  a designed vocabulary, and "a nudge is not a delete" is a distinction the app
+  will need again — this ADR's own justification for minting the three roles
+  doesn't weaken when the one screen using it changes its mind. What made the
+  unclaimed role a liability was that it was *unclaimed and failing AA*, a trap
+  for the next author; the deepen removes the trap, and the guard now holds
+  `warning` to the bar on both `background` and `surface` even with nothing
+  painting it.
+
+Dark needed no change: `amber400` already measures 6.9:1 on `amber950` and 9.1:1
+on `background`.
