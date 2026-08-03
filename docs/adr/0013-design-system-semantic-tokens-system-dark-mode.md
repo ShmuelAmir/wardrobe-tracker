@@ -185,3 +185,28 @@ The full role→primitive table and the build-ready deltas live in the
 The invariant the guard enforces is unchanged and was the sizing constraint on this
 amendment: every hex in `primitives.ts`, every primitive referenced by ≥1 role.
 Implementation is a separate effort; this amendment records the accepted design.
+
+## Amendment (2026-08-03) — the two carried contrast flags, resolved
+
+The retrofit amendment above deferred two contrast questions to the build (#78).
+Both are now settled, and the answers are guarded by
+`__tests__/contrast.test.ts` — a sibling of `theme.test.ts` that asserts the AA
+*ratio* of the foreground/background role pairs components actually paint, so a
+future primitive nudge that breaks legibility fails a test rather than shipping.
+
+- **`onAccentMuted` clears AA in both themes.** Light was already fixed by the
+  token ticket's deepen (`indigo100` ~4.7:1 on `accent`). Dark was not: at
+  `#3a3a70` the muted text measured ~3.6:1 on the lightened `indigo300` accent,
+  so `indigo800` deepens to `#2b2b55` (~4.7:1). The role keeps its one consumer,
+  the add-item primary-tile subtitle.
+- **Standalone `warning` text is no longer painted anywhere.** Its sole consumer,
+  the paste-link fetch-failure message, moves to `danger`: an error that reads as
+  a caution is the wrong signal, and the warm amber measured ~4.1:1 on the
+  near-white `background` where `danger` clears ~6:1. The role stays in the set —
+  the vocabulary distinction between a nudge and a delete is still real — but it
+  is unclaimed, and light `warning` must be deepened before anything claims it.
+
+Not fixed here, and out of this ticket's scope: light `onWarningSurface` on
+`warningSurface` (the "never worn" `0` badge) measures ~4.0:1 at 13px, below AA.
+It is a different pair on a different screen; deepening `amber700` would fix it
+and the unclaimed `warning` role in one move.

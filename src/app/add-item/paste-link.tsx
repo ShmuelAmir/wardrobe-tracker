@@ -190,7 +190,10 @@ function makeStyles(theme: Theme) {
       fontWeight: '600',
     },
     error: {
-      color: theme.warning,
+      // `danger`, not the warm attention `warning`: a fetch that failed is a
+      // failure, not a caution — and at 15px the amber missed AA on the
+      // near-white background where the red clears it comfortably (#78).
+      color: theme.danger,
       fontSize: 15,
     },
   });
