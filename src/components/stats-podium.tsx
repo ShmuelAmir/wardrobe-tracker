@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { ItemImage } from '@/components/item-image';
 import type { WornItem } from '@/db/queries';
+import { wearCountLabel } from '@/stats-copy';
 import { useTheme, type Theme } from '@/theme';
 
 /**
@@ -63,7 +64,7 @@ function PodiumCard({
         {item.name ?? item.category}
       </Text>
       <Text style={styles.cardCount} numberOfLines={1}>
-        {item.wearCount} {item.wearCount === 1 ? 'wear' : 'wears'}
+        {wearCountLabel(item.wearCount)}
       </Text>
     </View>
   );

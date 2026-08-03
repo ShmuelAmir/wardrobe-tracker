@@ -1,4 +1,19 @@
-import { mostWornEmptyCopy, neverWornEmptyCopy } from '@/stats-copy';
+import { listCaption, mostWornEmptyCopy, neverWornEmptyCopy, wearCountLabel } from '@/stats-copy';
+
+describe('wearCountLabel — the badge unit (§9.5)', () => {
+  it('spells the unit out, singular at one', () => {
+    expect(wearCountLabel(0)).toBe('0 wears');
+    expect(wearCountLabel(1)).toBe('1 wear');
+    expect(wearCountLabel(12)).toBe('12 wears');
+  });
+});
+
+describe('listCaption — naming each list’s sort (§9.4)', () => {
+  it('names the sort, since neither list has a header row to', () => {
+    expect(listCaption('least')).toBe('Ranked from least used');
+    expect(listCaption('never')).toBe('Oldest additions first');
+  });
+});
 
 describe('mostWornEmptyCopy — §9.5 head empty states', () => {
   it('gives the honest fresh-install line when nothing is worn', () => {

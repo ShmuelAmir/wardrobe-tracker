@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { ItemImage } from '@/components/item-image';
 import { humanizeDaysAgo, daysSinceDate, daysSinceIso } from '@/relative-time';
+import { wearCountLabel } from '@/stats-copy';
 import type { Item } from '@/db/schema';
 import type { WornItem } from '@/db/queries';
 import { useTheme, type Theme } from '@/theme';
@@ -68,9 +69,7 @@ export function LeaderboardRow({
         </Text>
       </View>
       <View style={styles.countBadge} testID={`stats-wear-badge-${item.id}`}>
-        <Text style={styles.countLabel}>
-          {item.wearCount} {item.wearCount === 1 ? 'wear' : 'wears'}
-        </Text>
+        <Text style={styles.countLabel}>{wearCountLabel(item.wearCount)}</Text>
       </View>
     </View>
   );

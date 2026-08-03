@@ -10,7 +10,12 @@ import { SeeAllLink } from '@/components/stats-see-all';
 import { StatsSubTabs, type SubTab } from '@/components/stats-subtabs';
 import { useStats, type StatsScope, type WardrobeSort, type WornItem } from '@/db/queries';
 import type { Item } from '@/db/schema';
-import { mostWornEmptyCopy, neverWornEmptyCopy } from '@/stats-copy';
+import {
+  listCaption,
+  mostWornEmptyCopy,
+  neverWornEmptyCopy,
+  MOST_WORN_HEADING,
+} from '@/stats-copy';
 import { useTheme, type Theme } from '@/theme';
 import { wardrobeParams } from '@/wardrobe-view';
 
@@ -88,9 +93,7 @@ export default function StatsTab() {
       ListFooterComponent={
         rows.length > 0 ? (
           <View style={styles.listFooter}>
-            <Text style={styles.listCaption}>
-              {activeTab === 'least' ? 'Ranked from least used' : 'Oldest additions first'}
-            </Text>
+            <Text style={styles.listCaption}>{listCaption(activeTab)}</Text>
             {activeTab === 'least' ? (
               <SeeAllLink
                 onPress={() => seeAll('least')}
@@ -139,7 +142,7 @@ function MostWornHead({
   if (k === 0) {
     return (
       <StatsEmptyCard
-        title="Most worn"
+        title={MOST_WORN_HEADING}
         body={mostWornEmptyCopy(data.wornCount, scope)}
         testID="stats-most-worn-empty"
       />
@@ -152,7 +155,7 @@ function MostWornHead({
           own meaning, and this ticket has no business relabelling it. Above the
           podium the row holds nothing but the link. */}
       <View style={[styles.sectionHead, k >= 3 && styles.sectionHeadLinkOnly]}>
-        {k >= 3 ? null : <Text style={styles.headerLabel}>Most worn</Text>}
+        {k >= 3 ? null : <Text style={styles.headerLabel}>{MOST_WORN_HEADING}</Text>}
         <SeeAllLink
           onPress={onSeeAll}
           accessibilityLabel="See all most-worn items in the Wardrobe"

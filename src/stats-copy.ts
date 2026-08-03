@@ -1,6 +1,27 @@
 import type { StatsScope } from '@/db/queries';
 
 /**
+ * The §9.4 head's own name — the label over the `k = 1–2` ranked rows, and the
+ * title of the dashed card that stands in for the ranking at `k = 0`. One
+ * constant so the empty slot is named the same as the thing that fills it.
+ */
+export const MOST_WORN_HEADING = 'Most worn';
+
+/** `wearCountLabel(1)` → `"1 wear"`; `wearCountLabel(12)` → `"12 wears"`. */
+export function wearCountLabel(count: number): string {
+  return `${count} ${count === 1 ? 'wear' : 'wears'}`;
+}
+
+/**
+ * The caption under a sub-tab list. Neither list has a header row, so nothing
+ * else says which way it is sorted — and the sort *is* the argument each list
+ * makes ("least used" indicts, "oldest additions" explains).
+ */
+export function listCaption(tab: 'least' | 'never'): string {
+  return tab === 'least' ? 'Ranked from least used' : 'Oldest additions first';
+}
+
+/**
  * §9.5 head empty-state copy, chosen by **why** the leaderboard is empty (`k = 0`
  * happens at `n = 0` or `n = 1`):
  *
