@@ -19,13 +19,23 @@ library permission strings come from config plugins, which Expo Go can't carry.
 
 ```sh
 npm install
-npm run ios     # prebuild + build + install onto a simulator or connected iPhone
+npm run ios     # prebuild + build + install onto a simulator
+npm run phone   # same, onto the iPhone in $IPHONE_UDID (prompts if unset)
 npm start       # start the dev server against an already-installed dev build
 ```
 
-Building to a physical iPhone needs Xcode, CocoaPods, and a signing team set on
-the generated Xcode project (`ios/` is generated and gitignored — rerun
-`npm run prebuild` any time the app config changes).
+`IPHONE_UDID` is a per-machine setting, not a project one — export it from your
+shell profile (`xcrun xctrace list devices` lists the UDIDs). It is kept out of
+the repo because it identifies a personal device, not because it is a secret.
+
+Building to a physical iPhone needs Xcode and CocoaPods, but not the Xcode UI:
+the signing team lives in `app.json` (`ios.appleTeamId`), so `npm run prebuild`
+regenerates the gitignored `ios/` directory with signing already configured.
+
+The build is signed with a free Apple ID, whose provisioning profile expires
+after 7 days — when the phone says *"Wardrobe Tracker" is No Longer Available*,
+rerun `npm run phone`. Installing over the existing app preserves the SQLite
+database; deleting the app does not.
 
 ```sh
 npm test        # jest + @testing-library/react-native
