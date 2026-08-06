@@ -13,7 +13,7 @@
     "ios": {
       "bundleIdentifier": "com.shmuelamir.wardrobetracker",
       "supportsTablet": false,
-      "appleTeamId": "V2GL426ZCM"
+      "appleTeamId": "48X7T3D8Z8"
     },
     "plugins": [
       "expo-router",

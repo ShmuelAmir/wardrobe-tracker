@@ -28,14 +28,23 @@ npm start       # start the dev server against an already-installed dev build
 shell profile (`xcrun xctrace list devices` lists the UDIDs). It is kept out of
 the repo because it identifies a personal device, not because it is a secret.
 
-Building to a physical iPhone needs Xcode and CocoaPods, but not the Xcode UI:
-the signing team lives in `app.json` (`ios.appleTeamId`), so `npm run prebuild`
+The signing team lives in `app.json` (`ios.appleTeamId`), so `npm run prebuild`
 regenerates the gitignored `ios/` directory with signing already configured.
 
-The build is signed with a free Apple ID, whose provisioning profile expires
-after 7 days — when the phone says *"Wardrobe Tracker" is No Longer Available*,
-rerun `npm run phone`. Installing over the existing app preserves the SQLite
-database; deleting the app does not.
+A **provisioning profile must exist** before any device build works, and a free
+Apple ID cannot mint one from the command line — `xcodebuild
+-allowProvisioningUpdates` fails with *"No profiles for
+'com.shmuelamir.wardrobetracker' were found"*. Create it from the Xcode UI once:
+open `ios/WardrobeTracker.xcworkspace`, select the target, and let Signing &
+Capabilities resolve. After that the profile lands in
+`~/Library/Developer/Xcode/UserData/Provisioning Profiles/` and `npm run phone`
+works on its own.
+
+The free-account profile expires after 7 days — when the phone says *"Wardrobe
+Tracker" is No Longer Available*, rerun `npm run phone`. If that fails with the
+same "No profiles" error, the profile needs regenerating from Xcode again.
+Installing over the existing app preserves the SQLite database; deleting the app
+does not.
 
 ```sh
 npm test        # jest + @testing-library/react-native
