@@ -1,6 +1,6 @@
 # 1. On-device-only, no accounts / cloud / sync
 
-- Status: Accepted
+- Status: Superseded by [ADR-0014](./0014-convex-backend-one-account-many-devices.md)
 - Date: 2026-07-17
 - Owner: wayfinding map ([#1](https://github.com/ShmuelAmir/wardrobe-tracker/issues/1)); §1, §12 of `SPEC.md`
 

@@ -1,6 +1,6 @@
 # 8. Fail toward an orphan; startup-only orphan sweep
 
-- Status: Accepted
+- Status: Superseded by [ADR-0018](./0018-images-in-convex-file-storage.md)
 - Date: 2026-07-17
 - Owner: [#10 — Spec image storage](https://github.com/ShmuelAmir/wardrobe-tracker/issues/10); §4.5, §4.6 of `SPEC.md`
 

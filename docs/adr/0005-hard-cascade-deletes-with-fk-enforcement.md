@@ -1,6 +1,6 @@
 # 5. Hard cascade deletes with foreign keys enforced
 
-- Status: Accepted
+- Status: Superseded by [ADR-0017](./0017-row-side-cascades-server-enforcement.md)
 - Date: 2026-07-17
 - Owner: [#4 — Finalize data model & Drizzle schema](https://github.com/ShmuelAmir/wardrobe-tracker/issues/4); §3.1 of `SPEC.md`
 

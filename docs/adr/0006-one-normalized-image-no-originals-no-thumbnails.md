@@ -37,3 +37,33 @@ second file that can disagree with the first.
   better than carrying 800MB against a maybe.
 - One file per item keeps the filesystem↔DB relationship one-to-one, which the
   naming (ADR-0007) and orphan handling (ADR-0008) both depend on.
+
+## Amendment (2026-08-07) — same decision, new numbers and a different reason
+
+The pipeline runs **client-side for file uploads** (`createImageBitmap` → canvas →
+`toBlob`) and **server-side inside the import action** for web import (ADR-0019).
+One file either way, so this ADR's decision holds unchanged.
+
+**The target drops from 1600px to ~1200px, JPEG q0.8, ~150 KB — and the reason
+moves.** The original sized for disk (~60 MB at 200 items). Disk is no longer the
+constraint: every grid render is now **metered egress** against a 1 GB/month
+free-tier ceiling, which is the binding limit rather than the 1 GB file store
+(ADR-0018). Since no caching lever exists, image size is the only lever left.
+
+**JPEG is now forced rather than chosen.** Safari cannot *encode* WebP or AVIF via
+`canvas.toBlob`, even though it decodes both.
+
+**Two problems solve themselves and must not be re-solved:**
+
+- **EXIF orientation is handled by spec** — `createImageBitmap`'s
+  `imageOrientation` defaults to `"from-image"`.
+- **iOS canvas dimension caps are dodged by resizing *during* decode** rather than
+  after.
+
+**The no-thumbnails half keeps its conclusion but loses its argument.** The original
+rested on expo-image / SDWebImage `allowDownscaling`, which is native-specific; the
+browser's own decode path replaces it. Cross-cutting invariant #8 restates
+accordingly: `contentFit: 'cover'` becomes **`object-fit: cover`**.
+
+Never-upscale survives unchanged. Convex storage offers **no transforms, no CDN and
+no cache headers**, so this pipeline is the only normalization there is.

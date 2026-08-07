@@ -1,6 +1,6 @@
 # 7. UUID image filenames; store the bare filename, never a path
 
-- Status: Accepted
+- Status: Superseded by [ADR-0018](./0018-images-in-convex-file-storage.md)
 - Date: 2026-07-17
 - Owner: [#10 — Spec image storage](https://github.com/ShmuelAmir/wardrobe-tracker/issues/10); §4.2 of `SPEC.md`
 

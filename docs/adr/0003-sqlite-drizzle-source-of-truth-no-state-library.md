@@ -1,6 +1,6 @@
 # 3. SQLite + Drizzle as the single source of truth; no state-management library
 
-- Status: Accepted
+- Status: Superseded by [ADR-0016](./0016-convex-source-of-truth-no-state-library.md)
 - Date: 2026-07-17
 - Owner: [#2](https://github.com/ShmuelAmir/wardrobe-tracker/issues/2), [#4](https://github.com/ShmuelAmir/wardrobe-tracker/issues/4); §2 of `SPEC.md`
 

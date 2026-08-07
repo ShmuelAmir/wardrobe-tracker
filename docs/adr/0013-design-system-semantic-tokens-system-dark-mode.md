@@ -210,3 +210,58 @@ Not fixed here, and out of this ticket's scope: light `onWarningSurface` on
 `warningSurface` (the "never worn" `0` badge) measures ~4.0:1 at 13px, below AA.
 It is a different pair on a different screen; deepening `amber700` would fix it
 and the unclaimed `warning` role in one move.
+
+## Amendment (2026-08-07) — vindicated at scale, and the implementation gets cheaper
+
+Third amendment, and the first one that makes this ADR *less* code rather than more.
+
+**The architecture is vindicated at scale.** The layout prototype wrote **~1,300
+lines of CSS across three unrelated desktop layouts with zero colour literals and
+zero new roles** — four times the surface area the original retrofit covered. The
+two-layer split (private primitives → semantic roles), the closed-role-set review
+gate, the no-dead-primitive rule, and system-driven dark mode with no in-app toggle
+are all unchanged.
+
+**The implementation gets strictly simpler.** All 23 roles become **CSS custom
+properties**, walked mechanically off the same role maps. `useTheme()` disappears,
+the `makeStyles(theme)` + `useMemo` house pattern disappears with it, and **the theme
+flip costs zero re-renders** — which retires this ADR's own forcing function, since
+the whole reason that pattern existed was that React Native's `StyleSheet.create`
+evaluates once at module load. `useColorScheme()` becomes a `prefers-color-scheme`
+media query.
+
+**The React Navigation theme adapter dies outright**, and with it the "one
+`colorScheme` source themes both content and chrome" clause: there is no second
+theming system to keep in lockstep, and the `chrome*` roles from the retrofit
+amendment are painted by our own CSS.
+
+**Two gaps no ticket closed, decided here.**
+
+1. **The raw-hex guard's scan surface widens to `src/**/*.css`.** The guard is
+   mechanically bound to `src/theme/primitives.ts`, and hex can now hide in CSS files
+   that did not exist when it was written. The invariant is unchanged — every hex in
+   `primitives.ts`, every primitive referenced by ≥1 role.
+
+   **The widening turns out to be free, and that has a consequence.** The token block
+   is generated as a **runtime string** off `src/theme/*.ts`, so no `.css` file ever
+   holds a hex and the guard keeps its single-entry allowlist. But **runtime
+   generation therefore becomes load-bearing**: a build-time `.css` would re-open the
+   exclusion problem and take the allowlist off one entry. It is recorded as an
+   invariant, not an implementation preference.
+
+2. **The PWA manifest's `theme_color` and `background_color` are generated from
+   `primitives.ts` at build time.** They are static colour values living *outside*
+   `src/`, and so beyond the widened scan surface — a new hole this amendment closes
+   by generation rather than by tolerating an exception.
+
+**A new guard replaces half of a retiring test.** `theme.test.ts` does not port
+clean: it imports `navigationTheme`, which dies with expo-router. Its role-shape half
+is succeeded by a **`css-vars` totality guard** asserting that every one of the 23
+roles is emitted as a custom property — mandated by name in the spec because an
+unemitted role yields an **unstyled element, not an error**. `contrast.test.ts` ports
+byte-identical, and the still-open light `onWarningSurface` measurement (~4.0:1 at
+13px) remains out of scope.
+
+**Two clauses are spent.** "Migration is incremental" and "primitives emerge from the
+migration" described a one-time 42-file retrofit that has already happened; the web
+port is a rewrite, not a migration.
