@@ -1,0 +1,215 @@
+/*
+ * PROTOTYPE stylesheet. Not one hex anywhere — every color is a `--wt-*`
+ * variable emitted from the shipped role maps, which is the CSS restatement of
+ * ADR-0013's one rule. A grep for `#` in this file is the web version of
+ * `__tests__/no-raw-hex.test.ts`.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--wt-background);
+  color: var(--wt-text-primary);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The desktop shell: a real two-column layout, not a stretched phone column.
+   Below 900px the rail collapses to a horizontal chrome bar at the bottom —
+   the phone idiom — which is the whole "two real designs" claim in one
+   media query. */
+.shell {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: 240px 1fr;
+}
+
+.rail {
+  background: var(--wt-chrome-bg);
+  color: var(--wt-chrome-ink);
+  border-right: 1px solid var(--wt-chrome-line);
+  padding: var(--wt-space-xl) var(--wt-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-sm);
+}
+
+.rail h1 {
+  font-size: 18px;
+  margin: 0 0 var(--wt-space-lg);
+}
+
+.rail button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--wt-chrome-ink);
+  text-align: left;
+  padding: var(--wt-space-sm) var(--wt-space-md);
+  border-radius: var(--wt-radius-sm);
+  font: inherit;
+  cursor: pointer;
+}
+
+.rail button[aria-current='true'] {
+  background: var(--wt-accent);
+  color: var(--wt-on-accent);
+}
+
+.main {
+  padding: var(--wt-space-xl);
+  max-width: 1200px;
+}
+
+.hero {
+  background: var(--wt-hero-gradient);
+  border: 1px solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+  padding: var(--wt-space-xl);
+  margin-bottom: var(--wt-space-xl);
+}
+
+.hero h2 {
+  margin: 0 0 var(--wt-space-xs);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--wt-text-secondary);
+}
+
+.chips {
+  display: flex;
+  gap: var(--wt-space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--wt-space-lg);
+}
+
+.chip {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 0;
+  border-radius: var(--wt-radius-pill);
+  padding: var(--wt-space-xs) var(--wt-space-md);
+  background: var(--wt-accent-soft);
+  color: var(--wt-text-primary);
+}
+
+.chip[data-inert='true'] {
+  cursor: default;
+  background: var(--wt-fill);
+  color: var(--wt-text-secondary);
+}
+
+/* The grid itself. `auto-fill` + `minmax` replaces FlatList's `numColumns`:
+   3-up on a phone and 5–6-up on a desktop fall out of one rule instead of a
+   breakpoint table. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--wt-space-md);
+}
+
+.tile {
+  display: block;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tile img,
+.tile .placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--wt-radius-md);
+  background: var(--wt-fill);
+  display: block;
+}
+
+.tile .placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--wt-text-secondary);
+  font-size: 12px;
+}
+
+.tile .label {
+  display: block;
+  padding: var(--wt-space-xs) var(--wt-space-xs) 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile .meta {
+  display: block;
+  padding: 0 var(--wt-space-xs);
+  font-size: 12px;
+  color: var(--wt-text-tertiary);
+}
+
+.note {
+  margin-top: var(--wt-space-xxl);
+  background: var(--wt-warning-surface);
+  color: var(--wt-on-warning-surface);
+  border-radius: var(--wt-radius-md);
+  padding: var(--wt-space-lg);
+  font-size: 13px;
+}
+
+.note code {
+  font-size: 12px;
+}
+
+.empty {
+  background: var(--wt-surface);
+  border: 1px solid var(--wt-border);
+  border-radius: var(--wt-radius-md);
+  padding: var(--wt-space-xl);
+  color: var(--wt-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .rail {
+    grid-row: 2;
+    flex-direction: row;
+    border-right: 0;
+    border-top: 1px solid var(--wt-chrome-line);
+    padding: var(--wt-space-sm) var(--wt-space-md)
+      calc(var(--wt-space-sm) + env(safe-area-inset-bottom));
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .rail h1 {
+    display: none;
+  }
+
+  .main {
+    padding: var(--wt-space-lg);
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--wt-space-sm);
+  }
+}
