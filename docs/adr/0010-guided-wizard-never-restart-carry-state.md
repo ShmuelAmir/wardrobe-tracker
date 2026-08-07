@@ -47,3 +47,50 @@ required/optional split (**Category is the only required field**). Edit adds
   create button.
 - Both principles ("never restart, carry state" and "no dead-can't-work button")
   are cross-cutting invariants that any new flow must uphold.
+
+## Amendment (2026-08-07) — ports intact; the hosting mechanism changes
+
+This ADR survives the replatform **invariant and mechanism**, for the price of one
+IndexedDB record. It gains real history semantics in exchange.
+
+**The whole draft persists — parsed JSON *and* the image blob.** `AddItemDraftProvider`
+held a live blob precisely because route params cannot carry a local file handle
+cleanly; on web, reload is a normal user act rather than a crash, so accepting
+reload-as-restart would plainly contradict this ADR. Persisting only the JSON was
+rejected because it re-restarts the **expensive** half, making the user re-download
+or re-pick an image they had already confirmed. Lifecycle: **one active record per
+flow**, overwritten as the walk proceeds, dropped on successful save and on explicit
+Cancel, kept indefinitely otherwise.
+
+**The wizard gets real step routes, so browser Back is wizard Back.** This is
+load-bearing rather than convenient: an installed standalone PWA has **no back
+button**, so history must be driven by in-app affordances that agree with it. Every
+nested surface therefore owns an explicit visible exit, and browser Back is an
+*alias* for it, never the only way out. The wizard is a **modal** mounted as a child
+of the app shell via React Router's `backgroundLocation`, whose no-background
+fallback renders full-screen — which *is* the phone design, so the degraded path is
+one we build anyway.
+
+**The builder persists too, and there is still no confirm-on-leave dialog.** A
+confirm dialog is a restart-or-lose prompt wearing a politeness costume — this ADR's
+own failure mode in its own language. The Outfits `+` offers **"Resume outfit"**
+instead of ever asking.
+
+**The four sheets become a uniform `?sheet=` search param**, so "Back closes the
+topmost open thing" is one rule rather than four behaviours.
+
+Two clauses change substrate but not meaning:
+
+- **Camera / library permission denial** loses its source tile, because camera
+  capture is out of scope on web. The surviving instance of "one source going quiet,
+  not a dead end" is a failed file pick.
+- **Actions must return structured failure results rather than throwing**
+  (ADR-0019) — a thrown error in an action is exactly the flow-restart this ADR
+  bans. That obligation catches a **real bug that ports today**: the `FetchOutcome`
+  catch classifies every throw as `retryable`, producing a Retry button that can
+  never work. Fixed by one invisible auto-retry, then dead-end.
+
+The corollary "the app never offers a button that can't work" survives untouched.
+Notably, both Back-trap fixes turned out to be **already-shipped native behaviour
+that ports verbatim**: `review.tsx` already `replace`s into `saved`, and three steps
+already carry `<Redirect>` guards on a missing draft.

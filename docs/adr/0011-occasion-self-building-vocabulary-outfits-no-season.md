@@ -49,3 +49,25 @@ not in the Detail header. `occasion` carries outfit tagging alone.
   a visible, low-frequency, self-inflicted problem, not worth a management surface.
 - An **occasion filter on the Outfits list** is a known v2 ask and cheap — the
   vocabulary query already exists (§7.4).
+
+## Amendment (2026-08-07) — one mechanism change: matching loses `collate nocase`
+
+This is the thinnest disposition on the replatform ledger, and the only ADR whose
+*reasoning* turned out to be entirely storage-independent. The chips-as-radio-buttons
+behaviour, the top-8 most-used-first / alphabetical-tiebreak / cap-8 vocabulary, no
+seeding, first-spelling-wins canonicalization, the self-cleaning consequence, the
+absence of a cross-outfit rename, and the whole outfits-have-no-season argument all
+port with **no edits**.
+
+One mechanism moves. **Case-insensitive occasion matching loses `collate nocase`**:
+that was a SQLite collation, and Convex has no equivalent. Since normalization-on-save
+*depends* on the case-insensitive match — it is what makes `WORK` reuse `Work` while
+never mangling `NYE` to `Nye` — the match has to survive in some form.
+
+**Decided: collect the outfits in the mutation and match in JS.** A stored
+normalized `occasionKey` field was considered and rejected: a second field that must
+stay in lockstep with the display spelling earns nothing at a few hundred outfits,
+and it would put a concept in the schema the domain has no word for.
+
+Filtering moves from `WHERE occasion = ?` to an indexed query plus a JS comparison.
+The known-v2 occasion filter on the Outfits list stays cheap.

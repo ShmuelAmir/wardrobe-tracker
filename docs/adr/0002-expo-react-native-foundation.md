@@ -1,6 +1,6 @@
 # 2. Expo / React Native foundation & SDK choices
 
-- Status: Accepted
+- Status: Superseded by [ADR-0015](./0015-vite-react-react-router.md)
 - Date: 2026-07-17
 - Owner: [#2 — Research: Expo project foundation & SDK choices](https://github.com/ShmuelAmir/wardrobe-tracker/issues/2) (findings on branch `research/expo-foundation`); §2 of `SPEC.md`
 

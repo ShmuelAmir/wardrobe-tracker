@@ -1,6 +1,6 @@
 # 9. Web import via native `fetch` — no proxy, no backend
 
-- Status: Accepted
+- Status: Superseded by [ADR-0019](./0019-web-import-convex-action.md)
 - Date: 2026-07-17
 - Owner: [#3 — Research: web image import](https://github.com/ShmuelAmir/wardrobe-tracker/issues/3) (findings on branch `research/web-image-import`), [#9](https://github.com/ShmuelAmir/wardrobe-tracker/issues/9); §5.3, §5.4 of `SPEC.md`
 
