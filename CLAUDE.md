@@ -23,3 +23,17 @@ issue tracker hold the history. Density follows a per-layer budget. See
 ### Design system
 
 Colors are semantic tokens read off `useTheme()`; raw hex lives only in `src/theme/primitives.ts`, guarded by `__tests__/no-raw-hex.test.ts`. See `docs/agents/design-system.md`.
+
+<!-- convex-ai-start -->
+
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read
+`convex/_generated/ai/guidelines.md` first** for important guidelines on
+how to correctly use Convex APIs and patterns. The file contains rules that
+override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running
+`npx convex ai-files install`.
+
+<!-- convex-ai-end -->
