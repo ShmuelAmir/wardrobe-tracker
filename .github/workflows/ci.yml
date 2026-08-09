@@ -1,0 +1,26 @@
+# Typecheck + test on every push. No secrets and no deployment: the suite is
+# in-memory (better-sqlite3 today, convex-test after the replatform) and
+# deploys are manual (SPEC.md §14.6, §15.6).
+name: CI
+
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
