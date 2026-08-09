@@ -1,5 +1,5 @@
 import type { WardrobeSort, WardrobeView } from '@/db/queries';
-import { CATEGORIES } from '@/db/schema';
+import { CATEGORIES } from '@/item-taxonomy';
 
 /**
  * §9.6 — the Wardrobe tab's **arrived-at** state, expressed as nav params.
