@@ -1,6 +1,6 @@
-# Typecheck + test on every push. No secrets and no deployment: the suite is
-# in-memory (better-sqlite3 today, convex-test after the replatform) and
-# deploys are manual (SPEC.md §14.6, §15.6).
+# The suite is in-memory and deploys are run by hand (§14.6), so this workflow
+# needs no secrets at all (§15.6). Anything added here that wants one is a
+# change of policy, not a change of config.
 name: CI
 
 on: push
@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
