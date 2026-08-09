@@ -1,0 +1,26 @@
+# The suite is in-memory and deploys are run by hand (§14.6), so this workflow
+# needs no secrets at all (§15.6). Anything added here that wants one is a
+# change of policy, not a change of config.
+name: CI
+
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
