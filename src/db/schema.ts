@@ -1,18 +1,19 @@
 import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
+import type { Category, Season } from '@/item-taxonomy';
+
 /**
  * SPEC.md §3.2. Four tables and nothing else: wear stats are derived on read
- * (§3.1 rule 4), so no `wear_count` or `last_worn` column exists here — or may
+ * (§3.1 rule 1), so no `wear_count` or `last_worn` column exists here — or may
  * be added.
  */
 
-/** Fixed enum, validated in TypeScript rather than by a SQL `CHECK` (§3.1 rule 1). */
-export const CATEGORIES = ['Top', 'Bottom', 'Outerwear', 'Footwear', 'Accessory', 'Bag'] as const;
-export type Category = (typeof CATEGORIES)[number];
-
-/** No "all-season" value — year-round means all four selected (§3.1 rule 2). */
-export const SEASONS = ['spring', 'summer', 'fall', 'winter'] as const;
-export type Season = (typeof SEASONS)[number];
+/**
+ * Re-exported, not defined here, so that importing the vocabulary doesn't
+ * require importing Drizzle — see `@/item-taxonomy`. A call site still gets the
+ * whole storage vocabulary from this one module.
+ */
+export { CATEGORIES, SEASONS, type Category, type Season } from '@/item-taxonomy';
 
 export const item = sqliteTable('item', {
   id: integer('id').primaryKey({ autoIncrement: true }),
