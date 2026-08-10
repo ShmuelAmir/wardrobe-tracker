@@ -11,6 +11,9 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
+    /* `process.env` is how a Convex function reads a deployment variable — the
+     * signup secret (§13.4) and `CONVEX_SITE_URL` both arrive that way. */
+    "types": ["node"],
 
     /* These compiler options are required by Convex */
     "target": "ESNext",
@@ -21,5 +24,8 @@
     "noEmit": true
   },
   "include": ["./**/*"],
-  "exclude": ["./_generated"]
+  /* The tests run on Vitest and are checked by `web/tsconfig.json`, which has
+   * that runner's globals; they are not deployed and do not belong to this
+   * project's environment. */
+  "exclude": ["./_generated", "./**/*.test.ts"]
 }

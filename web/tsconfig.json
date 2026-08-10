@@ -11,8 +11,12 @@
     "verbatimModuleSyntax": true,
     "types": ["vite/client", "vitest/globals", "node"],
     "paths": {
-      "@/*": ["../src/*"]
+      "@/*": ["../src/*"],
+      "@convex/*": ["../convex/*"]
     }
   },
-  "include": ["src", "test", "vite.config.ts", "vitest.config.ts"]
+  // `../convex` is in scope because this project is the one that runs its tests
+  // (§15.1's `convex` runner lives in `vitest.config.ts` here) and the one that
+  // imports its generated `api`. The root project excludes it.
+  "include": ["src", "test", "../convex", "vite.config.ts", "vitest.config.ts"]
 }

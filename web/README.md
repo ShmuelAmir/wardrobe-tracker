@@ -40,6 +40,17 @@ VITE_CONVEX_SITE_URL=…
 
 `CONVEX_DEPLOYMENT` is read by the CLI, not the client, and keeps its name.
 
+## Signing in
+
+There is **no signup screen**, and that is not a gap: `signUp` lives on the server
+permanently so the account can be recreated, gated on both an `OWNER_SIGNUP_SECRET`
+deployment variable and a zero-existing-users check (SPEC §13.4). Creating the
+account on a fresh deployment — and resetting a forgotten password — is
+[`docs/runbook.md`](../docs/runbook.md) procedure 1.
+
+The login form is a **shell state, not a route** (§13.5), so it appears over
+whatever URL was asked for and no `?next=` is ever added.
+
 ## Colours
 
 There is no colour in any stylesheet. `src/theme/css-vars.ts` generates the

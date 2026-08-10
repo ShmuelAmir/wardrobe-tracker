@@ -43,19 +43,16 @@ const ROOT_DOMAIN_TESTS = [
  * One config, two projects, one `npm test` (§15.1). The split is forced rather
  * than chosen: `convex-test` needs a Web-API runtime (`edge-runtime`) and
  * component tests need a DOM (`jsdom`), and no single environment is both.
- *
- * The `convex` project matches nothing yet — the Convex functions land with the
- * data model — so it passes empty on purpose, standing ready rather than
- * arriving later.
  */
 export default defineConfig({
   test: {
-    // The `convex` project below matches nothing yet, and an empty project is
-    // not a failure — see its comment.
-    passWithNoTests: true,
     projects: [
       {
         resolve: { alias },
+        // The functions under test live above `web/`, so the loader has to be
+        // allowed out of the project root to reach them — the same reason the
+        // `web` project below sets it.
+        server: { fs: { allow: [repoRoot] } },
         test: {
           name: 'convex',
           globals: true,

@@ -1,7 +1,12 @@
+import { api } from '@convex/_generated/api';
 import { render } from '@testing-library/react';
 import { RouterProvider, createMemoryRouter } from 'react-router';
 
+import { resetConvex, stubQuery } from '../test/convex-fake';
+import { anItem } from '../test/fixtures';
 import { routes } from './routes';
+
+vi.mock('convex/react', () => import('../test/convex-fake'));
 
 /**
  * The URL space of §7.1, asserted as a table. It reads as bookkeeping until you
@@ -24,6 +29,13 @@ function surfacesAt(path: string): string[] {
     (element) => element.getAttribute('data-surface') as string,
   );
 }
+
+beforeEach(() => {
+  resetConvex();
+  // A wardrobe with something in it, so the rows below exercise the grid rather
+  // than §7.7's zero state — which is a surface of its own, tested beside it.
+  stubQuery(api.items.list, [anItem()]);
+});
 
 describe('the route tree covers §7.1s URL space', () => {
   it.each([
