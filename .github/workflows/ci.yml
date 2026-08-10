@@ -1,6 +1,11 @@
 # The suite is in-memory and deploys are run by hand (§14.6), so this workflow
 # needs no secrets at all (§15.6). Anything added here that wants one is a
 # change of policy, not a change of config.
+#
+# Two jobs, because there are two packages: the native app at the root and the
+# Vite app in `web/`, each with its own dependency tree. They run in parallel and
+# both have to be green — that is the coexistence window's whole contract, that
+# there is never a moment when nothing guards the tree (§15.1).
 name: CI
 
 on: push
@@ -9,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  native:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,3 +29,39 @@ jobs:
       - run: npm run typecheck
 
       - run: npm test
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      # Both trees, because for the length of the coexistence window the web app
+      # reads modules that still belong to the native app's TypeScript project:
+      # `@` resolves into the repo's `src/`, whose nearest tsconfig is the root
+      # one (it extends `expo/tsconfig.base`), and whose own imports resolve
+      # against the root's `node_modules`. So checking `web/` needs the native
+      # toolchain on disk. This step retires at cutover, when `src/` stops being
+      # shared.
+      - run: npm ci
+        working-directory: .
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      # The build is a check in its own right: it is the only step that proves
+      # `@` still resolves the shipped domain modules into a browser bundle.
+      - run: npm run build

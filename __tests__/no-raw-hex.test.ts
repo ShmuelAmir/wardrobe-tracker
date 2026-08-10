@@ -5,42 +5,61 @@ import { join, relative, sep } from 'path';
  * The contract guard for the design system (ADR-0013): a raw color literal in
  * app code is a regression — it re-opens the fragmentation the token layer
  * closed. `primitives.ts` is the *one* module allowed to name hex; everything
- * else reads a role off `useTheme()`.
+ * else reads a role — off `useTheme()` on native, off `var(--wt-…)` on the web.
  *
- * This test sweeps `src/` for a color literal outside that file and fails if it
- * finds one, so a stray `'#3a2a6d'` can't slip back in through review. It is the
- * automated half of the guard; the human half is the checklist in
- * `docs/agents/design-system.md`.
+ * This test sweeps the app's source roots for a color literal outside that file
+ * and fails if it finds one, so a stray `'#3a2a6d'` can't slip back in through
+ * review. It is the automated half of the guard; the human half is the checklist
+ * in `docs/agents/design-system.md`.
  *
- * It matches only *quoted* color values — a hex or `rgb()/rgba()` string, the
- * shape a React Native style color always takes — so prose like "outfit #200" in
- * a comment is not a false positive. Named CSS colors (`'transparent'`) are out
- * of scope: they are keywords, not palette values, so they carry no
- * fragmentation risk.
+ * **The scan surface includes `.css`** (ADR-0013's third amendment, SPEC §15.5),
+ * and that costs nothing precisely because the custom-property block is
+ * generated at runtime from `src/theme/css-vars.ts`: no stylesheet on disk ever
+ * holds a value, so the allowlist stays a single entry rather than growing a
+ * carve-out for a generated file.
  */
 
-const SRC = join(__dirname, '..', 'src');
+/** Both app source roots: the native app's modules, and the Vite app's. */
+const ROOTS = [join(__dirname, '..', 'src'), join(__dirname, '..', 'web', 'src')];
+const REPO = join(__dirname, '..');
 
-// The single sanctioned home for raw hex (ADR-0013). Relative to `src/`.
-const ALLOWED = new Set(['theme/primitives.ts']);
+// The single sanctioned home for raw hex (ADR-0013). Repo-relative.
+const ALLOWED = new Set(['src/theme/primitives.ts']);
 
-// A quoted hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`) or a quoted `rgb(`/
-// `rgba(` — i.e. an actual style color, not a `#123` in prose.
-const COLOR_LITERAL = /['"]#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})['"]|['"]rgba?\(/;
+// In TS a style color is always a *quoted* value — a hex or an `rgb()/rgba()`
+// string — so requiring the quote keeps prose like "outfit #200" in a comment
+// from reading as an offender.
+const TS_COLOR = /['"]#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})['"]|['"]rgba?\(/;
+
+// In CSS the same value is *unquoted*, so the quote can't be the discriminator
+// and the functional notations `hsl()`/`hsla()` join the list. Named keywords
+// (`transparent`, `currentColor`) stay out of scope in both: they are keywords,
+// not palette values, so they carry no fragmentation risk.
+const CSS_COLOR = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b|\b(?:rgba?|hsla?)\(/;
+
+const PATTERNS: { extension: RegExp; literal: RegExp }[] = [
+  { extension: /\.tsx?$/, literal: TS_COLOR },
+  { extension: /\.css$/, literal: CSS_COLOR },
+];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) return sourceFiles(path);
-    return /\.tsx?$/.test(name) ? [path] : [];
+    return PATTERNS.some(({ extension }) => extension.test(name)) ? [path] : [];
   });
 }
 
+function namesAColor(path: string): boolean {
+  const { literal } = PATTERNS.find(({ extension }) => extension.test(path)) as (typeof PATTERNS)[0];
+  return literal.test(readFileSync(path, 'utf8'));
+}
+
 describe('no raw color literals leak outside primitives.ts', () => {
-  const offenders = sourceFiles(SRC)
-    .filter((path) => !ALLOWED.has(relative(SRC, path).split(sep).join('/')))
-    .filter((path) => COLOR_LITERAL.test(readFileSync(path, 'utf8')))
-    .map((path) => relative(SRC, path));
+  const offenders = ROOTS.flatMap(sourceFiles)
+    .map((path) => relative(REPO, path).split(sep).join('/'))
+    .filter((path) => !ALLOWED.has(path))
+    .filter((path) => namesAColor(join(REPO, path)));
 
   it('finds none', () => {
     expect(offenders).toEqual([]);

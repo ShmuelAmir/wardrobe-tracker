@@ -8,5 +8,9 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules"]
+  // `web/` is its own package with its own tsconfig, React version and DOM lib
+  // (ADR-0015). Typechecking it from here would resolve its imports against the
+  // Expo tree, which is the coupling the whole beside-not-on-top arrangement
+  // avoids.
+  "exclude": ["node_modules", "web"]
 }
