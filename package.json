@@ -63,6 +63,13 @@
     },
     "setupFiles": [
       "<rootDir>/jest.setup.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/web/"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/web/"
     ]
   }
 }

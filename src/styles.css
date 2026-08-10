@@ -1,0 +1,36 @@
+/**
+ * The base stylesheet. It names no colour — every value here is a `var(--wt-…)`
+ * role emitted at runtime by `src/theme/css-vars.ts`, which is what keeps
+ * ADR-0013's one rule ("a component never names a colour") true on the web and
+ * lets `__tests__/no-raw-hex.test.ts` sweep `.css` with a single-entry allowlist.
+ *
+ * It lives beside the token modules rather than under `web/` because it is part
+ * of the design system's surface, not the Vite app's plumbing.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--wt-background);
+  color: var(--wt-text-primary);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
