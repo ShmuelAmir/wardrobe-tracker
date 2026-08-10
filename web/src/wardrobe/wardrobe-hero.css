@@ -1,0 +1,47 @@
+/* Full-bleed: the gradient fills the pane area edge to edge, and the detail pane
+   is not rendered beside it — there is nothing yet to select. */
+.wardrobe-hero {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  background: var(--wt-hero-gradient);
+}
+
+.wardrobe-hero__content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wt-space-md);
+  max-width: 480px;
+  padding: var(--wt-space-xxl);
+}
+
+.wardrobe-hero__glyph {
+  margin: 0;
+  font-size: 52px;
+}
+
+.wardrobe-hero__title {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--wt-text-primary);
+}
+
+.wardrobe-hero__body {
+  margin: 0;
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--wt-text-secondary);
+}
+
+.wardrobe-hero__cta {
+  margin-top: var(--wt-space-md);
+  padding: var(--wt-space-lg) var(--wt-space-xxl);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--wt-on-accent);
+  text-decoration: none;
+  background: var(--wt-accent);
+  border-radius: var(--wt-radius-pill);
+}

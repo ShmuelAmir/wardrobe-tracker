@@ -40,9 +40,12 @@ deployment:
    zero-existing-users check (§13.4). Set the secret, run signup, then unset it:
    ```
    npx convex env set OWNER_SIGNUP_SECRET <value> --prod
-   #  ... complete signup from the app ...
+   npx convex run --prod auth:signIn '{"provider":"password","params":{"flow":"signUp","email":"<email>","password":"<new password>","secret":"<value>"}}'
    npx convex env remove OWNER_SIGNUP_SECRET --prod
    ```
+
+   Signup is driven from the CLI because there is **no signup UI** to complete it
+   in (§13.4) — the app only ever offers sign-in.
 
 > The zero-existing-users check means step 3 fails while an Owner document still
 > exists. Step 2 has to actually remove it, not just the password hash.

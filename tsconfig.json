@@ -11,6 +11,9 @@
   // `web/` is its own package with its own tsconfig, React version and DOM lib
   // (ADR-0015). Typechecking it from here would resolve its imports against the
   // Expo tree, which is the coupling the whole beside-not-on-top arrangement
-  // avoids.
-  "exclude": ["node_modules", "web"]
+  // avoids. `convex/` is excluded for the same reason and one more: its tests run
+  // on Vitest, so they need that runner's globals rather than Jest's. It is
+  // checked twice over — by `convex/tsconfig.json` on every deploy, and by
+  // `web/tsconfig.json`, which is the project that actually consumes it.
+  "exclude": ["node_modules", "web", "convex"]
 }

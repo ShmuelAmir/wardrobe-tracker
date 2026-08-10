@@ -1,0 +1,98 @@
+/**
+ * The shell frame and its navigation chrome, in one file because they share the
+ * **one** breakpoint §7.4 allows: the single `@media (min-width: 900px)` block
+ * at the bottom turns the bottom tabs into the 64px icon rail *and* turns the
+ * pane stack the right way round. Splitting them across two stylesheets would
+ * write 900px twice, and a second copy is what lets the two halves disagree.
+ *
+ * Below the breakpoint is the base case, not the exception — the tabs are what
+ * a phone gets, and the rail is the enhancement.
+ */
+
+.app-shell {
+  display: flex;
+  /* Reversed, because the nav is first in the DOM (it is the landmark a keyboard
+     reaches first) and painted last on a phone. */
+  flex-direction: column-reverse;
+  height: 100%;
+}
+
+.app-shell__panes {
+  flex: 1;
+  /* Without this the panes refuse to shrink and their own scroll never starts. */
+  min-height: 0;
+  overflow: auto;
+}
+
+.app-shell__loading {
+  height: 100%;
+  background: var(--wt-background);
+}
+
+.app-nav {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-around;
+  background: var(--wt-chrome-bg);
+  border-top: 1px solid var(--wt-chrome-line);
+  /* §14.4: the tabs sit under the iOS home indicator once installed, and the
+     inset resolves to zero everywhere else. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.app-nav__link {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wt-space-xs);
+  padding: var(--wt-space-sm) 0;
+  color: var(--wt-chrome-ink);
+  text-decoration: none;
+}
+
+.app-nav__link[aria-current='page'] {
+  color: var(--wt-accent);
+}
+
+.app-nav__icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.app-nav__label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+@media (min-width: 900px) {
+  .app-shell {
+    flex-direction: row;
+  }
+
+  .app-nav {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: var(--wt-space-sm);
+    width: 64px;
+    padding: var(--wt-space-md) 0;
+    border-top: none;
+    border-right: 1px solid var(--wt-chrome-line);
+  }
+
+  .app-nav__link {
+    flex: none;
+  }
+
+  /* The rail is 64px of icons; the label stays in the DOM for the screen reader
+     that never sees the tabs. */
+  .app-nav__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

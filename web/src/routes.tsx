@@ -1,11 +1,18 @@
 import { Navigate, Outlet, type RouteObject } from 'react-router';
 
+import { AppShell } from './shell/app-shell';
+import { WardrobeLayout } from './wardrobe/wardrobe-layout';
+
 /**
- * §7.1's URL space as one tree, with every surface still a placeholder. The
+ * §7.1's URL space as one tree, with most surfaces still placeholders. The
  * nesting is the part that is already load-bearing: the two list layouts are
  * **pathless** routes owning the pane that stays put, while their children own
  * the pane that changes, so `/` and `/item/:id` render the same grid without it
  * appearing in two places — detail is a nested route, not a pushed one (§7.2).
+ *
+ * The whole tree hangs off `<AppShell>`, which renders its children only when
+ * signed in — that is what makes login a shell state rather than a route
+ * (§13.5), including for the `*` redirect below.
  */
 
 /** A placeholder surface. `Outlet` is what makes the nesting observable. */
@@ -20,10 +27,10 @@ function Surface({ name }: { name: string }) {
 export const routes: RouteObject[] = [
   {
     path: '/',
-    element: <Surface name="shell" />,
+    element: <AppShell />,
     children: [
       {
-        element: <Surface name="wardrobe-grid" />,
+        element: <WardrobeLayout />,
         children: [
           { index: true, element: <Surface name="empty-item-pane" /> },
           {

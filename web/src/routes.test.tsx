@@ -1,7 +1,10 @@
-import { render } from '@testing-library/react';
-import { RouterProvider, createMemoryRouter } from 'react-router';
+import { api } from '@convex/_generated/api';
 
-import { routes } from './routes';
+import { resetConvex, stubQuery } from '../test/convex-fake';
+import { anItem } from '../test/fixtures';
+import { renderRoute, surfaces } from '../test/render';
+
+vi.mock('convex/react', () => import('../test/convex-fake'));
 
 /**
  * The URL space of §7.1, asserted as a table. It reads as bookkeeping until you
@@ -17,13 +20,17 @@ import { routes } from './routes';
  * could: the router is mountable, so routing is testable at all (§15.4).
  */
 function surfacesAt(path: string): string[] {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-  const { container } = render(<RouterProvider router={router} />);
+  renderRoute(path);
 
-  return [...container.querySelectorAll('[data-surface]')].map(
-    (element) => element.getAttribute('data-surface') as string,
-  );
+  return surfaces();
 }
+
+beforeEach(() => {
+  resetConvex();
+  // A wardrobe with something in it, so the rows below exercise the grid rather
+  // than §7.7's zero state — which is a surface of its own, tested beside it.
+  stubQuery(api.items.list, [anItem()]);
+});
 
 describe('the route tree covers §7.1s URL space', () => {
   it.each([

@@ -9,7 +9,13 @@ import { defineConfig } from 'vite';
  * module the build never sees.
  */
 export const repoRoot = fileURLToPath(new URL('..', import.meta.url));
-export const alias = { '@': `${repoRoot}src` };
+export const alias = {
+  '@': `${repoRoot}src`,
+  // The generated `api` and the function modules. Aliased for the same reason
+  // `@` is: a relative path out of `web/src/` would be three levels of `..` and
+  // would move whenever a component does.
+  '@convex': `${repoRoot}convex`,
+};
 
 /**
  * The web app is built **beside** the native one, not on top of it: everything
