@@ -53,18 +53,29 @@ describe('the generated custom-property block is total over the role set', () =>
     expect(expected).toHaveLength(23);
   });
 
-  const runs = declarationRuns(themeStylesheet);
+  const [light_, dark_] = declarationRuns(themeStylesheet);
 
-  // Light on `:root`, dark under the media query, dark again under the explicit
-  // `[data-scheme="dark"]` override — every one of them a complete role map, or
-  // a role falls back to the wrong scheme's value instead of failing.
-  it('emits three declaration blocks — light, and dark twice', () => {
-    expect(runs).toHaveLength(3);
+  // Light on `:root`, dark under the media query, and nothing else — a third
+  // block would mean an override selector, which ADR-0013 rules out.
+  it('emits two declaration blocks — light, then dark', () => {
+    expect(declarationRuns(themeStylesheet)).toHaveLength(2);
   });
 
-  it.each([0, 1, 2])('emits every role in block %i', (index) => {
-    const emitted = new Set(runs[index]);
+  // A role missing from *either* block silently resolves to the other scheme's
+  // value, which reads as a theming bug rather than a missing declaration.
+  it.each([
+    ['light', () => light_],
+    ['dark', () => dark_],
+  ])('emits every role in the %s block', (_scheme, run) => {
+    const emitted = new Set(run());
     expect(expected.filter((property) => !emitted.has(property))).toEqual([]);
+  });
+
+  // The dark block carries roles and nothing else, so it can be pinned exactly —
+  // which catches drift the other way too: a stale property left behind after a
+  // role is renamed.
+  it('emits nothing but roles in the dark block', () => {
+    expect([...dark_].sort()).toEqual(expected);
   });
 
   it('emits heroGradient as a gradient rather than a bare colour', () => {

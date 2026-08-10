@@ -13,7 +13,7 @@ import { radii, spacing } from './tokens';
  * of the palette and would re-open the raw-hex guard's exclusion problem — the
  * guard would have to carve out an exception for it, and an exception is exactly
  * what ADR-0013 closed. Because the block is a string built from `light`/`dark`,
- * no `.css` file ever holds a hex, so widening the guard to `src/**‍/*.css`
+ * no stylesheet on disk ever holds a hex, so widening that guard to sweep `.css`
  * costs nothing.
  *
  * Nothing is transcribed: the maps are walked mechanically, so a role added in
@@ -48,13 +48,16 @@ function statics(): string {
 }
 
 /**
- * Both maps are emitted up front and the *scheme* is chosen by a selector, so a
- * theme flip is one attribute write on `<html>` — no re-render, and no flash,
- * since the media query has already resolved before first paint. `data-scheme`
- * is the explicit override; absent it, the system preference wins.
+ * Both maps are emitted up front and the scheme is chosen by a media query, so
+ * the flip costs zero re-renders and cannot flash: `prefers-color-scheme` has
+ * already resolved before first paint.
+ *
+ * There is deliberately **no override selector**. Dark mode is driven by the OS
+ * appearance and nothing else (ADR-0013) — no in-app toggle, no persisted
+ * preference — so a `[data-scheme]` hook would be a mechanism with no claimant,
+ * and the guard below would then pin it in place.
  */
 export const themeStylesheet = [
   `:root {\n${statics()}\n${declarations(light)}\n}`,
-  `@media (prefers-color-scheme: dark) {\n  :root:not([data-scheme="light"]) {\n${declarations(dark)}\n  }\n}`,
-  `:root[data-scheme="dark"] {\n${declarations(dark)}\n}`,
+  `@media (prefers-color-scheme: dark) {\n  :root {\n${declarations(dark)}\n  }\n}`,
 ].join('\n\n');

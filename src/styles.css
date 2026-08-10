@@ -24,9 +24,9 @@ body {
   margin: 0;
   background: var(--wt-background);
   color: var(--wt-text-primary);
+  /* Sizes and weights belong to the `type` ramp in `src/theme/tokens.ts`, which
+     the port applies per variant; only the face is set globally. */
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 16px;
-  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 

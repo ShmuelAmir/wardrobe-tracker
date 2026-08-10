@@ -2,7 +2,14 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
-const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+/**
+ * The repo root, and the alias that makes it reachable. Both are exported
+ * because `vitest.config.ts` needs exactly the same two values — a second copy
+ * could drift, and the drift would only surface as a test passing against a
+ * module the build never sees.
+ */
+export const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+export const alias = { '@': `${repoRoot}src` };
 
 /**
  * The web app is built **beside** the native one, not on top of it: everything
@@ -21,6 +28,6 @@ const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 export default defineConfig({
   plugins: [react()],
   envDir: repoRoot,
-  resolve: { alias: { '@': `${repoRoot}src` } },
+  resolve: { alias },
   server: { port: 5173 },
 });

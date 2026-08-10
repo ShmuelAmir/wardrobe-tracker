@@ -18,8 +18,7 @@ are on disk for the length of the port:
   The custom properties are generated **at runtime** by `src/theme/css-vars.ts`
   and installed before first paint. There is no `useTheme()`, no `makeStyles`,
   and the theme flip costs zero re-renders.
-- **Native (`src/app/`, `src/components/`)** — `theme.accent` off `useTheme()`,
-  as before.
+- **Native (`src/app/`, `src/components/`)** — `theme.accent` off `useTheme()`.
 
 **Runtime generation is an invariant, not a preference** (SPEC §10 #11). A
 build-time `.css` holding the palette would be a second copy of it and would

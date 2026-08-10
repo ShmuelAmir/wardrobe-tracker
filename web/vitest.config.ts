@@ -2,13 +2,15 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
-const repoRoot = fileURLToPath(new URL('..', import.meta.url));
-const alias = { '@': `${repoRoot}src` };
+// The same root and the same `@`, from the same place the build reads them.
+import { alias, repoRoot } from './vite.config';
+
 const shim = (name: string) => fileURLToPath(new URL(`./test/shims/${name}.ts`, import.meta.url));
 
 /**
- * The domain tests that already run on this runner **byte-identical** (§15.2) —
- * same files Jest runs, no fork, no edit. `globals: true` below is what buys
+ * The domain tests at the repo root that this runner shares with Jest — the same
+ * files, no fork and no edit, so ten of them are **byte-identical** ports
+ * (§15.2) and `css-vars` is new to both. `globals: true` below is what buys
  * that: the ports keep Jest's bare `describe`/`it`/`expect` and so need no
  * re-review.
  *
@@ -23,7 +25,7 @@ const shim = (name: string) => fileURLToPath(new URL(`./test/shims/${name}.ts`, 
  *    action, §15.4 splits the rest across the project boundary). Porting them
  *    now would mean editing them twice.
  */
-const PORTED_DOMAIN_TESTS = [
+const ROOT_DOMAIN_TESTS = [
   'contrast',
   'css-vars',
   'delete-copy',
@@ -84,7 +86,7 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['./test/setup.ts'],
           env: { WARDROBE_REPO_ROOT: repoRoot },
-          include: ['src/**/*.test.{ts,tsx}', ...PORTED_DOMAIN_TESTS],
+          include: ['src/**/*.test.{ts,tsx}', ...ROOT_DOMAIN_TESTS],
         },
       },
     ],
