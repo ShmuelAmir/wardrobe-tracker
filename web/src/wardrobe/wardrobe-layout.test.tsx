@@ -1,16 +1,13 @@
 import { api } from '@convex/_generated/api';
-import { render, screen } from '@testing-library/react';
-import { RouterProvider, createMemoryRouter } from 'react-router';
+import { screen } from '@testing-library/react';
 
 import { resetConvex, stubQuery } from '../../test/convex-fake';
 import { anItem } from '../../test/fixtures';
-import { routes } from '../routes';
+import { renderRoute } from '../../test/render';
 
 vi.mock('convex/react', () => import('../../test/convex-fake'));
 
-function wardrobe() {
-  render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: ['/'] })} />);
-}
+const wardrobe = (path = '/') => renderRoute(path);
 
 beforeEach(resetConvex);
 
@@ -41,6 +38,15 @@ describe('the wardrobe zero state', () => {
     wardrobe();
 
     expect(screen.getByRole('navigation')).toBeDefined();
+  });
+
+  it('leaves a URL naming an item on the panes, so the pane can say it is gone', () => {
+    stubQuery(api.items.list, []);
+
+    wardrobe('/item/abc');
+
+    expect(screen.queryByText('Your wardrobe starts here')).toBeNull();
+    expect(document.querySelector('[data-surface="item-detail"]')).not.toBeNull();
   });
 
   it('shows the grid instead once an item exists', () => {

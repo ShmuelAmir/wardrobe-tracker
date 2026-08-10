@@ -1,10 +1,8 @@
 import { api } from '@convex/_generated/api';
-import { render } from '@testing-library/react';
-import { RouterProvider, createMemoryRouter } from 'react-router';
 
 import { resetConvex, stubQuery } from '../test/convex-fake';
 import { anItem } from '../test/fixtures';
-import { routes } from './routes';
+import { renderRoute, surfaces } from '../test/render';
 
 vi.mock('convex/react', () => import('../test/convex-fake'));
 
@@ -22,12 +20,9 @@ vi.mock('convex/react', () => import('../test/convex-fake'));
  * could: the router is mountable, so routing is testable at all (§15.4).
  */
 function surfacesAt(path: string): string[] {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-  const { container } = render(<RouterProvider router={router} />);
+  renderRoute(path);
 
-  return [...container.querySelectorAll('[data-surface]')].map(
-    (element) => element.getAttribute('data-surface') as string,
-  );
+  return surfaces();
 }
 
 beforeEach(() => {

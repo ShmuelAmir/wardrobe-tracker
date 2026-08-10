@@ -1,23 +1,15 @@
 import { api } from '@convex/_generated/api';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RouterProvider, createMemoryRouter } from 'react-router';
 
 import { resetConvex, setAuthState, stubQuery } from '../../test/convex-fake';
 import { anItem } from '../../test/fixtures';
-import { routes } from '../routes';
+import { renderRoute } from '../../test/render';
 
 vi.mock('convex/react', () => import('../../test/convex-fake'));
 
 const signIn = vi.fn();
 vi.mock('@convex-dev/auth/react', () => ({ useAuthActions: () => ({ signIn }) }));
-
-function shellAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-  render(<RouterProvider router={router} />);
-
-  return router;
-}
 
 beforeEach(() => {
   resetConvex();
@@ -29,7 +21,7 @@ describe('login is a shell state, not a route', () => {
   it('puts the sign-in form over the URL that was asked for, leaving it intact', async () => {
     setAuthState('unauthenticated');
 
-    const router = shellAt('/item/abc');
+    const router = renderRoute('/item/abc');
 
     expect(screen.getByLabelText('Password')).toBeDefined();
     // Not `/sign-in`, and no `?next=` — the attempted location is simply still
@@ -41,7 +33,7 @@ describe('login is a shell state, not a route', () => {
   it('shows neither the app nor the form while auth is still resolving', () => {
     setAuthState('loading');
 
-    shellAt('/');
+    renderRoute('/');
 
     expect(document.querySelector('[data-surface="auth-loading"]')).not.toBeNull();
     expect(screen.queryByLabelText('Password')).toBeNull();
@@ -51,7 +43,7 @@ describe('login is a shell state, not a route', () => {
   it('offers no way to sign up and no way to recover a password', () => {
     setAuthState('unauthenticated');
 
-    shellAt('/');
+    renderRoute('/');
 
     expect(screen.queryByText(/sign up|create account/i)).toBeNull();
     expect(screen.queryByText(/forgot/i)).toBeNull();
@@ -59,7 +51,7 @@ describe('login is a shell state, not a route', () => {
 
   it('signs in with the password flow', async () => {
     setAuthState('unauthenticated');
-    shellAt('/');
+    renderRoute('/');
 
     await userEvent.type(screen.getByLabelText('Email'), 'owner@example.test');
     await userEvent.type(screen.getByLabelText('Password'), 'a-long-enough-password');
@@ -75,7 +67,7 @@ describe('login is a shell state, not a route', () => {
   it('says a rejected credential is rejected, without saying which half', async () => {
     signIn.mockRejectedValue(new Error('InvalidAccountId'));
     setAuthState('unauthenticated');
-    shellAt('/');
+    renderRoute('/');
 
     await userEvent.type(screen.getByLabelText('Email'), 'owner@example.test');
     await userEvent.type(screen.getByLabelText('Password'), 'wrong');
@@ -87,7 +79,7 @@ describe('login is a shell state, not a route', () => {
 
 describe('the navigation chrome', () => {
   it('renders the same three destinations from one nav', () => {
-    shellAt('/');
+    renderRoute('/');
 
     const links = screen.getAllByRole('link');
 
@@ -96,7 +88,7 @@ describe('the navigation chrome', () => {
   });
 
   it('marks only the current destination', () => {
-    shellAt('/stats');
+    renderRoute('/stats');
 
     expect(screen.getByRole('link', { current: 'page' }).textContent).toBe('Stats');
   });

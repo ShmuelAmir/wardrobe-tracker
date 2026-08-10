@@ -9,6 +9,10 @@ import './shell.css';
  * here cannot reach only one of the two layouts. Measuring the breakpoint in JS
  * would make the swap a client-side thing and give it a frame of the wrong
  * layout; the media query has already resolved before first paint.
+ *
+ * Destinations only. The shell's other two pieces of chrome — §7.5's contextual
+ * `+` and §7.4's wear-again strip — arrive with the surfaces they open and read
+ * from: the wizard, the builder, and the outfits the strip lists.
  */
 
 const DESTINATIONS = [

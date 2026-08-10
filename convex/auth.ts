@@ -57,9 +57,12 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
      * credentials provider this callback runs only on account creation, so the
      * count is not paid on ordinary sign-in.
      *
-     * The Owner document stores nothing custom, so only the email is written —
-     * in particular the signup secret arrives on `params` and is never one of
-     * the fields inserted here.
+     * Defining this callback **replaces** the library's own create-or-update
+     * rather than wrapping it, so an existing user is returned untouched instead
+     * of having the profile patched onto it. That is the whole intended
+     * behaviour here: the Owner document stores nothing custom (§13.4), so only
+     * the email is ever written — and in particular the signup secret arrives on
+     * `params` and is never one of the fields inserted below.
      */
     async createOrUpdateUser(ctx, { existingUserId, profile }) {
       if (existingUserId !== null) {
