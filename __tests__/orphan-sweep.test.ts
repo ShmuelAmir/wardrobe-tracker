@@ -222,12 +222,19 @@ describe('sweepOrphanImages — reclaims both orphan sources (§4.5, §4.6)', ()
     // leaves what a process death between the move and the insert leaves: the
     // real pipeline's own file, under its own name, with no row.
     mockUnlinkFailures.add('9d4c-uuid.jpg');
-    await expect(
-      saveItem(
-        { uri: 'file:///cache/pick.jpg', width: 800, height: 1000, uuid: '9d4c-uuid' },
-        { category: null as never, name: null, brand: null, season: null, sourceUrl: null },
-      ),
-    ).rejects.toThrow();
+    // The rejection is read off its message rather than asserted with
+    // `.rejects.toThrow()`: that matcher passes only when the reason is an
+    // `Error` *of this realm*, and better-sqlite3 is a native addon whose error
+    // can be constructed in whichever jest sandbox loaded the addon first —
+    // which is worker-scheduling order, so `.toThrow()` here goes red at random.
+    const failure = await saveItem(
+      { uri: 'file:///cache/pick.jpg', width: 800, height: 1000, uuid: '9d4c-uuid' },
+      { category: null as never, name: null, brand: null, season: null, sourceUrl: null },
+    ).then(
+      () => null,
+      (error: { message?: string }) => error,
+    );
+    expect(failure?.message).toMatch(/NOT NULL constraint/i);
     mockUnlinkFailures.clear();
 
     expect(onDisk()).toEqual(['1.jpg', '9d4c-uuid.jpg']);
