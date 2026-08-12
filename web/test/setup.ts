@@ -1,3 +1,4 @@
+import { Blob as PlatformBlob } from 'node:buffer';
 import { join } from 'node:path';
 
 /**
@@ -18,3 +19,21 @@ import { join } from 'node:path';
   process.env.WARDROBE_REPO_ROOT as string,
   '__tests__',
 );
+
+/**
+ * jsdom's `Blob` is opaque to `structuredClone` — it clones to a bare `{}`,
+ * losing the bytes — and structured cloning is exactly how IndexedDB stores a
+ * value. The platform `Blob` clones properly, so swapping it in is what lets a
+ * §5.7 draft test assert the thing browsers actually guarantee: a Blob written
+ * to IndexedDB reads back as a Blob.
+ */
+globalThis.Blob = PlatformBlob as unknown as typeof globalThis.Blob;
+
+/**
+ * jsdom implements neither half of the object-URL pair, which the wizard uses to
+ * preview a picked image without uploading it (§4.4). The stub only has to mint
+ * a unique string and forget it — no test reads bytes back out of one.
+ */
+let objectUrls = 0;
+URL.createObjectURL = () => `blob:wardrobe/${(objectUrls += 1)}`;
+URL.revokeObjectURL = () => {};

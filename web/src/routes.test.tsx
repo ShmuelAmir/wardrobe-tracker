@@ -1,8 +1,13 @@
+import 'fake-indexeddb/auto';
+
 import { api } from '@convex/_generated/api';
+import { waitFor } from '@testing-library/react';
 
 import { resetConvex, stubQuery } from '../test/convex-fake';
 import { anItem } from '../test/fixtures';
 import { renderRoute, surfaces } from '../test/render';
+import type { AddItemDraftRecord } from './add-item/add-item-draft';
+import { draftStore } from './add-item/draft-store';
 
 vi.mock('convex/react', () => import('../test/convex-fake'));
 
@@ -19,17 +24,25 @@ vi.mock('convex/react', () => import('../test/convex-fake'));
  * This is also the first thing `createMemoryRouter` buys that expo-router never
  * could: the router is mountable, so routing is testable at all (§15.4).
  */
-function surfacesAt(path: string): string[] {
+async function surfacesAt(path: string, expected: string[]) {
   renderRoute(path);
 
-  return surfaces();
+  // The wizard's steps mount behind an asynchronous draft read, so a row is
+  // asserted once the tree settles rather than on the first paint.
+  await waitFor(() => expect(surfaces()).toEqual(expected));
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   resetConvex();
   // A wardrobe with something in it, so the rows below exercise the grid rather
   // than §7.7's zero state — which is a surface of its own, tested beside it.
   stubQuery(api.items.list, [anItem()]);
+  // And a captured image, because the wizard's middle steps are guarded: with no
+  // draft behind them they redirect (§5.8), which the wizard's own test asserts.
+  await draftStore<AddItemDraftRecord>('add-item').write({
+    image: { blob: new Blob(['jpeg']), width: 1200, height: 900 },
+    storageId: null,
+  });
 });
 
 describe('the route tree covers §7.1s URL space', () => {
@@ -48,11 +61,11 @@ describe('the route tree covers §7.1s URL space', () => {
     ['/add/saved', ['shell', 'add-item-wizard', 'add-saved']],
     ['/builder', ['shell', 'outfit-builder', 'builder-picker']],
     ['/builder/category/tops', ['shell', 'outfit-builder', 'builder-category']],
-  ])('renders %s as %j', (path, expected) => {
-    expect(surfacesAt(path)).toEqual(expected);
+  ])('renders %s as %j', async (path, expected) => {
+    await surfacesAt(path, expected);
   });
 
-  it('redirects an unknown path to the wardrobe rather than a 404', () => {
-    expect(surfacesAt('/nope/nowhere')).toEqual(['shell', 'wardrobe-grid', 'empty-item-pane']);
+  it('redirects an unknown path to the wardrobe rather than a 404', async () => {
+    await surfacesAt('/nope/nowhere', ['shell', 'wardrobe-grid', 'empty-item-pane']);
   });
 });

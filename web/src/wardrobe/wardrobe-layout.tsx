@@ -1,8 +1,10 @@
 import { api } from '@convex/_generated/api';
 import { useQuery } from 'convex/react';
-import { Outlet, useLocation } from 'react-router';
+import { Link, Outlet, useLocation } from 'react-router';
 
+import { ItemGrid } from './item-grid';
 import { WardrobeHero } from './wardrobe-hero';
+import './wardrobe-layout.css';
 
 /**
  * The pane that stays put while `/item/:id` changes the one beside it (§7.2),
@@ -35,7 +37,18 @@ export function WardrobeLayout() {
   }
 
   return (
-    <section data-surface="wardrobe-grid">
+    <section className="wardrobe" data-surface="wardrobe-grid">
+      <div className="wardrobe__list">
+        <header className="wardrobe__header">
+          <h1 className="wardrobe__title">Wardrobe</h1>
+          {/* §7.5 — the `+` is contextual, so it belongs to the surface it opens
+              from rather than to the shell: on the wardrobe it is the wizard. */}
+          <Link className="wardrobe__add" to="/add" aria-label="Add an item">
+            +
+          </Link>
+        </header>
+        <ItemGrid items={items} />
+      </div>
       <Outlet />
     </section>
   );

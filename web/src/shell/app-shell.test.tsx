@@ -1,5 +1,5 @@
 import { api } from '@convex/_generated/api';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { resetConvex, setAuthState, stubQuery } from '../../test/convex-fake';
@@ -81,7 +81,9 @@ describe('the navigation chrome', () => {
   it('renders the same three destinations from one nav', () => {
     renderRoute('/');
 
-    const links = screen.getAllByRole('link');
+    // Scoped to the nav: the surfaces beside it carry links of their own, and
+    // what this asserts is that the chrome's destinations come from one place.
+    const links = within(screen.getByRole('navigation')).getAllByRole('link');
 
     expect(links.map((link) => link.getAttribute('href'))).toEqual(['/', '/outfits', '/stats']);
     expect(screen.getAllByRole('navigation')).toHaveLength(1);

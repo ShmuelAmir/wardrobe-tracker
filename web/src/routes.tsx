@@ -1,5 +1,10 @@
 import { Navigate, Outlet, type RouteObject } from 'react-router';
 
+import { ConfirmStep } from './add-item/confirm-step';
+import { ReviewStep } from './add-item/review-step';
+import { SavedStep } from './add-item/saved-step';
+import { SourceStep } from './add-item/source-step';
+import { AddItemWizard } from './add-item/wizard';
 import { AppShell } from './shell/app-shell';
 import { WardrobeLayout } from './wardrobe/wardrobe-layout';
 
@@ -53,15 +58,15 @@ export const routes: RouteObject[] = [
       { path: 'stats', element: <Surface name="stats" /> },
       {
         path: 'add',
-        element: <Surface name="add-item-wizard" />,
+        element: <AddItemWizard />,
         children: [
-          { index: true, element: <Surface name="add-source" /> },
+          { index: true, element: <SourceStep /> },
           { path: 'paste-link', element: <Surface name="add-paste-link" /> },
           { path: 'confirm-image', element: <Surface name="add-confirm-image" /> },
-          { path: 'confirm', element: <Surface name="add-confirm" /> },
-          { path: 'review', element: <Surface name="add-review" /> },
+          { path: 'confirm', element: <ConfirmStep /> },
+          { path: 'review', element: <ReviewStep /> },
           // Entered with `replace`, so Back never lands on a submitted form.
-          { path: 'saved', element: <Surface name="add-saved" /> },
+          { path: 'saved', element: <SavedStep /> },
         ],
       },
       {

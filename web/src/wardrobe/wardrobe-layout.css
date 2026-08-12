@@ -1,0 +1,42 @@
+/* The pane that stays put beside the one that changes (§7.2). The list scrolls
+   on its own so a selected item's pane is never pushed off the screen. */
+
+.wardrobe {
+  display: flex;
+  height: 100%;
+  background: var(--wt-background);
+}
+
+.wardrobe__list {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.wardrobe__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wt-space-lg) var(--wt-space-lg) 0;
+}
+
+.wardrobe__title {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--wt-text-primary);
+}
+
+.wardrobe__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--wt-on-accent);
+  text-decoration: none;
+  background: var(--wt-accent);
+  border-radius: var(--wt-radius-pill);
+}
