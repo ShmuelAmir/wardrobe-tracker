@@ -36,27 +36,58 @@ export function resizePlan(width: number, height: number): ImageSize {
 }
 
 /**
+ * The cap, in the shape `createImageBitmap` takes it. **Only the long edge is
+ * named**: the decoder derives the other axis from the source's own ratio, so
+ * nothing here can stretch an image, and a source already inside the cap is
+ * decoded with no resize at all rather than at a size it has to be talked into.
+ */
+function decodeCap({ width, height }: ImageSize): ImageBitmapOptions {
+  const target = resizePlan(width, height);
+  if (target.width === width) return {};
+
+  return width >= height ? { resizeWidth: target.width } : { resizeHeight: target.height };
+}
+
+/**
+ * The source's dimensions, read off an `<img>` rather than a decoded bitmap:
+ * they are needed to pick the axis to cap, and asking `createImageBitmap` for
+ * them first would materialize the full-size decode this exists to avoid. The
+ * intrinsic size an `<img>` reports is already EXIF-corrected, so it agrees with
+ * what the decode below produces.
+ */
+function sourceSize(file: Blob): Promise<ImageSize> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const probe = new Image();
+
+    probe.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: probe.naturalWidth, height: probe.naturalHeight });
+    };
+    probe.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("That file couldn't be read as an image"));
+    };
+    probe.src = url;
+  });
+}
+
+/**
  * Two problems are solved by this shape and must not be re-solved:
  *
  *  - **EXIF orientation** — `createImageBitmap`'s `imageOrientation` defaults to
  *    `"from-image"`, so a phone photo arrives already upright and no rotation
  *    step belongs here.
- *  - **iOS canvas dimension caps** — the resize happens *during* decode, so the
- *    canvas is only ever the target size. Decoding at full size and scaling on
- *    the canvas is what trips the cap.
+ *  - **iOS canvas dimension caps** — the resize happens *during* decode, so
+ *    neither a full-size bitmap nor an oversized canvas is ever materialized.
+ *    Decoding at full size and scaling afterwards is what trips the cap.
  */
 export async function normalizeImage(file: Blob): Promise<NormalizedImage> {
-  const source = await createImageBitmap(file);
-  const { width, height } = resizePlan(source.width, source.height);
-
-  const bitmap =
-    width === source.width && height === source.height
-      ? source
-      : await createImageBitmap(source, {
-          resizeWidth: width,
-          resizeHeight: height,
-          resizeQuality: 'high',
-        });
+  const bitmap = await createImageBitmap(file, {
+    ...decodeCap(await sourceSize(file)),
+    resizeQuality: 'high',
+  });
+  const { width, height } = bitmap;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -65,9 +96,7 @@ export async function normalizeImage(file: Blob): Promise<NormalizedImage> {
   if (context === null) throw new Error("This browser can't process that image");
   context.drawImage(bitmap, 0, 0);
 
-  // Both handles hold decoded pixels until GC otherwise, and the source one can
-  // be the full-size decode.
-  source.close();
+  // The handle holds decoded pixels until GC otherwise.
   bitmap.close();
 
   const blob = await new Promise<Blob | null>((resolve) =>

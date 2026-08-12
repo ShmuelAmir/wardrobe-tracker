@@ -45,16 +45,15 @@ function transact<Result>(
   );
 }
 
-/** The read/write/drop trio for one flow's draft record. */
-export type DraftStore<Record> = {
-  read: () => Promise<Record | null>;
-  write: (record: Record) => Promise<void>;
+export type DraftStore<Value> = {
+  read: () => Promise<Value | null>;
+  write: (record: Value) => Promise<void>;
   drop: () => Promise<void>;
 };
 
-export function draftStore<Record>(flow: string): DraftStore<Record> {
+export function draftStore<Value>(flow: string): DraftStore<Value> {
   return {
-    read: async () => (await transact<Record | undefined>('readonly', (s) => s.get(flow))) ?? null,
+    read: async () => (await transact<Value | undefined>('readonly', (s) => s.get(flow))) ?? null,
     write: async (record) => {
       await transact('readwrite', (store) => store.put(record, flow));
     },

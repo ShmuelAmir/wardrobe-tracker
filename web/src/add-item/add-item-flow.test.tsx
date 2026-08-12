@@ -8,8 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { resetConvex, stubMutation, stubQuery } from '../../test/convex-fake';
 import { anItem } from '../../test/fixtures';
 import { renderRoute } from '../../test/render';
-import { draftStore } from './draft-store';
-import type { AddItemDraftRecord } from './add-item-draft';
+import { addItemDraftStore } from './add-item-draft';
 
 vi.mock('convex/react', () => import('../../test/convex-fake'));
 
@@ -28,7 +27,6 @@ let uploads: Blob[] = [];
 let inserted: unknown[] = [];
 
 const STORAGE_ID = 'storage_1' as Id<'_storage'>;
-const drafts = draftStore<AddItemDraftRecord>('add-item');
 
 const aFile = () => new File(['jpeg bytes'], 'shirt.jpg', { type: 'image/jpeg' });
 
@@ -75,7 +73,7 @@ beforeEach(async () => {
   normalizeFails = false;
   uploads = [];
   inserted = [];
-  await drafts.drop();
+  await addItemDraftStore.drop();
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -118,6 +116,9 @@ describe('the wizard is a walk of real routes', () => {
     await back(router);
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    // The submitted form is not merely off-screen: its history entry was
+    // consumed by `saved`, and the step below it has no draft left to render.
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
   });
 
   it('bounces a deep link into a step with no captured image', async () => {
@@ -243,7 +244,7 @@ describe('the draft persists', () => {
 
     await fillAndSave(user);
 
-    await waitFor(async () => expect(await drafts.read()).toBeNull());
+    await waitFor(async () => expect(await addItemDraftStore.read()).toBeNull());
   });
 
   it('drops the record on an explicit Cancel', async () => {
@@ -255,6 +256,6 @@ describe('the draft persists', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
-    await waitFor(async () => expect(await drafts.read()).toBeNull());
+    await waitFor(async () => expect(await addItemDraftStore.read()).toBeNull());
   });
 });

@@ -12,7 +12,7 @@ export function ItemGrid({ items }: { items: Doc<'items'>[] }) {
   return (
     <ul className="item-grid">
       {items.map((item) => (
-        <li key={item._id} className="item-grid__cell">
+        <li key={item._id}>
           <ItemTile item={item} />
           <p className="item-grid__label">{item.name ?? item.category}</p>
         </li>

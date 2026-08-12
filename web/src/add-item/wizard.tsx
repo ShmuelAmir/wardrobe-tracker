@@ -32,7 +32,10 @@ function WizardChrome() {
   const { pathname } = useLocation();
   const { clear } = useAddItemDraft();
 
-  const steps = pathname !== '/add' && pathname !== '/add/saved';
+  // The first step has nothing to step back to, and the terminal step owns its
+  // own two exits — so each end of the walk drops one affordance.
+  const first = pathname === '/add';
+  const terminal = pathname === '/add/saved';
 
   function cancel() {
     // Explicit Cancel is one of the two acts that drop the record (§5.7); a walk
@@ -43,12 +46,12 @@ function WizardChrome() {
 
   return (
     <header className="wizard__chrome">
-      {steps && (
+      {!first && !terminal && (
         <button className="wizard__back" type="button" onClick={() => navigate(-1)}>
           Back
         </button>
       )}
-      {pathname !== '/add/saved' && (
+      {!terminal && (
         <button className="wizard__cancel" type="button" onClick={cancel}>
           Cancel
         </button>

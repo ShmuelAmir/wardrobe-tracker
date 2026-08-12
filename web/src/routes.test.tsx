@@ -6,8 +6,7 @@ import { waitFor } from '@testing-library/react';
 import { resetConvex, stubQuery } from '../test/convex-fake';
 import { anItem } from '../test/fixtures';
 import { renderRoute, surfaces } from '../test/render';
-import type { AddItemDraftRecord } from './add-item/add-item-draft';
-import { draftStore } from './add-item/draft-store';
+import { addItemDraftStore } from './add-item/add-item-draft';
 
 vi.mock('convex/react', () => import('../test/convex-fake'));
 
@@ -39,7 +38,7 @@ beforeEach(async () => {
   stubQuery(api.items.list, [anItem()]);
   // And a captured image, because the wizard's middle steps are guarded: with no
   // draft behind them they redirect (§5.8), which the wizard's own test asserts.
-  await draftStore<AddItemDraftRecord>('add-item').write({
+  await addItemDraftStore.write({
     image: { blob: new Blob(['jpeg']), width: 1200, height: 900 },
     storageId: null,
   });

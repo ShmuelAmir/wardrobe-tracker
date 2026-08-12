@@ -22,7 +22,11 @@ export type AddItemDraftRecord = {
   storageId: Id<'_storage'> | null;
 };
 
-const store = draftStore<AddItemDraftRecord>('add-item');
+/**
+ * Exported because a test resuming or clearing this flow has to reach the same
+ * record the wizard writes; naming the flow twice is how the two drift apart.
+ */
+export const addItemDraftStore = draftStore<AddItemDraftRecord>('add-item');
 
 type Draft = {
   image: NormalizedImage | null;
@@ -50,7 +54,7 @@ export function AddItemDraftProvider({ children }: { children: ReactNode }) {
       setResumed(true);
     };
 
-    store.read().then(settle, () => settle(null));
+    addItemDraftStore.read().then(settle, () => settle(null));
 
     return () => {
       live = false;
@@ -68,7 +72,7 @@ export function AddItemDraftProvider({ children }: { children: ReactNode }) {
     // storage (private mode, a denied quota) leaves the wizard working in
     // memory rather than failing outright, here and on the read above.
     const persist = (next: AddItemDraftRecord | null) => {
-      (next === null ? store.drop() : store.write(next)).catch(() => {});
+      (next === null ? addItemDraftStore.drop() : addItemDraftStore.write(next)).catch(() => {});
       return next;
     };
 
