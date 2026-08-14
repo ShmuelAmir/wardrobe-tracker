@@ -1,6 +1,6 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 
-import type { MutationCtx, QueryCtx } from './_generated/server';
+import type { ActionCtx, MutationCtx, QueryCtx } from './_generated/server';
 
 /**
  * The only way a function learns who is asking (§13.2, invariant #1). **No
@@ -15,7 +15,7 @@ import type { MutationCtx, QueryCtx } from './_generated/server';
  * > no error. `convex/authz.test.ts` drives two sessions of one identity for
  * > exactly this reason.
  */
-export async function requireOwner(ctx: QueryCtx | MutationCtx): Promise<string> {
+export async function requireOwner(ctx: ActionCtx | QueryCtx | MutationCtx): Promise<string> {
   const userId = await getAuthUserId(ctx);
 
   if (userId === null) {

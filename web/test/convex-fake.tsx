@@ -22,9 +22,14 @@ const results = new Map<string, unknown>();
 // Same keying as the queries, and for the same reason.
 const handlers = new Map<string, (args: never) => Promise<unknown>>();
 
-/** Call in `beforeEach`: signed in, with every query still in flight. */
+// The socket the app reads its offline state off (§14.5). Connected by default,
+// which is what every test that is not about being offline assumes.
+let connected = true;
+
+/** Call in `beforeEach`: signed in, online, with every query still in flight. */
 export function resetConvex() {
   authState = 'authenticated';
+  connected = true;
   results.clear();
   handlers.clear();
 }
@@ -66,6 +71,37 @@ export function useMutation<Mutation extends FunctionReference<'mutation'>>(muta
     }
     return handler(args as never) as Promise<Mutation['_returnType']>;
   };
+}
+
+/**
+ * Actions share the mutations' registry: both are "call the server and await a
+ * value", and a test that stubs one reads exactly like a test that stubs the
+ * other. Keeping them apart would buy a distinction no caller here makes.
+ */
+export function stubAction<Action extends FunctionReference<'action'>>(
+  action: Action,
+  handler: (args: Action['_args']) => Promise<Action['_returnType']>,
+) {
+  handlers.set(getFunctionName(action), handler as (args: never) => Promise<unknown>);
+}
+
+export function useAction<Action extends FunctionReference<'action'>>(action: Action) {
+  return (args: Action['_args']) => {
+    const handler = handlers.get(getFunctionName(action));
+    if (handler === undefined) {
+      throw new Error(`No stub for action ${getFunctionName(action)}`);
+    }
+    return handler(args as never) as Promise<Action['_returnType']>;
+  };
+}
+
+/** §14.5 — the offline signal, which is the socket and never `navigator.onLine`. */
+export function setConnected(state: boolean) {
+  connected = state;
+}
+
+export function useConvexConnectionState() {
+  return { isWebSocketConnected: connected };
 }
 
 export function AuthLoading({ children }: { children: ReactNode }) {

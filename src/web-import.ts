@@ -1,6 +1,9 @@
 /**
- * §5.3 — the web-import parse. RN's `fetch` enforces no CORS (native apps have
- * none), so brand pages are fetched directly — **no proxy, no backend**.
+ * §5.3 — the web-import parse: HTML in, image candidates and metadata out, with
+ * **no I/O and no platform imports**. That purity is what lets one copy serve
+ * both callers — the Convex action that fetches product pages server-side
+ * (ADR-0019) and `web-import-fetch.ts`'s native fetch — and what keeps the whole
+ * parse pinned by tests against real retail HTML.
  *
  * The candidate list is built in three passes:
  *
@@ -18,17 +21,13 @@
  *
  * The first candidate is what step 3 auto-picks; the rest fill the thumbnail row.
  * Reliability is site-dependent (SPAs and anti-bot 403s can fail), which is
- * exactly why step 3's manual fallback is mandatory — the failure states are
- * their own ticket; this module is the happy path.
+ * exactly why step 3's manual fallback is mandatory.
  *
- * Parsing is deliberately regex-based: RN ships no DOM parser, and meta/JSON-LD
- * extraction from server-rendered retail HTML doesn't need one. It is also kept
- * free of native imports so the whole parse is a pure function pinned by tests
- * (including three real retail pages under `__tests__/fixtures/`), with only
- * `fetchProductPage` reaching for the (mockable) global `fetch` and the
- * connectivity pre-flight.
+ * Parsing is deliberately regex-based: meta/JSON-LD extraction from
+ * server-rendered retail HTML needs no DOM, and neither of the two runtimes this
+ * runs in ships one — RN has no DOM parser and Convex's default runtime has no
+ * `DOMParser` either. Three real retail pages under `__tests__/fixtures/` pin it.
  */
-import * as Network from 'expo-network';
 
 export type WebImportResult = {
   /** Image URLs, best-first and deduplicated; `[0]` is step 3's auto-pick. */
@@ -75,24 +74,24 @@ export const UNREACHABLE_MESSAGE = "Couldn't reach that page. Check your connect
 /** §5.3 — the dead-end copy: a page answered, but held no image we could use. */
 export const NO_IMAGE_MESSAGE = "Couldn't get an image from that page.";
 
-/** §5.3 — long enough for a slow retail page on cellular, short enough not to hang. */
-const FETCH_TIMEOUT_MS = 10_000;
-
 /**
- * §5.3 — the outcome of a fetch, split on **the user's next action**, not on the
- * diagnosis they can't act on:
+ * §5.3 — the outcome of an attempt to import a page, split on **the user's next
+ * action**, not on the diagnosis they can't act on:
  *
  * - `ok` — a page we parsed into at least one candidate; step 3 confirms it.
  * - `retryable` — offline, a timeout, a network failure, or a 5xx/429. The page
  *   is unreachable *right now*, so the promoted action is Retry.
- * - `dead-end` — a 401/403/404, or a 200 with no usable image. Retrying the
- *   parser can't help, so the escape hatch is a photo. `sourceUrl` is carried
- *   **always** (the user typed it; it's true of the item regardless), and
- *   `name`/`brand` **only when a page was actually parsed** (the no-image case) —
- *   null on the status dead-ends, where there was no product page to read.
- * - `cancelled` — the caller aborted; not an error, just restore the field.
+ * - `dead-end` — a 401/403/404, or a 200 with no usable image. Retrying can't
+ *   help, so the escape hatch is Review with a drop zone (§5.5). `sourceUrl` is
+ *   carried **always** (the user typed it; it's true of the item regardless),
+ *   and `name`/`brand` **only when a page was actually parsed** (the no-image
+ *   case) — null on the status dead-ends, where there was no page to read.
+ *
+ * There is no `cancelled` here: a cancel is a client-side act against a call in
+ * flight, so it is the caller's own state rather than an outcome the importer
+ * can report. The native fetch adds it in `web-import-fetch.ts`.
  */
-export type FetchOutcome =
+export type WebImportOutcome =
   | { status: 'ok'; result: WebImportResult }
   | { status: 'retryable'; message: string }
   | {
@@ -101,8 +100,7 @@ export type FetchOutcome =
       sourceUrl: string;
       name: string | null;
       brand: string | null;
-    }
-  | { status: 'cancelled' };
+    };
 
 /**
  * §5.3 — "would trying again plausibly help?" as one rule, not a case-by-case
@@ -114,81 +112,6 @@ export function classifyStatus(status: number): 'ok' | 'retryable' | 'dead-end' 
   if (status >= 200 && status < 300) return 'ok';
   if (status === 429 || status >= 500) return 'retryable';
   return 'dead-end';
-}
-
-/**
- * §5.3 — fetch a page and classify the result. An **offline pre-flight** fires
- * the retryable error immediately rather than waiting out the timeout; a **10s
- * abort** caps a slow page into the same retryable error; and an external
- * `signal` lets step 2's Cancel abort the very same request — distinguished from
- * the timeout because a caller abort reports `cancelled`, not an error.
- *
- * `Response.url` (the post-redirect URL) becomes `sourceUrl` so a shortener
- * resolves to the durable product page; the pasted string is the fallback.
- */
-export async function fetchProductPage(
-  pastedUrl: string,
-  options: { signal?: AbortSignal } = {},
-): Promise<FetchOutcome> {
-  const url = pastedUrl.trim();
-
-  // The pre-flight only rules out the certain-offline case; captive portals and
-  // stale state are why it never gates step 1 and why a "reachable" verdict still
-  // goes through the real fetch (and its timeout).
-  const network = await Network.getNetworkStateAsync();
-  if (network.isConnected === false || network.isInternetReachable === false) {
-    return { status: 'retryable', message: OFFLINE_MESSAGE };
-  }
-
-  // One internal controller aborts on **either** the 10s timer or the caller's
-  // Cancel, so a single `signal` drives the request; we read the caller's signal
-  // afterward to tell the two aborts apart. The whole fetch **and body read**
-  // sit inside the try so a Cancel mid-download still aborts and a parse throw
-  // can't escape as an unhandled rejection that strands step 2's spinner.
-  const controller = new AbortController();
-  const onCallerAbort = () => controller.abort();
-  options.signal?.addEventListener('abort', onCallerAbort);
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, { headers: BROWSER_HEADERS, signal: controller.signal });
-
-    const category = classifyStatus(response.status);
-    if (category === 'retryable') {
-      return { status: 'retryable', message: UNREACHABLE_MESSAGE };
-    }
-    if (category === 'dead-end') {
-      // A status dead-end (403/404) has no product page to read, so no name/brand.
-      return {
-        status: 'dead-end',
-        message: NO_IMAGE_MESSAGE,
-        sourceUrl: response.url || url,
-        name: null,
-        brand: null,
-      };
-    }
-
-    const result = parsePage(await response.text(), response.url || url);
-    if (result.candidates.length === 0) {
-      // The no-image dead-end: a 200 we *did* parse, so name/brand carry through.
-      return {
-        status: 'dead-end',
-        message: NO_IMAGE_MESSAGE,
-        sourceUrl: result.sourceUrl,
-        name: result.name,
-        brand: result.brand,
-      };
-    }
-    return { status: 'ok', result };
-  } catch {
-    // A caller abort is a Cancel, not an error; the 10s timeout and any other
-    // failure (network drop, a body read that never lands) are retryable.
-    if (options.signal?.aborted) return { status: 'cancelled' };
-    return { status: 'retryable', message: UNREACHABLE_MESSAGE };
-  } finally {
-    clearTimeout(timeout);
-    options.signal?.removeEventListener('abort', onCallerAbort);
-  }
 }
 
 /** The pure parse: HTML + the resolved page URL in, candidates + metadata out. */

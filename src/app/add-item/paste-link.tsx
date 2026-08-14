@@ -12,7 +12,8 @@ import {
 import { useAddItemDraft } from '@/components/add-item-draft';
 import { PhotoFallback } from '@/components/photo-fallback';
 import { useTheme, type Theme } from '@/theme';
-import { fetchProductPage, isFetchableUrl } from '@/web-import';
+import { isFetchableUrl } from '@/web-import';
+import { fetchProductPage } from '@/web-import-fetch';
 
 /**
  * Step 2 — paste a link (§5.1) and its two failure states (§5.3). Fetch lights up

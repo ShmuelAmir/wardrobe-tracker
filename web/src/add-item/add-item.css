@@ -195,3 +195,100 @@
   border: 1px solid var(--wt-border);
   border-radius: var(--wt-radius-sm);
 }
+
+/* The source step's two tiles are ranked, not equal: web import is the primary
+   path (§5.1), so the file tile reads as the alternative it is. */
+.wizard__tile {
+  text-decoration: none;
+}
+
+.wizard__tile--secondary {
+  background: var(--wt-fill);
+}
+
+.wizard__tile--secondary .wizard__tile-title {
+  color: var(--wt-text-primary);
+}
+
+.wizard__tile--secondary .wizard__tile-subtitle {
+  color: var(--wt-text-secondary);
+}
+
+.wizard__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-sm);
+}
+
+/* The swap row for the other images found on the page. It scrolls sideways
+   rather than wrapping, so the large preview keeps the height it needs. */
+.confirm-image__row {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--wt-space-sm);
+  overflow-x: auto;
+}
+
+.confirm-image__thumb {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--wt-fill);
+  border: 2px solid transparent;
+  border-radius: var(--wt-radius-sm);
+  cursor: pointer;
+}
+
+.confirm-image__thumb[aria-pressed='true'] {
+  border-color: var(--wt-accent);
+}
+
+.confirm-image__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* §5.5 — the image slot on a dead-ended Review. Dashed, because it is an
+   invitation to drop something rather than a control that does something. */
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-sm);
+  padding: var(--wt-space-xl);
+  text-align: center;
+  background: var(--wt-surface);
+  border: 2px dashed var(--wt-border);
+  border-radius: var(--wt-radius-md);
+}
+
+.drop-zone--over {
+  border-color: var(--wt-accent);
+  background: var(--wt-accent-soft);
+}
+
+.drop-zone__reason {
+  margin: 0;
+  font-size: 14px;
+  color: var(--wt-text-secondary);
+}
+
+.drop-zone__pick {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wt-accent);
+  cursor: pointer;
+}
+
+/* §5.5 — the page you were already looking at, one click away. */
+.review__source {
+  margin: 0;
+  font-size: 14px;
+  color: var(--wt-text-secondary);
+}
+
+.review__source a {
+  color: var(--wt-accent);
+}

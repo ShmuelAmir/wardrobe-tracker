@@ -85,8 +85,17 @@ normalized key (see ADR-0011).
 **Web import** — the primary add-item path: a **server-side Convex action** fetches
 the brand product page's HTML, parses an image (`og:image` → `twitter:image` →
 JSON-LD → largest `<img>`), normalizes it and stores it. Running server-side means
-there is no CORS to enforce; the parser is pure regex and needs no DOM library. The
-action returns **structured failure results, never throws** (see ADR-0019).
+there is no CORS to enforce; the parser is pure regex and needs no DOM library, and
+the codec is pure JavaScript, which is why the server path reads **JPEG only** (see
+ADR-0020). The action returns **structured failure results, never throws** (see
+ADR-0019).
+
+**Dead end** — a web import that reached Review with everything **but** the image:
+a 401/403/404, a page with no usable image, a connection reject that reproduced, or
+the user's own "none of these". It is a *continuation*, never a restart — `sourceUrl`
+is carried always, name and brand whenever the parse returned them — and the image
+slot becomes a paste-or-drag drop zone. Distinct from a **retryable** failure, which
+keeps the user on the paste step behind a Retry button (see §5.4 of `SPEC.md`).
 
 **Wear-again rail** — the horizontal strip **above the list pane on every screen**:
 the 5 most recently worn outfits, each with a one-click "Wore it" that logs a wear

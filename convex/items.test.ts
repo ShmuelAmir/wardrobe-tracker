@@ -54,6 +54,40 @@ describe('creating an item', () => {
     });
   });
 
+  it('records the source URL a web import carries, and leaves it absent otherwise', async () => {
+    const t = wardrobe();
+    const image = await storeImage(t);
+
+    await t.withIdentity(OWNER).mutation(api.items.create, {
+      image,
+      category: 'Top',
+      sourceUrl: 'https://acme.test/p/coat',
+    });
+    await t.withIdentity(OWNER).mutation(api.items.create, { image, category: 'Bag' });
+
+    const [bag, top] = await t.withIdentity(OWNER).query(api.items.list, {});
+
+    expect(top.sourceUrl).toBe('https://acme.test/p/coat');
+    expect(bag.sourceUrl).toBeUndefined();
+  });
+
+  it('accepts the optional fields spelled as explicit undefined, which is what the form sends', async () => {
+    const t = wardrobe();
+    const image = await storeImage(t);
+
+    await t.withIdentity(OWNER).mutation(api.items.create, {
+      image,
+      category: 'Top',
+      name: undefined,
+      brand: undefined,
+      season: undefined,
+      sourceUrl: undefined,
+    });
+
+    const [item] = await t.withIdentity(OWNER).query(api.items.list, {});
+    expect(item.name).toBeUndefined();
+  });
+
   it('scopes the row to the caller resolved from the token, not to an argument', async () => {
     const t = wardrobe();
     const image = await storeImage(t);

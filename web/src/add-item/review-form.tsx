@@ -43,10 +43,18 @@ export type ReviewFormState = {
   build: () => ReviewSubmission | null;
 };
 
-export function useReviewForm(): ReviewFormState {
+/**
+ * Pre-fill, which on the wizard's web-import path is what a parsed page gave us
+ * (§5.6) and in Edit mode is the row. Absent fields start blank — **blank beats
+ * junk**, so a name the cleanup could not salvage is an empty field to type in
+ * rather than a site slogan to delete first (§5.3).
+ */
+export type ReviewPrefill = { name?: string | null; brand?: string | null };
+
+export function useReviewForm(prefill: ReviewPrefill = {}): ReviewFormState {
   const [category, setCategory] = useState<Category | null>(null);
-  const [name, setName] = useState('');
-  const [brand, setBrand] = useState('');
+  const [name, setName] = useState(prefill.name ?? '');
+  const [brand, setBrand] = useState(prefill.brand ?? '');
   const [season, setSeason] = useState<Season[]>([]);
 
   return {

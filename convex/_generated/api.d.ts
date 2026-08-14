@@ -10,7 +10,9 @@
 
 import type * as auth from "../auth.js";
 import type * as items from "../items.js";
+import type * as normalizeImage from "../normalizeImage.js";
 import type * as owner from "../owner.js";
+import type * as webImport from "../webImport.js";
 
 import type {
   ApiFromModules,
@@ -21,7 +23,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   items: typeof items;
+  normalizeImage: typeof normalizeImage;
   owner: typeof owner;
+  webImport: typeof webImport;
 }>;
 
 /**

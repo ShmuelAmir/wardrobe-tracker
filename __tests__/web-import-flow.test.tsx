@@ -25,10 +25,9 @@ jest.mock('expo-image', () => {
 });
 
 const mockFetchProductPage = jest.fn();
-jest.mock('@/web-import', () => {
-  const actual = jest.requireActual('@/web-import');
-  return { ...actual, fetchProductPage: (...args: unknown[]) => mockFetchProductPage(...args) };
-});
+jest.mock('@/web-import-fetch', () => ({
+  fetchProductPage: (...args: unknown[]) => mockFetchProductPage(...args),
+}));
 
 const mockDownloadCandidate = jest.fn();
 jest.mock('@/web-download', () => ({
