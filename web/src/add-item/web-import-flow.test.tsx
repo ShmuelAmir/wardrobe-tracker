@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 
 import { api } from '@convex/_generated/api';
 import type { Id } from '@convex/_generated/dataModel';
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { resetConvex, setConnected, stubAction, stubMutation, stubQuery } from '../../test/convex-fake';
@@ -66,6 +66,12 @@ function stubBackend() {
   }));
 }
 
+/** The browser's Back button, which §5.8 makes an alias for the wizard's. */
+const back = (router: ReturnType<typeof renderRoute>) =>
+  act(async () => {
+    await router.navigate(-1);
+  });
+
 async function fetchPage(user: ReturnType<typeof userEvent.setup>, url = PAGE) {
   await user.click(await screen.findByRole('link', { name: /import from web/i }));
   await user.type(await screen.findByLabelText(/product page/i), url);
@@ -93,13 +99,16 @@ describe('pasting a product link', () => {
 
     await fetchPage(user);
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/add/confirm-image'));
-    expect(screen.getByRole('img', { name: /found/i })).toHaveProperty('src', CANDIDATES[0]);
+    expect(await screen.findByRole('img', { name: /found/i })).toHaveProperty(
+      'src',
+      CANDIDATES[0],
+    );
+    expect(router.state.location.pathname).toBe('/add/confirm-image');
 
     await user.click(screen.getByRole('button', { name: 'Use this image' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/add/review'));
-    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Wool Overcoat');
+    expect(await screen.findByLabelText('Name')).toHaveProperty('value', 'Wool Overcoat');
+    expect(router.state.location.pathname).toBe('/add/review');
     expect(screen.getByLabelText('Brand')).toHaveProperty('value', 'Acme');
     expect(screen.getByRole('link', { name: 'acme.test' })).toHaveProperty('href', PAGE);
   });
@@ -181,8 +190,8 @@ describe('confirming which image', () => {
 
     await user.click(await screen.findByRole('button', { name: /none of these/i }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/add/review'));
-    expect(screen.getByLabelText(/add your own image/i)).toBeDefined();
+    expect(await screen.findByLabelText(/add your own image/i)).toBeDefined();
+    expect(router.state.location.pathname).toBe('/add/review');
     expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Wool Overcoat');
     expect(imageCalls).toEqual([]);
   });
@@ -195,8 +204,25 @@ describe('confirming which image', () => {
     await user.click(await screen.findByRole('button', { name: 'Use this image' }));
     await screen.findByRole('button', { name: 'Save' });
 
-    await router.navigate(-1);
+    await back(router);
     await user.click(await screen.findByRole('button', { name: /none of these/i }));
+
+    expect(await screen.findByLabelText(/add your own image/i)).toBeDefined();
+    expect(screen.queryByRole('img', { name: /picked/i })).toBeNull();
+  });
+
+  it('empties the slot when the download dead-ends after another was stored', async () => {
+    const user = userEvent.setup();
+    stubBackend();
+    const router = renderRoute('/add');
+    await fetchPage(user);
+    await user.click(await screen.findByRole('button', { name: 'Use this image' }));
+    await screen.findByRole('button', { name: 'Save' });
+
+    await back(router);
+    imageOutcomes = [{ status: 'dead-end', message: "Couldn't use that image." }];
+    await user.click(await screen.findByRole('button', { name: 'Image 2' }));
+    await user.click(screen.getByRole('button', { name: 'Use this image' }));
 
     expect(await screen.findByLabelText(/add your own image/i)).toBeDefined();
     expect(screen.queryByRole('img', { name: /picked/i })).toBeNull();
@@ -229,7 +255,8 @@ describe('when the fetch fails', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/add/confirm-image'));
+    await screen.findByRole('button', { name: 'Use this image' });
+    expect(router.state.location.pathname).toBe('/add/confirm-image');
     expect(pageCalls).toEqual([PAGE, PAGE]);
   });
 
@@ -249,8 +276,8 @@ describe('when the fetch fails', () => {
 
     await fetchPage(user);
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/add/review'));
-    expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Wool Overcoat');
+    expect(await screen.findByLabelText('Name')).toHaveProperty('value', 'Wool Overcoat');
+    expect(router.state.location.pathname).toBe('/add/review');
     expect(screen.getByRole('link', { name: 'acme.test' })).toHaveProperty('href', PAGE);
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
@@ -278,8 +305,8 @@ describe('when the fetch fails', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Use this image' }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/add/review'));
-    expect(screen.getByLabelText(/add your own image/i)).toBeDefined();
+    expect(await screen.findByLabelText(/add your own image/i)).toBeDefined();
+    expect(router.state.location.pathname).toBe('/add/review');
   });
 
   it('retries a retryable download in place rather than walking on', async () => {
@@ -338,6 +365,47 @@ describe('the dead-end Review', () => {
 });
 
 describe('the draft persists across the web-import walk', () => {
+  it('empties the slot when a second paste dead-ends behind a stored image', async () => {
+    const user = userEvent.setup();
+    stubBackend();
+    const router = renderRoute('/add');
+    await fetchPage(user);
+    await user.click(await screen.findByRole('button', { name: 'Use this image' }));
+    await screen.findByRole('button', { name: 'Save' });
+
+    await back(router);
+    await back(router);
+    pageOutcomes = [
+      {
+        status: 'dead-end',
+        message: "Couldn't get an image from that page.",
+        sourceUrl: 'https://other.test/p/hat',
+        name: null,
+        brand: null,
+      },
+    ];
+    await user.type(await screen.findByLabelText(/product page/i), 'https://other.test/p/hat');
+    await user.click(screen.getByRole('button', { name: 'Fetch' }));
+
+    // The first page's image must not be offered under the second page's URL.
+    expect(await screen.findByLabelText(/add your own image/i)).toBeDefined();
+    expect(screen.getByRole('link', { name: 'other.test' })).toBeDefined();
+  });
+
+  it('drops a persisted draft whose image predates the tagged shape', async () => {
+    stubBackend();
+    await addItemDraftStore.write({
+      image: { blob: new Blob(['jpeg']), width: 1200, height: 900 },
+      storageId: null,
+      imported: null,
+    } as never);
+
+    const router = renderRoute('/add/review');
+
+    // Half-restoring it would render an empty slot behind an enabled Save.
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+  });
+
   it('resumes a cold load of the confirm step with the candidates still in hand', async () => {
     const user = userEvent.setup();
     stubBackend();

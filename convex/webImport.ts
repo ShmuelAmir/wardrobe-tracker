@@ -32,9 +32,10 @@ import { requireOwner } from './owner';
 const FETCH_TIMEOUT_MS = 10_000;
 
 /**
- * A ceiling on what we will pull down before decoding. The default runtime has
- * 64 MiB and a decoded frame is 4 bytes a pixel, so the guard has to bite on the
- * compressed bytes, before the frame exists.
+ * A ceiling on what we will pull down at all. The default runtime has 64 MiB and
+ * the whole response is buffered before anything looks at it, so this bites on
+ * the *declared* length first and on the delivered bytes second — the decode's
+ * own megapixel cap is a separate, later guard against the 4-bytes-a-pixel frame.
  */
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 
@@ -81,6 +82,12 @@ export const importImage = action({
   handler: async (ctx, args): Promise<ImageImportOutcome> => {
     await requireOwner(ctx);
 
+    // The same syntax gate the page fetch runs. It is what keeps the argument
+    // from naming a `file:`/`data:` URL, and it is the only gate available: the
+    // action is stateless, so it cannot check the candidate against the parse
+    // that produced it, and Convex's egress has no SSRF filter of its own.
+    if (!isFetchableUrl(args.url)) return { status: 'dead-end', message: IMAGE_UNUSABLE_MESSAGE };
+
     let bytes: Uint8Array;
     try {
       const response = await fetch(args.url, {
@@ -92,6 +99,13 @@ export const importImage = action({
       if (category === 'retryable') return { status: 'retryable', message: UNREACHABLE_MESSAGE };
       if (category === 'dead-end') return { status: 'dead-end', message: IMAGE_UNUSABLE_MESSAGE };
 
+      // Before the read, not after: buffering 100 MB to then reject it is the
+      // out-of-memory this ceiling exists to prevent, and an action that runs
+      // out of memory reaches the client as a throw (invariant #7).
+      if (tooLarge(response.headers.get('Content-Length'))) {
+        return { status: 'dead-end', message: IMAGE_UNUSABLE_MESSAGE };
+      }
+
       bytes = new Uint8Array(await response.arrayBuffer());
     } catch {
       // Unlike the page fetch, a throw here needs no auto-retry to classify: the
@@ -100,6 +114,7 @@ export const importImage = action({
       return { status: 'retryable', message: UNREACHABLE_MESSAGE };
     }
 
+    // A CDN that declared no length still has to answer for what it sent.
     if (bytes.byteLength > MAX_IMAGE_BYTES) {
       return { status: 'dead-end', message: IMAGE_UNUSABLE_MESSAGE };
     }
@@ -186,6 +201,12 @@ async function fetchPage(url: string): Promise<WebImportOutcome | typeof REJECTE
   }
 
   return { status: 'ok', result };
+}
+
+/** A declared length over the ceiling. An absent one is not a verdict. */
+function tooLarge(contentLength: string | null): boolean {
+  const declared = Number(contentLength);
+  return Number.isFinite(declared) && declared > MAX_IMAGE_BYTES;
 }
 
 function isTimeout(error: unknown): boolean {

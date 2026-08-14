@@ -23,12 +23,18 @@ import { resizePlan, STORED_QUALITY, type ImageSize } from '../src/image-normali
  */
 
 /**
- * The decode guards, both sized against the default runtime's **64 MiB**. A
- * decoded frame is 4 bytes a pixel, so 30 MP is already ~120 MB of RGBA and has
- * to be refused before it is allocated rather than after.
+ * The decode guard, sized against the default runtime's **64 MiB**: a decoded
+ * frame is 4 bytes a pixel, so 8 MP is ~32 MB of RGBA and leaves room for the
+ * downscaled copy and the encoder's own buffers. Retail hero shots are 2–9 MP,
+ * so this refuses almost nothing real.
+ *
+ * > ⚠️ It bounds **one** decode, not the isolate. `jpeg-js` tracks its memory on
+ * > a module-level counter that a second concurrent `decode` resets, so
+ * > `maxMemoryUsageInMB` cannot bound two imports at once — this cap and the
+ * > caller's byte ceiling are what actually hold the line.
  */
-const MAX_SOURCE_MEGAPIXELS = 12;
-const MAX_SOURCE_MEMORY_MB = 48;
+const MAX_SOURCE_MEGAPIXELS = 8;
+const MAX_SOURCE_MEMORY_MB = 32;
 
 /** The stored bytes plus the size they decode at, for the row that names them. */
 export type NormalizedBytes = ImageSize & { bytes: Uint8Array };
@@ -38,11 +44,25 @@ export type NormalizedBytes = ImageSize & { bytes: Uint8Array };
  * CommonJS, and Convex's default runtime defines no `Buffer` — the encode would
  * throw a `ReferenceError` on the only runtime it has to work on. `Buffer.from`
  * is reached there purely as a byte container, so a `Uint8Array` is an exact
- * stand-in. Guarded, so a runtime that has a real `Buffer` keeps it.
+ * stand-in.
+ *
+ * > ⚠️ The stand-in is installed **for the call and removed after it**, never
+ * > left on `globalThis`. A one-method `Buffer` that outlives the encode is
+ * > worse than none: an isolate is reused, and the next module to feature-detect
+ * > `typeof Buffer !== 'undefined'` would take a Node path and fail on
+ * > `Buffer.alloc` with a `TypeError` its `ReferenceError` fallback cannot
+ * > catch — `jpeg-js`'s own decoder has exactly that fallback.
  */
-function ensureByteContainer(): void {
-  const scope = globalThis as { Buffer?: { from(bytes: number[]): Uint8Array } };
-  scope.Buffer ??= { from: (bytes) => Uint8Array.from(bytes) };
+function withByteContainer<Result>(encode: () => Result): Result {
+  const scope = globalThis as { Buffer?: unknown };
+  if (scope.Buffer !== undefined) return encode();
+
+  scope.Buffer = { from: (bytes: number[]) => Uint8Array.from(bytes) };
+  try {
+    return encode();
+  } finally {
+    delete scope.Buffer;
+  }
 }
 
 /** Decode → cap the long edge → re-encode. Raises on bytes it cannot decode. */
@@ -61,8 +81,9 @@ export function normalizeJpeg(source: Uint8Array): NormalizedBytes {
       ? decoded.data
       : downscale(decoded.data, decoded, target);
 
-  ensureByteContainer();
-  const encoded = encode({ ...target, data: pixels }, Math.round(STORED_QUALITY * 100));
+  const encoded = withByteContainer(() =>
+    encode({ ...target, data: pixels }, Math.round(STORED_QUALITY * 100)),
+  );
 
   return { ...target, bytes: new Uint8Array(encoded.data) };
 }

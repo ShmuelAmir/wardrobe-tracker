@@ -79,8 +79,12 @@ export const NO_IMAGE_MESSAGE = "Couldn't get an image from that page.";
  * action**, not on the diagnosis they can't act on:
  *
  * - `ok` — a page we parsed into at least one candidate; step 3 confirms it.
- * - `retryable` — offline, a timeout, a network failure, or a 5xx/429. The page
- *   is unreachable *right now*, so the promoted action is Retry.
+ * - `retryable` — offline, a timeout, or a 5xx/429. The page is unreachable
+ *   *right now*, so the promoted action is Retry. A bare connection reject is
+ *   **not** in this list and each caller decides it for itself: the server
+ *   importer retries once and then dead-ends it, because a reject that
+ *   reproduces is a fingerprint block, and a Retry it cannot satisfy is a button
+ *   that can't work (invariant #8, §5.4).
  * - `dead-end` — a 401/403/404, or a 200 with no usable image. Retrying can't
  *   help, so the escape hatch is Review with a drop zone (§5.5). `sourceUrl` is
  *   carried **always** (the user typed it; it's true of the item regardless),

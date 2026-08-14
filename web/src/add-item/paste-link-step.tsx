@@ -25,7 +25,7 @@ type Phase = { kind: 'idle' } | { kind: 'fetching' } | { kind: 'retryable'; mess
 
 export function PasteLinkStep() {
   const navigate = useNavigate();
-  const { setImported } = useAddItemDraft();
+  const { clearImage, setImported } = useAddItemDraft();
   const importPage = useAction(api.webImport.importPage);
   // §14.5 — the socket, never `navigator.onLine`, which lies through captive
   // portals. The wizard renders behind `<Authenticated>`, so a socket that is
@@ -64,8 +64,11 @@ export function PasteLinkStep() {
     }
 
     if (outcome.status === 'dead-end') {
-      // Nothing is thrown away: `sourceUrl` always, name and brand whenever the
-      // parse actually returned them.
+      // Nothing is thrown away except an image belonging to a *different* page:
+      // Back makes a second paste reachable with the first page's image still in
+      // the draft, and Review would otherwise offer it under this page's URL.
+      clearImage();
+      // `sourceUrl` always, name and brand whenever the parse returned them.
       setImported({
         sourceUrl: outcome.sourceUrl,
         name: outcome.name,

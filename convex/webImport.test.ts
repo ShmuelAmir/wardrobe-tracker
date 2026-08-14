@@ -254,6 +254,38 @@ describe('importing the confirmed image', () => {
     expect(await t.run(async (ctx) => await ctx.db.system.query('_storage').collect())).toEqual([]);
   });
 
+  it('refuses a URL that is not http(s), without fetching it', async () => {
+    const calls = stubFetch(new Response(jpegBody(80, 80)));
+
+    const outcome = await wardrobe()
+      .withIdentity(OWNER)
+      .action(api.webImport.importImage, { url: 'file:///etc/passwd' });
+
+    expect(outcome).toMatchObject({ status: 'dead-end' });
+    expect(calls).toEqual([]);
+  });
+
+  it('refuses a body that declares itself larger than the ceiling, before reading it', async () => {
+    let read = false;
+    const oversized = new Response(jpegBody(80, 80), {
+      headers: { 'Content-Length': String(64 * 1024 * 1024) },
+    });
+    Object.defineProperty(oversized, 'arrayBuffer', {
+      value: async () => {
+        read = true;
+        return new ArrayBuffer(0);
+      },
+    });
+    stubFetch(oversized);
+
+    const outcome = await wardrobe()
+      .withIdentity(OWNER)
+      .action(api.webImport.importImage, { url: 'https://cdn.acme.test/huge.jpg' });
+
+    expect(outcome).toMatchObject({ status: 'dead-end' });
+    expect(read).toBe(false);
+  });
+
   it('maps a 5xx on the image to retryable', async () => {
     stubFetch(new Response('', { status: 503 }));
 

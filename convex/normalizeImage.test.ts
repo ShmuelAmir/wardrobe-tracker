@@ -53,6 +53,26 @@ describe('normalizing a downloaded product image', () => {
     vi.unstubAllGlobals();
   });
 
+  it('leaves no stand-in Buffer behind for the next call in the isolate to trip on', () => {
+    const source = sourceJpeg(400, 300);
+    vi.stubGlobal('Buffer', undefined);
+
+    normalizeJpeg(source);
+
+    // A one-method Buffer that outlives the encode is worse than none: the next
+    // module to feature-detect one takes a Node path it cannot complete.
+    expect((globalThis as { Buffer?: unknown }).Buffer).toBeUndefined();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps a real Buffer when the runtime has one', () => {
+    const before = (globalThis as { Buffer?: unknown }).Buffer;
+
+    normalizeJpeg(sourceJpeg(400, 300));
+
+    expect((globalThis as { Buffer?: unknown }).Buffer).toBe(before);
+  });
+
   it('rejects bytes that are not a decodable JPEG', () => {
     expect(() => normalizeJpeg(new TextEncoder().encode('<html>not an image</html>'))).toThrow();
   });

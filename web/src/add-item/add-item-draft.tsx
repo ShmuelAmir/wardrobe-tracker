@@ -73,6 +73,23 @@ const DraftContext = createContext<Draft | null>(null);
 
 const EMPTY: AddItemDraftRecord = { image: null, storageId: null, imported: null };
 
+/**
+ * A persisted record is only resumable if it still has the shape this build
+ * reads. A draft written before `image` became a tagged union has no `kind`, and
+ * resuming it renders an empty image slot behind an *enabled* Save — so a record
+ * that fails the check is dropped rather than half-restored. There is nothing to
+ * migrate: the draft is one in-flight walk, and dropping it costs a re-pick.
+ */
+function resumable(record: AddItemDraftRecord | null): AddItemDraftRecord | null {
+  if (record === null) return null;
+
+  const image = record.image;
+  if (image !== null && image !== undefined && image.kind !== 'local' && image.kind !== 'stored') {
+    return null;
+  }
+  return record;
+}
+
 export function AddItemDraftProvider({ children }: { children: ReactNode }) {
   const [record, setRecord] = useState<AddItemDraftRecord | null>(null);
   // The steps' redirect guards read an empty draft as "dead step", so nothing
@@ -88,7 +105,7 @@ export function AddItemDraftProvider({ children }: { children: ReactNode }) {
       setResumed(true);
     };
 
-    addItemDraftStore.read().then(settle, () => settle(null));
+    addItemDraftStore.read().then((found) => settle(resumable(found)), () => settle(null));
 
     return () => {
       live = false;

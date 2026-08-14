@@ -54,6 +54,10 @@ export function ConfirmImageStep() {
       return;
     }
     if (outcome.status === 'dead-end') {
+      // Reached again by Back after another candidate was already stored, so the
+      // slot has to be emptied or Review shows that one and never says why this
+      // one failed.
+      clearImage();
       setImported({ ...page, message: outcome.message });
       navigate('/add/review');
       return;
