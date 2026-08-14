@@ -233,7 +233,7 @@ describe('the draft persists', () => {
 
     expect(await screen.findByRole('button', { name: 'Save' })).toBeDefined();
     expect(router.state.location.pathname).toBe('/add/review');
-    expect(screen.getByRole('img', { name: /picked/i })).toBeDefined();
+    expect(await screen.findByRole('img', { name: /picked/i })).toBeDefined();
   });
 
   it('drops the record on a successful save', async () => {

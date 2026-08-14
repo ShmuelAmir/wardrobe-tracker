@@ -61,6 +61,9 @@ export const create = mutation({
     name: v.optional(v.string()),
     brand: v.optional(v.string()),
     season: v.optional(v.array(season)),
+    // §8.1 — the resolved product page a web import came from, and the one field
+    // in the app that points out of it. Absent on every other source.
+    sourceUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await requireOwner(ctx);

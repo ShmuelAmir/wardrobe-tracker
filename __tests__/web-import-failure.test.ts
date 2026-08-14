@@ -1,10 +1,10 @@
 import {
   classifyStatus,
-  fetchProductPage,
   NO_IMAGE_MESSAGE,
   OFFLINE_MESSAGE,
   UNREACHABLE_MESSAGE,
 } from '@/web-import';
+import { fetchProductPage } from '@/web-import-fetch';
 
 const mockGetNetworkState = jest.fn();
 jest.mock('expo-network', () => ({

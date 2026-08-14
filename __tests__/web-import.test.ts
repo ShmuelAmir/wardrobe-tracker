@@ -1,4 +1,5 @@
-import { fetchProductPage, isFetchableUrl, parsePage } from '@/web-import';
+import { isFetchableUrl, parsePage } from '@/web-import';
+import { fetchProductPage } from '@/web-import-fetch';
 
 jest.mock('expo-network', () => ({
   getNetworkStateAsync: async () => ({ isConnected: true, isInternetReachable: true }),

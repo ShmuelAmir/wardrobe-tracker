@@ -21,7 +21,7 @@ export function ConfirmStep() {
   return (
     <div className="wizard__body" data-surface="add-confirm">
       <h1 className="wizard__title">Confirm photo</h1>
-      <ImagePreview blob={image.blob} className="wizard__preview" />
+      <ImagePreview image={image} className="wizard__preview" />
       <button className="wizard__cta" type="button" onClick={() => navigate('/add/review')}>
         Use this photo
       </button>

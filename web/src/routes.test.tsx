@@ -36,11 +36,19 @@ beforeEach(async () => {
   // A wardrobe with something in it, so the rows below exercise the grid rather
   // than §7.7's zero state — which is a surface of its own, tested beside it.
   stubQuery(api.items.list, [anItem()]);
-  // And a captured image, because the wizard's middle steps are guarded: with no
-  // draft behind them they redirect (§5.8), which the wizard's own test asserts.
+  // And a draft with both an image and a parse behind it, because the wizard's
+  // middle steps are guarded: with nothing behind them they redirect (§5.8),
+  // which the wizard's own tests assert.
   await addItemDraftStore.write({
-    image: { blob: new Blob(['jpeg']), width: 1200, height: 900 },
+    image: { kind: 'local', blob: new Blob(['jpeg']), width: 1200, height: 900 },
     storageId: null,
+    imported: {
+      sourceUrl: 'https://acme.test/p/coat',
+      name: null,
+      brand: null,
+      candidates: ['https://cdn.acme.test/coat.jpg'],
+      message: null,
+    },
   });
 });
 

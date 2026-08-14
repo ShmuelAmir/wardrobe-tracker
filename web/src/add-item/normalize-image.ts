@@ -1,39 +1,19 @@
+import { resizePlan, STORED_QUALITY, STORED_TYPE, type ImageSize } from '@/image-normalize';
+
 /**
  * §4.1/§4.2 — the client half of the image pipeline: decode → resize → JPEG.
- * One normalized file per item, no original and no thumbnail, because Convex
- * storage offers no transforms and every grid render is billed egress (§2.2).
+ * The cap, format and quality it works to are `@/image-normalize`'s, shared with
+ * the Convex action that normalizes a web import — one normalized file per item
+ * whichever source it came from (ADR-0006).
  */
 
-/** The long edge, in CSS pixels. A source already inside it is left alone. */
-const MAX_EDGE = 1200;
-
-/**
- * **JPEG is forced, not chosen.** Safari decodes WebP and AVIF but cannot
- * *encode* either through `canvas.toBlob`, so offering a format choice would
- * produce a silent `image/png` fallback — several times the bytes — on the one
- * browser this app is aimed at.
- */
-const STORED_TYPE = 'image/jpeg';
-const STORED_QUALITY = 0.8;
-
-export type ImageSize = { width: number; height: number };
+// Re-exported because the plan is part of this pipeline's observable contract:
+// a caller reasoning about what will be stored reads it off the module that
+// stores it, not off the module that holds the number.
+export { resizePlan };
 
 /** The normalized bytes plus the size they actually decode at. */
 export type NormalizedImage = ImageSize & { blob: Blob };
-
-/**
- * The target size for a source of these dimensions: the long edge capped at
- * `MAX_EDGE`, the other axis scaled with it, and **never an upscale** — a 400px
- * product photo is stored at 400px, because inventing pixels costs bytes and
- * adds nothing.
- */
-export function resizePlan(width: number, height: number): ImageSize {
-  const longest = Math.max(width, height);
-  if (longest <= MAX_EDGE) return { width, height };
-
-  const scale = MAX_EDGE / longest;
-  return { width: Math.round(width * scale), height: Math.round(height * scale) };
-}
 
 /**
  * The cap, in the shape `createImageBitmap` takes it. **Only the long edge is
