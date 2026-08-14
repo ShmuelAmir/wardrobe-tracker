@@ -1,0 +1,197 @@
+/* One decision per full screen (§5): the wizard takes the whole pane area and
+   each step's body is a single column, so nothing competes with the step's one
+   forward action. */
+
+.wizard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--wt-background);
+}
+
+.wizard__chrome {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wt-space-md);
+  padding: var(--wt-space-md) var(--wt-space-lg);
+}
+
+.wizard__back,
+.wizard__cancel {
+  padding: 0;
+  font-size: 17px;
+  color: var(--wt-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* The chrome is a two-slot row: with no Back to render, Cancel still sits on
+   the right rather than sliding into the empty slot. */
+.wizard__cancel {
+  margin-left: auto;
+}
+
+.wizard__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--wt-space-md);
+  width: 100%;
+  max-width: 560px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: var(--wt-space-lg);
+  overflow-y: auto;
+}
+
+.wizard__body--centered {
+  align-items: center;
+  justify-content: center;
+}
+
+.wizard__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--wt-text-primary);
+}
+
+.wizard__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-xs);
+  padding: var(--wt-space-xl);
+  background: var(--wt-accent);
+  border-radius: var(--wt-radius-md);
+  cursor: pointer;
+}
+
+.wizard__tile-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--wt-on-accent);
+}
+
+.wizard__tile-subtitle {
+  font-size: 14px;
+  color: var(--wt-on-accent-muted);
+}
+
+/* The tile is the control; the input stays in the DOM so it keeps the label's
+   name and the keyboard's focus. */
+.wizard__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.wizard__preview {
+  flex: 1;
+  min-height: 0;
+  object-fit: contain;
+  background: var(--wt-fill);
+  border-radius: var(--wt-radius-md);
+}
+
+.wizard__error {
+  margin: 0;
+  padding: var(--wt-space-md);
+  font-size: 14px;
+  color: var(--wt-danger);
+  background: var(--wt-danger-surface);
+  border-radius: var(--wt-radius-sm);
+}
+
+.wizard__check {
+  margin: 0;
+  font-size: 52px;
+  color: var(--wt-accent);
+}
+
+.wizard__actions {
+  display: flex;
+  gap: var(--wt-space-md);
+  margin-top: var(--wt-space-lg);
+}
+
+.wizard__cta {
+  flex: 1;
+  padding: var(--wt-space-lg) var(--wt-space-xl);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--wt-on-accent);
+  background: var(--wt-accent);
+  border: none;
+  border-radius: var(--wt-radius-md);
+  cursor: pointer;
+}
+
+.wizard__cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wizard__cta--secondary {
+  color: var(--wt-text-primary);
+  background: var(--wt-fill);
+}
+
+.review__image {
+  align-self: flex-start;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  background: var(--wt-fill);
+  border-radius: var(--wt-radius-md);
+}
+
+.review__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wt-space-sm);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.review__label {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wt-text-secondary);
+  text-transform: uppercase;
+}
+
+.review__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wt-space-sm);
+}
+
+.review__chip {
+  padding: var(--wt-space-sm) var(--wt-space-lg);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--wt-text-primary);
+  background: var(--wt-fill);
+  border: none;
+  border-radius: var(--wt-radius-pill);
+  cursor: pointer;
+}
+
+.review__chip[aria-pressed='true'] {
+  color: var(--wt-on-accent);
+  background: var(--wt-accent);
+}
+
+.review__input {
+  padding: var(--wt-space-md) var(--wt-space-lg);
+  font-size: 16px;
+  color: var(--wt-text-primary);
+  background: var(--wt-surface);
+  border: 1px solid var(--wt-border);
+  border-radius: var(--wt-radius-sm);
+}

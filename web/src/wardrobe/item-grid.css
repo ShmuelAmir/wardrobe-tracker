@@ -1,0 +1,42 @@
+.item-grid {
+  display: grid;
+  /* Tiles keep a readable size and the column count follows the pane's width,
+     which is what lets the same grid serve the phone and the desktop pane. */
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--wt-space-md);
+  margin: 0;
+  padding: var(--wt-space-lg);
+  list-style: none;
+}
+
+.item-grid__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  /* Invariant #10: `cover` is what keeps the browser's decode-time downscaling,
+     and that downscaling is why no thumbnail is ever stored. */
+  object-fit: cover;
+  background: var(--wt-fill);
+  border-radius: var(--wt-radius-md);
+}
+
+.item-grid__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wt-border);
+}
+
+.item-grid__placeholder-label {
+  font-size: 12px;
+  color: var(--wt-text-secondary);
+}
+
+.item-grid__label {
+  margin: var(--wt-space-xs) 0 0;
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--wt-text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
