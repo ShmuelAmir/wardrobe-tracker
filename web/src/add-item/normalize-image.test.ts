@@ -112,6 +112,18 @@ describe('normalizing a picked file', () => {
     expect(image).toMatchObject({ width: 900, height: 1200 });
   });
 
+  it('still caps a sliver, whose short edge survives the scale unrounded', async () => {
+    const { calls } = stubImagePipeline({ width: 1, height: 2000 });
+
+    const image = await normalizeImage(new Blob([]));
+
+    // A 1px short edge scales to 0.6 and rounds back to 1, so a plan that
+    // reads "unchanged" off that axis alone would call this source in-bounds
+    // and store it at its full 2000px height.
+    expect(calls[0].options).toMatchObject({ resizeHeight: 1200 });
+    expect(image.height).toBe(1200);
+  });
+
   it('asks for no resize at all when the source is already within bounds', async () => {
     const { calls } = stubImagePipeline({ width: 400, height: 300 });
 

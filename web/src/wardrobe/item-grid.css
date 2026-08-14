@@ -24,7 +24,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--wt-border);
+  /* No background of its own: the tile it replaces is already the `fill` well an
+     inert tile wants, and the placeholder is the honest render for an image
+     still uploading — so the two states matching is the point, not an oversight. */
 }
 
 .item-grid__placeholder-label {

@@ -43,7 +43,10 @@ export function resizePlan(width: number, height: number): ImageSize {
  */
 function decodeCap({ width, height }: ImageSize): ImageBitmapOptions {
   const target = resizePlan(width, height);
-  if (target.width === width) return {};
+  // Both axes, because either one alone can round back to its source: a 1×2000
+  // sliver scales to 0.6px wide and rounds to the 1px it started at, which a
+  // width-only test reads as "already in bounds".
+  if (target.width === width && target.height === height) return {};
 
   return width >= height ? { resizeWidth: target.width } : { resizeHeight: target.height };
 }
